@@ -143,6 +143,16 @@ async function handleIncomingMessage(chatId: number, text: string | null) {
     await sendTelegramMessage(chatId, list);
     return;
   }
+  if (cmd === "/resumo" || cmd === "/relatorio" || cmd === "/report") {
+    const report = await buildDailyReport();
+    await sendTelegramMessage(chatId, report);
+    return;
+  }
+
+  // Default: send report
+  const report = await buildDailyReport();
+  await sendTelegramMessage(chatId, report);
+}
 
 export const pollTelegram = createServerFn({ method: "POST" }).handler(
   async () => {
