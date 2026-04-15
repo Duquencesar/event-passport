@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db } from "./supabase.server";
 
 export const listPeople = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await db
     .from("people")
     .select("id, name, email, tag, created_at")
     .order("name", { ascending: true })
@@ -13,7 +13,7 @@ export const listPeople = createServerFn({ method: "GET" }).handler(async () => 
 
 export const getPeopleWithRegistrations = createServerFn({ method: "GET" }).handler(
   async () => {
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await db
       .from("people")
       .select("id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at)")
       .order("name", { ascending: true })
@@ -24,7 +24,7 @@ export const getPeopleWithRegistrations = createServerFn({ method: "GET" }).hand
 );
 
 export const getPeopleCount = createServerFn({ method: "GET" }).handler(async () => {
-  const { count, error } = await supabaseAdmin
+  const { count, error } = await db
     .from("people")
     .select("id", { count: "exact", head: true });
   if (error) throw new Error(error.message);
