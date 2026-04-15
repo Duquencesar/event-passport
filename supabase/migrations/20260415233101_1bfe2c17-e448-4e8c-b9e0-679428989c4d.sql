@@ -1,0 +1,1 @@
+ALTER TABLE public.registrations ADD COLUMN day_pass_date date;

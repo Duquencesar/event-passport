@@ -121,6 +121,7 @@ export type Database = {
       }
       registrations: {
         Row: {
+          day_pass_date: string | null
           event_id: string | null
           event_name: string
           id: string
@@ -130,6 +131,7 @@ export type Database = {
           ticket_type: string
         }
         Insert: {
+          day_pass_date?: string | null
           event_id?: string | null
           event_name: string
           id?: string
@@ -139,6 +141,7 @@ export type Database = {
           ticket_type: string
         }
         Update: {
+          day_pass_date?: string | null
           event_id?: string | null
           event_name?: string
           id?: string
