@@ -35,34 +35,36 @@ async function sendTelegramMessage(chatId: number, text: string) {
 async function buildDailyReport(): Promise<string> {
   const today = new Date().toISOString().split("T")[0];
 
-  // Total registrations (all time)
-  const { count: totalRegistrations } = await supabaseAdmin
-    .from("registrations")
-    .select("id", { count: "exact", head: true });
-
-  // Total unique people registered
   const { count: totalPeople } = await supabaseAdmin
     .from("people")
     .select("id", { count: "exact", head: true });
 
-  // Architects registered
   const { count: architects } = await supabaseAdmin
     .from("people")
     .select("id", { count: "exact", head: true })
     .eq("tag", "Arquiteto");
 
-  // Today's check-ins
+  const { count: totalRegistrations } = await supabaseAdmin
+    .from("registrations")
+    .select("id", { count: "exact", head: true });
+
   const { count: todayCheckins } = await supabaseAdmin
     .from("checkins")
     .select("id", { count: "exact", head: true })
     .eq("date", today);
 
-  // Today's unique people checked in
   const { data: todayPeople } = await supabaseAdmin
     .from("checkins")
     .select("person_id")
     .eq("date", today);
   const uniqueToday = new Set(todayPeople?.map((c) => c.person_id)).size;
+
+  // Today's events
+  const { data: todayEvents } = await supabaseAdmin
+    .from("events")
+    .select("id, name, time, location")
+    .eq("date", today)
+    .order("time", { ascending: true });
 
   const lines = [
     `🌿 <b>Ipê Village — Relatório Diário</b>`,
@@ -77,6 +79,25 @@ async function buildDailyReport(): Promise<string> {
     `• Check-ins realizados: ${todayCheckins || 0}`,
     `• Pessoas únicas: ${uniqueToday}`,
   ];
+
+  if (todayEvents && todayEvents.length > 0) {
+    lines.push(``, `📆 <b>Eventos Hoje</b>`);
+    for (const ev of todayEvents) {
+      // Get check-in count per event
+      const { count: evCheckins } = await supabaseAdmin
+        .from("checkins")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", ev.id);
+      const { count: evRegs } = await supabaseAdmin
+        .from("registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", ev.id);
+      lines.push(
+        `• ${ev.time || "?"} — <b>${ev.name}</b>`,
+        `  📍 ${ev.location || "—"} | 📝 ${evRegs || 0} inscritos | ✅ ${evCheckins || 0} check-ins`,
+      );
+    }
+  }
 
   return lines.join("\n");
 }
