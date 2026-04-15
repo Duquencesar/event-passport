@@ -14,7 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      checkins: {
+        Row: {
+          access_type: string
+          checked_in_at: string
+          date: string
+          event_name: string | null
+          id: string
+          period: string
+          person_id: string
+        }
+        Insert: {
+          access_type: string
+          checked_in_at?: string
+          date?: string
+          event_name?: string | null
+          id?: string
+          period: string
+          person_id: string
+        }
+        Update: {
+          access_type?: string
+          checked_in_at?: string
+          date?: string
+          event_name?: string | null
+          id?: string
+          period?: string
+          person_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkins_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          tag: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          tag?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          tag?: string | null
+        }
+        Relationships: []
+      }
+      registrations: {
+        Row: {
+          event_name: string
+          id: string
+          imported_at: string
+          person_id: string
+          source: string
+          ticket_type: string
+        }
+        Insert: {
+          event_name: string
+          id?: string
+          imported_at?: string
+          person_id: string
+          source?: string
+          ticket_type: string
+        }
+        Update: {
+          event_name?: string
+          id?: string
+          imported_at?: string
+          person_id?: string
+          source?: string
+          ticket_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registrations_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
