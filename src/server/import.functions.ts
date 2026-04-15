@@ -24,6 +24,10 @@ export const importPeople = createServerFn({ method: "POST" })
       const email = row.email.toLowerCase().trim();
       const name = row.name.trim();
 
+      // Auto-detect tag from ticket type
+      const tag = row.tag ||
+        (row.ticket_type?.toLowerCase().includes("architect") ? "Arquiteto" : null);
+
       // Upsert person
       const { data: existing } = await supabaseAdmin
         .from("people")
@@ -37,13 +41,13 @@ export const importPeople = createServerFn({ method: "POST" })
         personId = existing.id;
         await supabaseAdmin
           .from("people")
-          .update({ name, tag: row.tag || null })
+          .update({ name, tag: tag || null })
           .eq("id", personId);
         updated++;
       } else {
         const { data: newPerson, error } = await supabaseAdmin
           .from("people")
-          .insert({ name, email, tag: row.tag || null })
+          .insert({ name, email, tag: tag || null })
           .select("id")
           .single();
         if (error) continue;
