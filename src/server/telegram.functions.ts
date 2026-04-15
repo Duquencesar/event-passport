@@ -149,12 +149,14 @@ export const pollTelegram = createServerFn({ method: "POST" }).handler(
       if (u.message) {
         // Store message
         await supabaseAdmin.from("telegram_messages").upsert(
-          {
-            update_id: u.update_id,
-            chat_id: u.message.chat.id,
-            text: u.message.text ?? null,
-            raw_update: u as unknown as Record<string, unknown>,
-          },
+          [
+            {
+              update_id: u.update_id,
+              chat_id: u.message.chat.id,
+              text: u.message.text ?? null,
+              raw_update: u as unknown as Record<string, unknown>,
+            },
+          ],
           { onConflict: "update_id" },
         );
 
