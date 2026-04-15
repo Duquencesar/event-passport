@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Search, Users, Ticket } from "lucide-react";
 import { getPeopleWithRegistrations, getPeopleCount } from "@/server/people.functions";
 
@@ -36,6 +37,7 @@ function PessoasPage() {
   const [people, setPeople] = useState<PersonWithRegs[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [filter, setFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -57,13 +59,23 @@ function PessoasPage() {
     load();
   }, []);
 
-  const filtered = filter.length >= 2
-    ? people.filter(
-        (p) =>
-          p.name.toLowerCase().includes(filter.toLowerCase()) ||
-          p.email.toLowerCase().includes(filter.toLowerCase()),
-      )
-    : people;
+  const tags = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of people) {
+      if (p.tag) set.add(p.tag);
+    }
+    return Array.from(set).sort();
+  }, [people]);
+
+  const filtered = people.filter((p) => {
+    if (tagFilter === "__none__" && p.tag) return false;
+    if (tagFilter && tagFilter !== "__none__" && p.tag !== tagFilter) return false;
+    if (filter.length >= 2) {
+      const q = filter.toLowerCase();
+      return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   return (
     <Layout>
@@ -76,14 +88,53 @@ function PessoasPage() {
           </Badge>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            placeholder="Filtrar por nome ou email..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="pl-10 h-11 bg-background/50"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              placeholder="Filtrar por nome ou email..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="pl-10 h-11 bg-background/50"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              variant={tagFilter === null ? "default" : "outline"}
+              onClick={() => setTagFilter(null)}
+              className="text-xs"
+            >
+              Todos ({people.length})
+            </Button>
+            {tags.map((tag) => {
+              const count = people.filter((p) => p.tag === tag).length;
+              return (
+                <Button
+                  key={tag}
+                  size="sm"
+                  variant={tagFilter === tag ? "default" : "outline"}
+                  onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
+                  className="text-xs"
+                >
+                  {tag} ({count})
+                </Button>
+              );
+            })}
+            {(() => {
+              const noTagCount = people.filter((p) => !p.tag).length;
+              return noTagCount > 0 ? (
+                <Button
+                  size="sm"
+                  variant={tagFilter === "__none__" ? "default" : "outline"}
+                  onClick={() => setTagFilter(tagFilter === "__none__" ? null : "__none__")}
+                  className="text-xs"
+                >
+                  Sem tag ({noTagCount})
+                </Button>
+              ) : null;
+            })()}
+          </div>
         </div>
 
         {loading ? (
