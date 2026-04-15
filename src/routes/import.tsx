@@ -3,7 +3,6 @@ import { useState, useRef } from "react";
 import Papa from "papaparse";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -62,7 +61,6 @@ function ImportPage() {
         setHeaders(h);
         setRows(data.slice(1).filter((r) => r.some((c) => c?.trim())));
 
-        // Auto-map common Luma columns
         const auto: Record<string, string> = { name: "", email: "", ticket_type: "", event_name: "", tag: "" };
         for (const col of h) {
           const lower = col.toLowerCase();
@@ -108,152 +106,156 @@ function ImportPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold tracking-tight">Importar Inscritos</h2>
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Importar Inscritos</h2>
+          <p className="text-muted-foreground text-sm mt-1">Upload de CSV exportado do Luma</p>
+        </div>
 
         {/* Upload */}
-        <Card className="border-border/50">
-          <CardContent className="p-6">
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-border/50 rounded-xl p-12 text-center cursor-pointer hover:border-primary/40 transition-colors"
-            >
-              <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                Clique ou arraste um arquivo CSV exportado do Luma
-              </p>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".csv"
-                onChange={handleFile}
-                className="hidden"
-              />
+        <div className="glass rounded-3xl p-8">
+          <div
+            onClick={() => fileRef.current?.click()}
+            className="border-2 border-dashed border-border/40 rounded-2xl p-14 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/3 transition-all duration-300"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Upload className="w-7 h-7 text-primary" />
             </div>
-          </CardContent>
-        </Card>
+            <p className="text-muted-foreground font-medium">
+              Clique ou arraste um arquivo CSV
+            </p>
+            <p className="text-muted-foreground/60 text-sm mt-1">Exportado do Luma ou similar</p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFile}
+              className="hidden"
+            />
+          </div>
+        </div>
 
         {/* Mapping */}
         {headers.length > 0 && !result && (
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base">
-                Mapeamento de colunas
-                <Badge variant="secondary" className="ml-3">
-                  {rows.length} linhas
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {(
-                  [
-                    ["name", "Nome *"],
-                    ["email", "Email *"],
-                    ["ticket_type", "Tipo de Ticket"],
-                    ["event_name", "Nome do Evento"],
-                    ["tag", "Tag (ex: Arquiteto)"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <div key={key} className="space-y-1">
-                    <label className="text-sm text-muted-foreground">{label}</label>
-                    <Select
-                      value={mapping[key]}
-                      onValueChange={(v) => setMapping({ ...mapping, [key]: v })}
-                    >
-                      <SelectTrigger className="bg-background/50">
-                        <SelectValue placeholder="Selecionar coluna" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">— Nenhuma —</SelectItem>
-                        {headers.map((h) => (
-                          <SelectItem key={h} value={h}>
-                            {h}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
-                <div className="space-y-1">
-                  <label className="text-sm text-muted-foreground">Sobrescrever evento</label>
-                  <Input
-                    placeholder="Nome fixo para todos (opcional)"
-                    value={eventNameOverride}
-                    onChange={(e) => setEventNameOverride(e.target.value)}
-                    className="bg-background/50"
-                  />
-                </div>
-              </div>
+          <div className="glass rounded-3xl p-8 space-y-6">
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-semibold">Mapeamento de colunas</h3>
+              <Badge className="bg-primary/10 text-primary border-0 rounded-lg">
+                {rows.length} linhas
+              </Badge>
+            </div>
 
-              {/* Preview */}
-              <div className="border rounded-md overflow-auto max-h-60">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
+            <div className="grid grid-cols-2 gap-4">
+              {(
+                [
+                  ["name", "Nome *"],
+                  ["email", "Email *"],
+                  ["ticket_type", "Tipo de Ticket"],
+                  ["event_name", "Nome do Evento"],
+                  ["tag", "Tag (ex: Arquiteto)"],
+                ] as const
+              ).map(([key, label]) => (
+                <div key={key} className="space-y-1.5">
+                  <label className="text-sm text-muted-foreground font-medium">{label}</label>
+                  <Select
+                    value={mapping[key]}
+                    onValueChange={(v) => setMapping({ ...mapping, [key]: v })}
+                  >
+                    <SelectTrigger className="rounded-xl bg-background/50">
+                      <SelectValue placeholder="Selecionar coluna" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">— Nenhuma —</SelectItem>
                       {headers.map((h) => (
-                        <TableHead key={h} className="text-xs whitespace-nowrap">
+                        <SelectItem key={h} value={h}>
                           {h}
-                        </TableHead>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+              <div className="space-y-1.5">
+                <label className="text-sm text-muted-foreground font-medium">Sobrescrever evento</label>
+                <Input
+                  placeholder="Nome fixo para todos (opcional)"
+                  value={eventNameOverride}
+                  onChange={(e) => setEventNameOverride(e.target.value)}
+                  className="rounded-xl bg-background/50"
+                />
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="glass-subtle rounded-2xl overflow-auto max-h-60">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {headers.map((h) => (
+                      <TableHead key={h} className="text-xs whitespace-nowrap font-semibold">
+                        {h}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.slice(0, 5).map((row, i) => (
+                    <TableRow key={i}>
+                      {row.map((cell, j) => (
+                        <TableCell key={j} className="text-xs whitespace-nowrap">
+                          {cell}
+                        </TableCell>
                       ))}
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.slice(0, 5).map((row, i) => (
-                      <TableRow key={i}>
-                        {row.map((cell, j) => (
-                          <TableCell key={j} className="text-xs whitespace-nowrap">
-                            {cell}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-              <Button
-                onClick={handleImport}
-                disabled={importing || !mapping.name || !mapping.email}
-                className="w-full h-11 font-bold"
-              >
-                <FileUp className="w-4 h-4 mr-2" />
-                {importing ? "Importando..." : `Importar ${rows.length} registros`}
-              </Button>
-            </CardContent>
-          </Card>
+            <Button
+              onClick={handleImport}
+              disabled={importing || !mapping.name || !mapping.email}
+              className="w-full h-13 font-bold rounded-2xl shadow-lg shadow-primary/20 text-base"
+            >
+              <FileUp className="w-5 h-5 mr-2" />
+              {importing ? "Importando..." : `Importar ${rows.length} registros`}
+            </Button>
+          </div>
         )}
 
         {/* Result */}
         {result && (
-          <Card className="border-primary/30">
-            <CardContent className="p-6 text-center space-y-2">
-              <CheckCircle className="w-10 h-10 mx-auto text-primary" />
-              <p className="text-lg font-bold text-primary">Importação concluída!</p>
-              <div className="flex justify-center gap-6 text-sm">
-                <span>
-                  <strong>{result.created}</strong> novos
-                </span>
-                <span>
-                  <strong>{result.updated}</strong> atualizados
-                </span>
-                <span>
-                  <strong>{result.registrations}</strong> inscrições
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => {
-                  setHeaders([]);
-                  setRows([]);
-                  setResult(null);
-                }}
-              >
-                Importar outro arquivo
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="glass rounded-3xl p-10 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary/12 flex items-center justify-center mx-auto">
+              <CheckCircle className="w-8 h-8 text-primary" />
+            </div>
+            <p className="text-xl font-bold text-primary">Importação concluída!</p>
+            <div className="flex justify-center gap-8 text-sm">
+              <span>
+                <strong className="text-lg">{result.created}</strong>
+                <span className="text-muted-foreground ml-1">novos</span>
+              </span>
+              <span>
+                <strong className="text-lg">{result.updated}</strong>
+                <span className="text-muted-foreground ml-1">atualizados</span>
+              </span>
+              <span>
+                <strong className="text-lg">{result.registrations}</strong>
+                <span className="text-muted-foreground ml-1">inscrições</span>
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              className="mt-4 rounded-xl"
+              onClick={() => {
+                setHeaders([]);
+                setRows([]);
+                setResult(null);
+              }}
+            >
+              Importar outro arquivo
+            </Button>
+          </div>
         )}
       </div>
     </Layout>
