@@ -49,38 +49,38 @@
 
 :root {
   --radius: 0.625rem;
-  /* Ipê Village dark theme */
-  --background: oklch(0.145 0.028 260);
+  /* Ipê Village — lighter dark theme */
+  --background: oklch(0.22 0.02 255);
   --foreground: oklch(0.97 0.005 250);
-  --card: oklch(0.185 0.025 255);
+  --card: oklch(0.27 0.018 252);
   --card-foreground: oklch(0.97 0.005 250);
-  --popover: oklch(0.185 0.025 255);
+  --popover: oklch(0.27 0.018 252);
   --popover-foreground: oklch(0.97 0.005 250);
   --primary: oklch(0.89 0.2 110);
-  --primary-foreground: oklch(0.145 0.028 260);
+  --primary-foreground: oklch(0.18 0.028 260);
   --secondary: oklch(0.65 0.12 230);
   --secondary-foreground: oklch(0.97 0.005 250);
-  --muted: oklch(0.22 0.02 255);
-  --muted-foreground: oklch(0.65 0.02 250);
-  --accent: oklch(0.22 0.02 255);
+  --muted: oklch(0.32 0.015 252);
+  --muted-foreground: oklch(0.70 0.02 250);
+  --accent: oklch(0.32 0.015 252);
   --accent-foreground: oklch(0.97 0.005 250);
   --destructive: oklch(0.60 0.22 25);
   --destructive-foreground: oklch(0.97 0.005 250);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 18%);
   --ring: oklch(0.89 0.2 110);
   --chart-1: oklch(0.89 0.2 110);
   --chart-2: oklch(0.65 0.12 230);
   --chart-3: oklch(0.75 0.15 180);
   --chart-4: oklch(0.80 0.18 85);
   --chart-5: oklch(0.70 0.20 320);
-  --sidebar: oklch(0.185 0.025 255);
+  --sidebar: oklch(0.25 0.018 254);
   --sidebar-foreground: oklch(0.97 0.005 250);
   --sidebar-primary: oklch(0.89 0.2 110);
-  --sidebar-primary-foreground: oklch(0.145 0.028 260);
-  --sidebar-accent: oklch(0.22 0.02 255);
+  --sidebar-primary-foreground: oklch(0.18 0.028 260);
+  --sidebar-accent: oklch(0.32 0.015 252);
   --sidebar-accent-foreground: oklch(0.97 0.005 250);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: oklch(1 0 0 / 14%);
   --sidebar-ring: oklch(0.89 0.2 110);
 }
 
