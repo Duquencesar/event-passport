@@ -17,7 +17,7 @@ export const getPeopleWithRegistrations = createServerFn({ method: "GET" }).hand
       .from("people")
       .select("id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at)")
       .order("name", { ascending: true })
-      .limit(500);
+      .limit(2000);
     if (error) throw new Error(error.message);
     return data || [];
   },
