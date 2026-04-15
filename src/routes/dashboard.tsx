@@ -213,7 +213,7 @@ function DashboardPage() {
                         `${name} ${(percent * 100).toFixed(0)}%`
                       }
                     >
-                      {current.breakdown.map((_, i) => (
+                      {current.breakdown.map((_: { name: string; value: number }, i: number) => (
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                       ))}
                     </Pie>
@@ -254,7 +254,7 @@ function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {current.topPeople.map((p, i) => (
+                  {current.topPeople.map((p: { name: string; email: string; tag: string | null; count: number }, i: number) => (
                     <TableRow key={p.email}>
                       <TableCell className="font-mono text-muted-foreground">
                         {i + 1}
