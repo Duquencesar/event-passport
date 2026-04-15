@@ -68,7 +68,8 @@ function PessoasPage() {
   }, [people]);
 
   const filtered = people.filter((p) => {
-    if (tagFilter && p.tag !== tagFilter) return false;
+    if (tagFilter === "__none__" && p.tag) return false;
+    if (tagFilter && tagFilter !== "__none__" && p.tag !== tagFilter) return false;
     if (filter.length >= 2) {
       const q = filter.toLowerCase();
       return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
