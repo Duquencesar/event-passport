@@ -25,8 +25,12 @@ export const importPeople = createServerFn({ method: "POST" })
       const email = row.email.toLowerCase().trim();
       const name = row.name.trim();
 
+      const ticketLower = row.ticket_type?.toLowerCase() || "";
       const tag = row.tag ||
-        (row.ticket_type?.toLowerCase().includes("architect") ? "Arquiteto" : null);
+        (ticketLower.includes("architect") ? "Arquiteto"
+        : ticketLower.includes("explorer") ? "Explorer"
+        : ticketLower.includes("day pass") ? "Day Pass"
+        : null);
 
       const { data: existing } = await supabaseAdmin
         .from("people")

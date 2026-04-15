@@ -4,7 +4,7 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Users, Ticket } from "lucide-react";
+import { Search, Users, Ticket, User } from "lucide-react";
 import { getPeopleWithRegistrations, getPeopleCount } from "@/server/people.functions";
 
 export const Route = createFileRoute("/pessoas")({
@@ -31,6 +31,18 @@ type PersonWithRegs = {
     imported_at: string;
   }>;
 };
+
+const TAG_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
+  Arquiteto: { bg: "bg-amber-500/15", text: "text-amber-400", dot: "bg-amber-400" },
+  Explorer: { bg: "bg-sky-500/15", text: "text-sky-400", dot: "bg-sky-400" },
+  "Day Pass": { bg: "bg-emerald-500/15", text: "text-emerald-400", dot: "bg-emerald-400" },
+};
+
+const DEFAULT_TAG_COLOR = { bg: "bg-muted/50", text: "text-muted-foreground", dot: "bg-muted-foreground" };
+
+function getTagColor(tag: string) {
+  return TAG_COLORS[tag] || DEFAULT_TAG_COLOR;
+}
 
 function PessoasPage() {
   const [people, setPeople] = useState<PersonWithRegs[]>([]);
@@ -71,14 +83,14 @@ function PessoasPage() {
     if (tagFilter && tagFilter !== "__none__" && p.tag !== tagFilter) return false;
     if (filter.length >= 2) {
       const q = filter.toLowerCase();
-      return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
+      return p.name.toLowerCase().includes(q);
     }
     return true;
   });
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Inscritos</h2>
@@ -92,11 +104,11 @@ function PessoasPage() {
         </div>
 
         {/* Search + Filters */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Filtrar por nome ou email..."
+              placeholder="Filtrar por nome..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="pl-12 h-12 rounded-2xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
@@ -113,6 +125,7 @@ function PessoasPage() {
             </Button>
             {tags.map((tag) => {
               const count = people.filter((p) => p.tag === tag).length;
+              const colors = getTagColor(tag);
               return (
                 <Button
                   key={tag}
@@ -121,6 +134,7 @@ function PessoasPage() {
                   onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
                   className="rounded-xl text-xs px-4"
                 >
+                  <span className={`w-2 h-2 rounded-full ${colors.dot} mr-1.5`} />
                   {tag} ({count})
                 </Button>
               );
@@ -157,36 +171,35 @@ function PessoasPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {filtered.map((p) => (
-              <div key={p.id} className="glass-subtle rounded-2xl p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2.5 mb-1">
-                      <span className="font-semibold truncate">{p.name}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {filtered.map((p) => {
+              const colors = p.tag ? getTagColor(p.tag) : null;
+              return (
+                <div key={p.id} className="glass-subtle rounded-2xl p-4 flex flex-col gap-3 hover:bg-white/[0.04] transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${colors ? colors.bg : "bg-muted/30"}`}>
+                      <User className={`w-5 h-5 ${colors ? colors.text : "text-muted-foreground"}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold truncate leading-tight">{p.name}</p>
                       {p.tag && (
-                        <Badge className="text-xs shrink-0 rounded-lg bg-primary/10 text-primary border-0 font-medium">
-                          {p.tag}
-                        </Badge>
+                        <span className={`text-xs font-medium ${colors?.text}`}>{p.tag}</span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">{p.email}</p>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 shrink-0">
-                    {p.registrations.length > 0 ? (
-                      p.registrations.map((r) => (
-                        <Badge key={r.id} variant="outline" className="text-xs rounded-lg border-border/40">
-                          <Ticket className="w-3 h-3 mr-1" />
-                          {r.ticket_type} — {r.event_name}
+                  {p.registrations.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.registrations.map((r) => (
+                        <Badge key={r.id} variant="outline" className="text-[10px] rounded-lg border-border/40 px-2 py-0.5">
+                          <Ticket className="w-2.5 h-2.5 mr-1 shrink-0" />
+                          <span className="truncate">{r.event_name}</span>
                         </Badge>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Sem inscrição</span>
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
