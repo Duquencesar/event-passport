@@ -20,8 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, FileUp, CheckCircle } from "lucide-react";
+import { Upload, FileUp, CheckCircle, CalendarDays } from "lucide-react";
 import { importPeople } from "@/server/import.functions";
+import { getUpcomingEvents } from "@/server/event.functions";
 
 export const Route = createFileRoute("/import")({
   head: () => ({
@@ -32,6 +33,8 @@ export const Route = createFileRoute("/import")({
   }),
   component: ImportPage,
 });
+
+type Event = { id: string; name: string; date: string; time: string | null };
 
 function ImportPage() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -47,6 +50,18 @@ function ImportPage() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ created: number; updated: number; registrations: number } | null>(null);
   const [eventNameOverride, setEventNameOverride] = useState("");
+
+  // Event selection
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const [eventsLoaded, setEventsLoaded] = useState(false);
+
+  useState(() => {
+    getUpcomingEvents().then((e) => {
+      setEvents(e);
+      setEventsLoaded(true);
+    });
+  });
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,14 +99,18 @@ function ImportPage() {
     const eventIdx = mapping.event_name ? headers.indexOf(mapping.event_name) : -1;
     const tagIdx = mapping.tag ? headers.indexOf(mapping.tag) : -1;
 
+    const selectedEvent = events.find((e) => e.id === selectedEventId);
+    const eventFallback = selectedEvent?.name || eventNameOverride || "Evento";
+
     const mapped = rows
       .filter((r) => r[nameIdx]?.trim() && r[emailIdx]?.trim())
       .map((r) => ({
         name: r[nameIdx].trim(),
         email: r[emailIdx].trim(),
         ticket_type: ticketIdx >= 0 ? r[ticketIdx]?.trim() || "Geral" : "Geral",
-        event_name: eventNameOverride || (eventIdx >= 0 ? r[eventIdx]?.trim() || "Evento" : "Evento"),
+        event_name: eventFallback || (eventIdx >= 0 ? r[eventIdx]?.trim() || "Evento" : "Evento"),
         tag: tagIdx >= 0 ? r[tagIdx]?.trim() || undefined : undefined,
+        event_id: selectedEventId || undefined,
       }));
 
     try {
@@ -112,6 +131,29 @@ function ImportPage() {
           <p className="text-muted-foreground text-sm mt-1">Upload de CSV exportado do Luma</p>
         </div>
 
+        {/* Event selector */}
+        {eventsLoaded && events.length > 0 && (
+          <div className="glass rounded-3xl p-6 space-y-3">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold">Associar a um evento</h3>
+            </div>
+            <Select value={selectedEventId} onValueChange={setSelectedEventId}>
+              <SelectTrigger className="rounded-xl bg-background/50">
+                <SelectValue placeholder="Selecionar evento (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— Nenhum evento —</SelectItem>
+                {events.map((e) => (
+                  <SelectItem key={e.id} value={e.id}>
+                    {e.date} — {e.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Upload */}
         <div className="glass rounded-3xl p-8">
           <div
@@ -121,17 +163,9 @@ function ImportPage() {
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Upload className="w-7 h-7 text-primary" />
             </div>
-            <p className="text-muted-foreground font-medium">
-              Clique ou arraste um arquivo CSV
-            </p>
+            <p className="text-muted-foreground font-medium">Clique ou arraste um arquivo CSV</p>
             <p className="text-muted-foreground/60 text-sm mt-1">Exportado do Luma ou similar</p>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFile}
-              className="hidden"
-            />
+            <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
           </div>
         </div>
 
@@ -140,50 +174,43 @@ function ImportPage() {
           <div className="glass rounded-3xl p-8 space-y-6">
             <div className="flex items-center gap-3">
               <h3 className="text-lg font-semibold">Mapeamento de colunas</h3>
-              <Badge className="bg-primary/10 text-primary border-0 rounded-lg">
-                {rows.length} linhas
-              </Badge>
+              <Badge className="bg-primary/10 text-primary border-0 rounded-lg">{rows.length} linhas</Badge>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {(
-                [
-                  ["name", "Nome *"],
-                  ["email", "Email *"],
-                  ["ticket_type", "Tipo de Ticket"],
-                  ["event_name", "Nome do Evento"],
-                  ["tag", "Tag (ex: Arquiteto)"],
-                ] as const
-              ).map(([key, label]) => (
+              {([
+                ["name", "Nome *"],
+                ["email", "Email *"],
+                ["ticket_type", "Tipo de Ticket"],
+                ["event_name", "Nome do Evento"],
+                ["tag", "Tag (ex: Arquiteto)"],
+              ] as const).map(([key, label]) => (
                 <div key={key} className="space-y-1.5">
                   <label className="text-sm text-muted-foreground font-medium">{label}</label>
-                  <Select
-                    value={mapping[key]}
-                    onValueChange={(v) => setMapping({ ...mapping, [key]: v })}
-                  >
+                  <Select value={mapping[key]} onValueChange={(v) => setMapping({ ...mapping, [key]: v })}>
                     <SelectTrigger className="rounded-xl bg-background/50">
                       <SelectValue placeholder="Selecionar coluna" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="__none__">— Nenhuma —</SelectItem>
                       {headers.map((h) => (
-                        <SelectItem key={h} value={h}>
-                          {h}
-                        </SelectItem>
+                        <SelectItem key={h} value={h}>{h}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               ))}
-              <div className="space-y-1.5">
-                <label className="text-sm text-muted-foreground font-medium">Sobrescrever evento</label>
-                <Input
-                  placeholder="Nome fixo para todos (opcional)"
-                  value={eventNameOverride}
-                  onChange={(e) => setEventNameOverride(e.target.value)}
-                  className="rounded-xl bg-background/50"
-                />
-              </div>
+              {!selectedEventId && (
+                <div className="space-y-1.5">
+                  <label className="text-sm text-muted-foreground font-medium">Sobrescrever evento</label>
+                  <Input
+                    placeholder="Nome fixo para todos (opcional)"
+                    value={eventNameOverride}
+                    onChange={(e) => setEventNameOverride(e.target.value)}
+                    className="rounded-xl bg-background/50"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Preview */}
@@ -192,9 +219,7 @@ function ImportPage() {
                 <TableHeader>
                   <TableRow>
                     {headers.map((h) => (
-                      <TableHead key={h} className="text-xs whitespace-nowrap font-semibold">
-                        {h}
-                      </TableHead>
+                      <TableHead key={h} className="text-xs whitespace-nowrap font-semibold">{h}</TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
@@ -202,9 +227,7 @@ function ImportPage() {
                   {rows.slice(0, 5).map((row, i) => (
                     <TableRow key={i}>
                       {row.map((cell, j) => (
-                        <TableCell key={j} className="text-xs whitespace-nowrap">
-                          {cell}
-                        </TableCell>
+                        <TableCell key={j} className="text-xs whitespace-nowrap">{cell}</TableCell>
                       ))}
                     </TableRow>
                   ))}
