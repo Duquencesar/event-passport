@@ -52,9 +52,10 @@ function PessoasPage() {
     }
   }, []);
 
-  useState(() => {
+  // biome-ignore lint: load on mount
+  useEffect(() => {
     load();
-  });
+  }, []);
 
   const filtered = filter.length >= 2
     ? people.filter(
