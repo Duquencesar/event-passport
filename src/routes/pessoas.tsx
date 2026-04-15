@@ -4,8 +4,8 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Users, Ticket, User } from "lucide-react";
-import { getPeopleWithRegistrations, getPeopleCount } from "@/server/people.functions";
+import { Search, Users, Ticket, User, CalendarDays } from "lucide-react";
+import { getPeopleWithRegistrations, getPeopleCount, setDayPassDate } from "@/server/people.functions";
 
 export const Route = createFileRoute("/pessoas")({
   head: () => ({
@@ -29,6 +29,7 @@ type PersonWithRegs = {
     ticket_type: string;
     source: string;
     imported_at: string;
+    day_pass_date: string | null;
   }>;
 };
 
@@ -188,12 +189,34 @@ function PessoasPage() {
                     </div>
                   </div>
                   {p.registrations.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-col gap-1.5">
                       {p.registrations.map((r) => (
-                        <Badge key={r.id} variant="outline" className="text-[10px] rounded-lg border-border/40 px-2 py-0.5">
-                          <Ticket className="w-2.5 h-2.5 mr-1 shrink-0" />
-                          <span className="truncate">{r.event_name}</span>
-                        </Badge>
+                        <div key={r.id} className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant="outline" className="text-[10px] rounded-lg border-border/40 px-2 py-0.5">
+                            <Ticket className="w-2.5 h-2.5 mr-1 shrink-0" />
+                            <span className="truncate">{r.event_name}</span>
+                          </Badge>
+                          {p.tag === "Day Pass" && (
+                            <div className="flex items-center gap-1">
+                              <CalendarDays className="w-3 h-3 text-emerald-400" />
+                              {r.day_pass_date ? (
+                                <span className="text-[10px] text-emerald-400 font-medium">
+                                  {new Date(r.day_pass_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                                </span>
+                              ) : (
+                                <input
+                                  type="date"
+                                  className="text-[10px] bg-transparent border border-border/40 rounded px-1 py-0.5 text-muted-foreground w-28"
+                                  onChange={async (e) => {
+                                    if (!e.target.value) return;
+                                    await setDayPassDate({ data: { registrationId: r.id, date: e.target.value } });
+                                    load();
+                                  }}
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
