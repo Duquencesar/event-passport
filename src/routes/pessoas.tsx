@@ -4,7 +4,6 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Search, Users, Ticket } from "lucide-react";
 import { getPeopleWithRegistrations, getPeopleCount } from "@/server/people.functions";
 
@@ -79,31 +78,36 @@ function PessoasPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold tracking-tight">Inscritos</h2>
-          <Badge variant="outline" className="text-lg px-4 py-1.5 border-primary/30 text-primary">
-            <Users className="w-5 h-5 mr-2" />
-            {totalCount} pessoas
-          </Badge>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Inscritos</h2>
+            <p className="text-muted-foreground text-sm mt-1">Pessoas cadastradas no sistema</p>
+          </div>
+          <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
+            <Users className="w-5 h-5 text-primary" />
+            <span className="text-2xl font-bold text-foreground">{totalCount}</span>
+            <span className="text-sm text-muted-foreground">pessoas</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        {/* Search + Filters */}
+        <div className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               placeholder="Filtrar por nome ou email..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="pl-10 h-11 bg-background/50"
+              className="pl-12 h-12 rounded-2xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
             />
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button
               size="sm"
               variant={tagFilter === null ? "default" : "outline"}
               onClick={() => setTagFilter(null)}
-              className="text-xs"
+              className="rounded-xl text-xs px-4"
             >
               Todos ({people.length})
             </Button>
@@ -115,7 +119,7 @@ function PessoasPage() {
                   size="sm"
                   variant={tagFilter === tag ? "default" : "outline"}
                   onClick={() => setTagFilter(tagFilter === tag ? null : tag)}
-                  className="text-xs"
+                  className="rounded-xl text-xs px-4"
                 >
                   {tag} ({count})
                 </Button>
@@ -128,53 +132,60 @@ function PessoasPage() {
                   size="sm"
                   variant={tagFilter === "__none__" ? "default" : "outline"}
                   onClick={() => setTagFilter(tagFilter === "__none__" ? null : "__none__")}
-                  className="text-xs"
+                  className="rounded-xl text-xs px-4"
                 >
                   Sem tag ({noTagCount})
                 </Button>
               ) : null;
             })()}
+            {tagFilter !== null && (
+              <span className="text-xs text-muted-foreground ml-2">
+                {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
         </div>
 
         {loading ? (
-          <p className="text-muted-foreground text-sm text-center py-8">Carregando...</p>
+          <div className="glass-subtle rounded-2xl py-12 text-center">
+            <p className="text-muted-foreground text-sm">Carregando...</p>
+          </div>
         ) : filtered.length === 0 ? (
-          <p className="text-muted-foreground text-sm text-center py-8">
-            {filter ? "Nenhum resultado encontrado" : "Nenhum inscrito cadastrado"}
-          </p>
+          <div className="glass-subtle rounded-2xl py-12 text-center">
+            <p className="text-muted-foreground text-sm">
+              {filter ? "Nenhum resultado encontrado" : "Nenhum inscrito cadastrado"}
+            </p>
+          </div>
         ) : (
           <div className="space-y-2">
             {filtered.map((p) => (
-              <Card key={p.id} className="border-border/40">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold truncate">{p.name}</span>
-                        {p.tag && (
-                          <Badge variant="secondary" className="text-xs shrink-0">
-                            {p.tag}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{p.email}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 shrink-0">
-                      {p.registrations.length > 0 ? (
-                        p.registrations.map((r) => (
-                          <Badge key={r.id} variant="outline" className="text-xs">
-                            <Ticket className="w-3 h-3 mr-1" />
-                            {r.ticket_type} — {r.event_name}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Sem inscrição</span>
+              <div key={p.id} className="glass-subtle rounded-2xl p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2.5 mb-1">
+                      <span className="font-semibold truncate">{p.name}</span>
+                      {p.tag && (
+                        <Badge className="text-xs shrink-0 rounded-lg bg-primary/10 text-primary border-0 font-medium">
+                          {p.tag}
+                        </Badge>
                       )}
                     </div>
+                    <p className="text-sm text-muted-foreground truncate">{p.email}</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div className="flex flex-wrap gap-1.5 shrink-0">
+                    {p.registrations.length > 0 ? (
+                      p.registrations.map((r) => (
+                        <Badge key={r.id} variant="outline" className="text-xs rounded-lg border-border/40">
+                          <Ticket className="w-3 h-3 mr-1" />
+                          {r.ticket_type} — {r.event_name}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sem inscrição</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         )}
