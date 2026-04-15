@@ -102,27 +102,47 @@ async function buildDailyReport(): Promise<string> {
   return lines.join("\n");
 }
 
+async function buildEventsList(): Promise<string> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data: upcoming } = await supabaseAdmin
+    .from("events")
+    .select("name, date, time, location")
+    .gte("date", today)
+    .order("date", { ascending: true })
+    .order("time", { ascending: true })
+    .limit(10);
+
+  if (!upcoming || upcoming.length === 0) {
+    return `📆 <b>Próximos Eventos</b>\n\nNenhum evento agendado.`;
+  }
+
+  const lines = [`📆 <b>Próximos Eventos Ipê Village</b>`, ``];
+  for (const ev of upcoming) {
+    lines.push(
+      `📅 ${ev.date} ${ev.time || ""} — <b>${ev.name}</b>`,
+      `   📍 ${ev.location || "—"}`,
+      ``,
+    );
+  }
+  return lines.join("\n");
+}
+
 async function handleIncomingMessage(chatId: number, text: string | null) {
   const cmd = (text || "").trim().toLowerCase();
 
   if (cmd === "/start" || cmd === "/help") {
     await sendTelegramMessage(
       chatId,
-      `🌿 <b>Ipê Village Bot</b>\n\nComandos:\n/resumo — Relatório diário (inscritos + check-ins)\n/help — Mostra esta mensagem`,
+      `🌿 <b>Ipê Village Bot</b>\n\nComandos:\n/resumo — Relatório diário (inscritos + check-ins)\n/eventos — Próximos eventos\n/help — Mostra esta mensagem`,
     );
     return;
   }
 
-  if (cmd === "/resumo" || cmd === "/relatorio" || cmd === "/report") {
-    const report = await buildDailyReport();
-    await sendTelegramMessage(chatId, report);
+  if (cmd === "/eventos" || cmd === "/events") {
+    const list = await buildEventsList();
+    await sendTelegramMessage(chatId, list);
     return;
   }
-
-  // Default: send report
-  const report = await buildDailyReport();
-  await sendTelegramMessage(chatId, report);
-}
 
 export const pollTelegram = createServerFn({ method: "POST" }).handler(
   async () => {
