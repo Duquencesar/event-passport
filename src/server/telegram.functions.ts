@@ -154,7 +154,7 @@ export const pollTelegram = createServerFn({ method: "POST" }).handler(
               update_id: u.update_id,
               chat_id: u.message.chat.id,
               text: u.message.text ?? null,
-              raw_update: u as unknown as Record<string, unknown>,
+              raw_update: JSON.parse(JSON.stringify(u)),
             },
           ],
           { onConflict: "update_id" },
