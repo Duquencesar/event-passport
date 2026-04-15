@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db as supabaseAdmin } from "./db";
 
 export const searchPeople = createServerFn({ method: "POST" })
   .inputValidator((input: { query: string }) => input)
