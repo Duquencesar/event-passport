@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { db } from "./supabase.server";
+import { db } from "./db";
 
 export const listPeople = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await db
