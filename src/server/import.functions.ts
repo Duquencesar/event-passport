@@ -11,6 +11,7 @@ export const importPeople = createServerFn({ method: "POST" })
           ticket_type: string;
           event_name: string;
           tag?: string;
+          event_id?: string;
         }>;
       },
     ) => input,
@@ -24,11 +25,9 @@ export const importPeople = createServerFn({ method: "POST" })
       const email = row.email.toLowerCase().trim();
       const name = row.name.trim();
 
-      // Auto-detect tag from ticket type
       const tag = row.tag ||
         (row.ticket_type?.toLowerCase().includes("architect") ? "Arquiteto" : null);
 
-      // Upsert person
       const { data: existing } = await supabaseAdmin
         .from("people")
         .select("id")
@@ -55,12 +54,12 @@ export const importPeople = createServerFn({ method: "POST" })
         created++;
       }
 
-      // Create registration
       await supabaseAdmin.from("registrations").insert({
         person_id: personId,
         event_name: row.event_name,
         ticket_type: row.ticket_type,
         source: "luma",
+        event_id: row.event_id || null,
       });
       registrations++;
     }
