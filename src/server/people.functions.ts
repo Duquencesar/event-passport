@@ -6,7 +6,7 @@ export const listPeople = createServerFn({ method: "GET" }).handler(async () => 
     .from("people")
     .select("id, name, email, tag, created_at")
     .order("name", { ascending: true })
-    .limit(500);
+      .limit(2000);
   if (error) throw new Error(error.message);
   return data || [];
 });
