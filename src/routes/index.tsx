@@ -151,7 +151,7 @@ function CheckinPage() {
     }
   };
 
-  const accessTypes = ["IP Village", "Day Pass", "Workshop/Café"];
+  const accessTypes = ["IP Village", "Day Pass", "Explorers", "Workshop/Café"];
 
   // Event selection screen
   if (!selectedEvent && eventsLoaded) {
