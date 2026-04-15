@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PessoasRouteImport } from './routes/pessoas'
 import { Route as ImportRouteImport } from './routes/import'
+import { Route as EventosRouteImport } from './routes/eventos'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksTelegramPollRouteImport } from './routes/hooks/telegram-poll'
@@ -23,6 +24,11 @@ const PessoasRoute = PessoasRouteImport.update({
 const ImportRoute = ImportRouteImport.update({
   id: '/import',
   path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventosRoute = EventosRouteImport.update({
+  id: '/eventos',
+  path: '/eventos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -44,6 +50,7 @@ const HooksTelegramPollRoute = HooksTelegramPollRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/eventos': typeof EventosRoute
   '/import': typeof ImportRoute
   '/pessoas': typeof PessoasRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/eventos': typeof EventosRoute
   '/import': typeof ImportRoute
   '/pessoas': typeof PessoasRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/eventos': typeof EventosRoute
   '/import': typeof ImportRoute
   '/pessoas': typeof PessoasRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
@@ -68,15 +77,23 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/eventos'
     | '/import'
     | '/pessoas'
     | '/hooks/telegram-poll'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/import' | '/pessoas' | '/hooks/telegram-poll'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/eventos'
+    | '/import'
+    | '/pessoas'
+    | '/hooks/telegram-poll'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/eventos'
     | '/import'
     | '/pessoas'
     | '/hooks/telegram-poll'
@@ -85,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  EventosRoute: typeof EventosRoute
   ImportRoute: typeof ImportRoute
   PessoasRoute: typeof PessoasRoute
   HooksTelegramPollRoute: typeof HooksTelegramPollRoute
@@ -104,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/import'
       preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eventos': {
+      id: '/eventos'
+      path: '/eventos'
+      fullPath: '/eventos'
+      preLoaderRoute: typeof EventosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -133,6 +158,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  EventosRoute: EventosRoute,
   ImportRoute: ImportRoute,
   PessoasRoute: PessoasRoute,
   HooksTelegramPollRoute: HooksTelegramPollRoute,
