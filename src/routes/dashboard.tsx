@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, UserCheck, HardHat, TrendingUp } from "lucide-react";
+import { Users, HardHat, TrendingUp, RefreshCw } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -32,6 +33,16 @@ import {
   getTopAttendees,
 } from "@/server/dashboard.functions";
 
+const loadDashboard = async (from: string, to: string) => {
+  const [stats, daily, breakdown, topPeople] = await Promise.all([
+    getDashboardStats({ data: { from, to } }),
+    getDailyAttendance({ data: { from, to } }),
+    getAccessTypeBreakdown({ data: { from, to } }),
+    getTopAttendees({ data: { from, to } }),
+  ]);
+  return { stats, daily, breakdown, topPeople };
+};
+
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
@@ -39,6 +50,18 @@ export const Route = createFileRoute("/dashboard")({
       { name: "description", content: "Analytics do Ipê Village" },
     ],
   }),
+  loaderDeps: ({ search }) => ({
+    from: (search as Record<string, string>).from,
+    to: (search as Record<string, string>).to,
+  }),
+  loader: async ({ deps }) => {
+    const today = new Date();
+    const thirtyDaysAgo = new Date(today);
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+    const from = deps.from || thirtyDaysAgo.toISOString().split("T")[0];
+    const to = deps.to || today.toISOString().split("T")[0];
+    return loadDashboard(from, to);
+  },
   component: DashboardPage,
 });
 
@@ -50,43 +73,29 @@ const PIE_COLORS = [
 ];
 
 function DashboardPage() {
+  const data = Route.useLoaderData();
   const today = new Date();
   const thirtyDaysAgo = new Date(today);
   thirtyDaysAgo.setDate(today.getDate() - 30);
 
   const [from, setFrom] = useState(thirtyDaysAgo.toISOString().split("T")[0]);
   const [to, setTo] = useState(today.toISOString().split("T")[0]);
-  const [stats, setStats] = useState({ totalCheckins: 0, uniquePeople: 0, architects: 0 });
-  const [daily, setDaily] = useState<{ date: string; count: number }[]>([]);
-  const [breakdown, setBreakdown] = useState<{ name: string; value: number }[]>([]);
-  const [topPeople, setTopPeople] = useState<
-    { name: string; email: string; tag: string | null; count: number }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [liveData, setLiveData] = useState<typeof data | null>(null);
 
-  const loadData = async () => {
+  const current = liveData || data;
+
+  const refresh = async () => {
     setLoading(true);
     try {
-      const [s, d, b, t] = await Promise.all([
-        getDashboardStats({ data: { from, to } }),
-        getDailyAttendance({ data: { from, to } }),
-        getAccessTypeBreakdown({ data: { from, to } }),
-        getTopAttendees({ data: { from, to } }),
-      ]);
-      setStats(s);
-      setDaily(d);
-      setBreakdown(b);
-      setTopPeople(t);
+      const result = await loadDashboard(from, to);
+      setLiveData(result);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    loadData();
-  }, [from, to]);
 
   return (
     <Layout>
@@ -107,6 +116,9 @@ function DashboardPage() {
               onChange={(e) => setTo(e.target.value)}
               className="w-40 bg-card"
             />
+            <Button size="sm" variant="secondary" onClick={refresh} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
           </div>
         </div>
 
@@ -115,19 +127,19 @@ function DashboardPage() {
           {[
             {
               label: "Total Check-ins",
-              value: stats.totalCheckins,
+              value: current.stats.totalCheckins,
               icon: TrendingUp,
               color: "text-primary",
             },
             {
               label: "Pessoas Únicas",
-              value: stats.uniquePeople,
+              value: current.stats.uniquePeople,
               icon: Users,
               color: "text-secondary",
             },
             {
               label: "Arquitetos Ativos",
-              value: stats.architects,
+              value: current.stats.architects,
               icon: HardHat,
               color: "text-chart-3",
             },
@@ -153,9 +165,9 @@ function DashboardPage() {
               <CardTitle className="text-base">Presença Diária</CardTitle>
             </CardHeader>
             <CardContent>
-              {daily.length > 0 ? (
+              {current.daily.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={daily}>
+                  <BarChart data={current.daily}>
                     <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 5%)" />
                     <XAxis
                       dataKey="date"
@@ -187,11 +199,11 @@ function DashboardPage() {
               <CardTitle className="text-base">Tipo de Acesso</CardTitle>
             </CardHeader>
             <CardContent>
-              {breakdown.length > 0 ? (
+              {current.breakdown.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
                     <Pie
-                      data={breakdown}
+                      data={current.breakdown}
                       cx="50%"
                       cy="50%"
                       innerRadius={50}
@@ -201,7 +213,7 @@ function DashboardPage() {
                         `${name} ${(percent * 100).toFixed(0)}%`
                       }
                     >
-                      {breakdown.map((_, i) => (
+                      {current.breakdown.map((_, i) => (
                         <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                       ))}
                     </Pie>
@@ -230,7 +242,7 @@ function DashboardPage() {
             <CardTitle className="text-base">Ranking de Frequência</CardTitle>
           </CardHeader>
           <CardContent>
-            {topPeople.length > 0 ? (
+            {current.topPeople.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -242,7 +254,7 @@ function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {topPeople.map((p, i) => (
+                  {current.topPeople.map((p, i) => (
                     <TableRow key={p.email}>
                       <TableCell className="font-mono text-muted-foreground">
                         {i + 1}
