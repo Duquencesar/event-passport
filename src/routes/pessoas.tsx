@@ -75,7 +75,7 @@ function getTagColor(tag: string) {
 
 function PessoasPage() {
   const [people, setPeople] = useState<PersonWithRegs[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState({ total: 0, checkedIn: 0 });
   const [filter, setFilter] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
