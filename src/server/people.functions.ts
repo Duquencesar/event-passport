@@ -35,18 +35,22 @@ export const setDayPassDate = createServerFn({ method: "POST" })
   });
 
 export const getPeopleCount = createServerFn({ method: "GET" }).handler(async () => {
-  const [totalResult, checkedInResult] = await Promise.all([
-    db.from("people").select("id", { count: "exact", head: true }),
-    db.from("checkins").select("person_id", { count: "exact", head: true }),
-  ]);
-  if (totalResult.error) throw new Error(totalResult.error.message);
+  const { count: total, error } = await db
+    .from("people")
+    .select("id", { count: "exact", head: true });
+  if (error) throw new Error(error.message);
 
-  // Count distinct people who checked in using a raw approach
-  const { data: distinctData } = await db.rpc("get_distinct_checkin_count" as any);
+  // Get distinct people who checked in by selecting unique person_ids
+  const { data: checkinPersons } = await db
+    .from("checkins")
+    .select("person_id")
+    .limit(10000);
+
+  const distinctCheckedIn = new Set((checkinPersons || []).map((c) => c.person_id)).size;
 
   return {
-    total: totalResult.count || 0,
-    checkedIn: typeof distinctData === "number" ? distinctData : 0,
+    total: total || 0,
+    checkedIn: distinctCheckedIn,
   };
 });
 
