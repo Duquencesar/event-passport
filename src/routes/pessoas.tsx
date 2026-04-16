@@ -272,27 +272,22 @@ function PessoasPage() {
                     </div>
                   </div>
                   {p.registrations.length > 0 && (
-                    <div className="flex flex-col gap-1.5">
-                      {p.registrations.map((r) => (
-                        <div key={r.id} className="flex items-center gap-1.5 flex-wrap">
-                          <Badge variant="outline" className="text-[10px] rounded-lg border-border/40 px-2 py-0.5">
-                            <Ticket className="w-2.5 h-2.5 mr-1 shrink-0" />
-                            <span className="truncate">{r.event_name}</span>
-                          </Badge>
-                          {p.tag === "Day Pass" && (
-                            <div className="flex items-center gap-1">
-                              <CalendarDays className="w-3 h-3 text-emerald-400" />
-                              {r.day_pass_date ? (
-                                <span className="text-[10px] text-emerald-400 font-medium">
-                                  {new Date(r.day_pass_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-muted-foreground/60">sem data</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                    <div className="flex flex-wrap gap-1">
+                      {p.registrations.slice(0, 3).map((r) => (
+                        <span
+                          key={r.id}
+                          className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] border border-border/20 text-muted-foreground max-w-[140px]"
+                          title={`${r.event_name} — ${r.ticket_type}`}
+                        >
+                          <CalendarDays className="w-2.5 h-2.5 shrink-0 text-primary/60" />
+                          <span className="truncate">{r.event_name.replace(/\s*[@|]\s*.*/g, '').replace(/\s*-\s*Guests.*/, '')}</span>
+                        </span>
                       ))}
+                      {p.registrations.length > 3 && (
+                        <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-md bg-primary/8 text-primary/70 font-medium">
+                          +{p.registrations.length - 3}
+                        </span>
+                      )}
                     </div>
                   )}
                 </button>
@@ -352,17 +347,22 @@ function PessoasPage() {
                 {/* Registrations */}
                 {selectedPerson.registrations.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">Inscrições</p>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-muted-foreground">Inscrições</p>
+                      <Badge className="bg-primary/10 text-primary border-0 rounded-lg text-xs">
+                        {selectedPerson.registrations.length} evento{selectedPerson.registrations.length !== 1 ? "s" : ""}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
                       {selectedPerson.registrations.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/20">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Ticket className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-sm truncate">{r.event_name}</span>
+                        <div key={r.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/20 group/reg">
+                          <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                            <CalendarDays className="w-4 h-4 text-primary/70" />
                           </div>
-                          <Badge variant="outline" className="text-[10px] rounded-lg border-border/40 shrink-0 ml-2">
-                            {r.ticket_type}
-                          </Badge>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate leading-tight">{r.event_name}</p>
+                            <p className="text-xs text-muted-foreground/70 mt-0.5">{r.ticket_type} · via {r.source}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
