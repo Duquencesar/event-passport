@@ -129,6 +129,9 @@ function CheckinPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [confirmedPerson, setConfirmedPerson] = useState<{
+    name: string; period: string; accessType: string;
+  } | null>(null);
 
   // Event-centric state
   const [events, setEvents] = useState<EventWithStats[]>([]);
@@ -286,6 +289,7 @@ function CheckinPage() {
           event_id: selectedEvent?.id || undefined,
         },
       });
+      setConfirmedPerson({ name: selected.name, period, accessType });
       setSuccess(true);
       setQuery("");
       setResults([]);
@@ -294,6 +298,7 @@ function CheckinPage() {
       setTimeout(() => {
         setSelected(null);
         setSuccess(false);
+        setConfirmedPerson(null);
       }, 2000);
 
       if (selectedEvent) {
@@ -812,12 +817,28 @@ function CheckinPage() {
           )}
 
           {/* Success */}
-          {success && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 rounded-full bg-primary/12 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-primary" />
+          {success && confirmedPerson && (
+            <div className="text-center py-10 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+              <div className="w-24 h-24 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto ring-4 ring-emerald-500/20">
+                <CheckCircle2 className="w-12 h-12 text-emerald-400" />
               </div>
-              <p className="text-primary font-bold text-xl">Check-in registrado!</p>
+              <div className="space-y-1">
+                <p className="text-emerald-400 font-black text-3xl tracking-tight">{confirmedPerson.name}</p>
+                <p className="text-muted-foreground text-base font-medium">Check-in registrado!</p>
+              </div>
+              <div className="flex items-center justify-center gap-3">
+                <span className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-400 text-sm font-semibold">
+                  {confirmedPerson.period}
+                </span>
+                <span className="px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                  {confirmedPerson.accessType}
+                </span>
+                {selectedEvent && (
+                  <span className="px-4 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm font-semibold truncate max-w-[200px]">
+                    {selectedEvent.name}
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
