@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { CalendarDays, Clock, MapPin, ExternalLink, Users } from "lucide-react";
 import { getEvents } from "@/server/event.functions";
 
@@ -26,6 +25,35 @@ type Event = {
   url: string | null;
 };
 
+const APP_TIME_ZONE = "America/Sao_Paulo";
+
+function getTodayKey() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: APP_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const year = parts.find((part) => part.type === "year")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDate(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: APP_TIME_ZONE,
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(date);
+}
+
 function EventosPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -37,19 +65,13 @@ function EventosPage() {
     });
   });
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayKey();
 
-  // Group by date
   const byDate: Record<string, Event[]> = {};
-  for (const e of events) {
-    if (!byDate[e.date]) byDate[e.date] = [];
-    byDate[e.date].push(e);
+  for (const event of events) {
+    if (!byDate[event.date]) byDate[event.date] = [];
+    byDate[event.date].push(event);
   }
-
-  const formatDate = (d: string) => {
-    const date = new Date(d + "T12:00:00");
-    return date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-  };
 
   return (
     <Layout>
