@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Users, Upload, BarChart3, ClipboardList, CalendarDays, LogOut } from "lucide-react";
+import { Users, Upload, BarChart3, ClipboardList, CalendarDays, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatBrasiliaLongDate } from "@/lib/brasilia-time";
 import { useEffect, useState } from "react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
   { to: "/" as const, label: "Check-in", icon: ClipboardList },
@@ -17,6 +18,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { isAuthenticated, loading, logout } = useAuth();
   const [today, setToday] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     setToday(formatBrasiliaLongDate(new Date()));
@@ -27,6 +29,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       navigate({ to: "/login" });
     }
   }, [loading, isAuthenticated, navigate]);
+
+  // Close drawer when route changes
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
 
   if (loading) {
     return (
@@ -42,15 +49,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen text-foreground">
       <header className="glass-strong sticky top-0 z-50 border-b border-border/30">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          {/* Logo — always visible */}
           <div className="flex items-center gap-8">
-            <h1 className="text-lg font-semibold tracking-tight">
+            <h1 className="text-lg font-semibold tracking-tight shrink-0">
               <span className="text-primary font-bold">Ipê</span>{" "}
               <span className="text-foreground/80">Village</span>
               <span className="text-muted-foreground text-sm font-normal ml-2 hidden sm:inline">
                 Check-In
               </span>
             </h1>
-            <nav className="flex items-center gap-0.5">
+
+            {/* Desktop nav — hidden on mobile */}
+            <nav className="hidden md:flex items-center gap-0.5">
               {navItems.map(({ to, label, icon: Icon }) => {
                 const active = location.pathname === to;
                 return (
@@ -70,17 +80,73 @@ export function Layout({ children }: { children: React.ReactNode }) {
               })}
             </nav>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground capitalize font-medium">
+
+          {/* Right side */}
+          <div className="flex items-center gap-2 md:gap-4">
+            <span className="text-sm text-muted-foreground capitalize font-medium hidden lg:block">
               {today}
             </span>
             <button
               onClick={logout}
-              className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-xl hover:bg-accent/60"
+              className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-xl hover:bg-accent/60 hidden md:flex"
               title="Sair"
             >
               <LogOut className="w-4 h-4" />
             </button>
+
+            {/* Hamburger button — visible only on mobile */}
+            <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className="md:hidden text-muted-foreground hover:text-foreground transition-colors p-2 rounded-xl hover:bg-accent/60"
+                  aria-label="Abrir menu"
+                >
+                  {drawerOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72 p-0 flex flex-col">
+                {/* Drawer header */}
+                <div className="px-6 py-5 border-b border-border/30 flex items-center justify-between">
+                  <h2 className="font-semibold">
+                    <span className="text-primary font-bold">Ipê</span>{" "}
+                    <span className="text-foreground/80">Village</span>
+                  </h2>
+                  <span className="text-xs text-muted-foreground capitalize">{today}</span>
+                </div>
+
+                {/* Drawer nav */}
+                <nav className="flex flex-col gap-1 p-4 flex-1">
+                  {navItems.map(({ to, label, icon: Icon }) => {
+                    const active = location.pathname === to;
+                    return (
+                      <Link
+                        key={to}
+                        to={to}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          active
+                            ? "bg-primary/12 text-primary shadow-sm"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        {label}
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                {/* Drawer footer */}
+                <div className="p-4 border-t border-border/30">
+                  <button
+                    onClick={() => { setDrawerOpen(false); logout(); }}
+                    className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all duration-200"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Sair
+                  </button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
