@@ -166,6 +166,35 @@ function CheckinPage() {
     loadToday();
   });
 
+  // Auto-refresh every 30 seconds
+  const selectedEventRef = useRef(selectedEvent);
+  selectedEventRef.current = selectedEvent;
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const ev = selectedEventRef.current;
+      if (ev && ev.id) {
+        // Refresh event-specific data
+        const [checkins, count] = await Promise.all([
+          getEventCheckins({ data: { event_id: ev.id } }),
+          getEventCheckinCount({ data: { event_id: ev.id } }),
+        ]);
+        setEventCheckins(checkins);
+        setEventCheckinCount(count);
+      }
+      // Always refresh today's data
+      const [allCheckins, allCount, todayEvents] = await Promise.all([
+        getTodayCheckins(),
+        getTodayCount(),
+        getTodayEventsWithStats(),
+      ]);
+      setTodayCheckins(allCheckins);
+      setTodayCount(allCount);
+      setEvents(todayEvents);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   const selectEvent = async (event: EventBase) => {
     setSelectedEvent(event);
     setQuery("");
