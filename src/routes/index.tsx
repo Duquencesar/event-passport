@@ -397,6 +397,7 @@ function CheckinPage() {
                   </button>
                 );
               })}
+              </div>
             </div>
           ) : (
             <div className="glass rounded-3xl py-16 text-center">
