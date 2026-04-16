@@ -16,6 +16,44 @@ export const getEvents = createServerFn({ method: "GET" })
     return data || [];
   });
 
+export const getAllEventsWithStats = createServerFn({ method: "GET" })
+  .middleware([withAuthHeaders, requireSupabaseAuth])
+  .handler(async () => {
+    const { data: events, error } = await supabaseAdmin
+      .from("events")
+      .select("*")
+      .order("date", { ascending: true })
+      .order("time", { ascending: true });
+    if (error) throw new Error(error.message);
+    if (!events || events.length === 0) return [];
+
+    const { count: fullAccessCount } = await supabaseAdmin
+      .from("registrations")
+      .select("person_id", { count: "exact", head: true })
+      .or("ticket_type.ilike.%architect%,ticket_type.ilike.%explorer%");
+
+    const results = await Promise.all(
+      events.map(async (event) => {
+        const [regResult, checkinResult] = await Promise.all([
+          supabaseAdmin
+            .from("registrations")
+            .select("id", { count: "exact", head: true })
+            .eq("event_id", event.id),
+          supabaseAdmin
+            .from("checkins")
+            .select("id", { count: "exact", head: true })
+            .eq("event_id", event.id),
+        ]);
+        return {
+          ...event,
+          registration_count: (regResult.count || 0) + (fullAccessCount || 0),
+          checkin_count: checkinResult.count || 0,
+        };
+      }),
+    );
+    return results;
+  });
+
 export const getTodayEvents = createServerFn({ method: "GET" })
   .middleware([withAuthHeaders, requireSupabaseAuth])
   .handler(async () => {

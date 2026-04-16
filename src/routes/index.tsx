@@ -176,9 +176,10 @@ function CheckinPage() {
     setEventsLoaded(true);
   }, []);
 
-  useState(() => {
+  // biome-ignore lint: load on mount
+  useEffect(() => {
     loadToday();
-  });
+  }, []);
 
   // Auto-refresh every 30 seconds
   const selectedEventRef = useRef(selectedEvent);
