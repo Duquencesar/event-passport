@@ -2,9 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
 import { db as supabaseAdmin } from "./db";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { withAuthHeaders } from "@/middleware/auth-client";
 
 export const getEvents = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .handler(async () => {
     const { data, error } = await supabaseAdmin
       .from("events")
@@ -16,7 +17,7 @@ export const getEvents = createServerFn({ method: "GET" })
   });
 
 export const getTodayEvents = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .handler(async () => {
     const today = await getBrasiliaTodayKey();
     const { data, error } = await supabaseAdmin
@@ -29,7 +30,7 @@ export const getTodayEvents = createServerFn({ method: "GET" })
   });
 
 export const getTodayEventsWithStats = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .handler(async () => {
     const today = await getBrasiliaTodayKey();
     const { data: events, error } = await supabaseAdmin
@@ -71,7 +72,7 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" })
   });
 
 export const getUpcomingEvents = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .handler(async () => {
     const today = await getBrasiliaTodayKey();
     const { data, error } = await supabaseAdmin
@@ -85,7 +86,7 @@ export const getUpcomingEvents = createServerFn({ method: "GET" })
   });
 
 export const getNextUpcomingEvents = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { limit: number }) => input)
   .handler(async ({ data }) => {
     const today = await getBrasiliaTodayKey();
@@ -127,7 +128,7 @@ export const getNextUpcomingEvents = createServerFn({ method: "POST" })
   });
 
 export const getEventCheckinCount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { event_id: string }) => input)
   .handler(async ({ data }) => {
     const { count, error } = await supabaseAdmin
@@ -139,7 +140,7 @@ export const getEventCheckinCount = createServerFn({ method: "POST" })
   });
 
 export const getEventRegistrationCount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { event_id: string }) => input)
   .handler(async ({ data }) => {
     const [eventSpecific, fullAccess] = await Promise.all([
@@ -156,7 +157,7 @@ export const getEventRegistrationCount = createServerFn({ method: "POST" })
   });
 
 export const createEvent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator(
     (input: { name: string; date: string; time?: string; organizer?: string; location?: string; url?: string }) => input,
   )
