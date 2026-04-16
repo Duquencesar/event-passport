@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db as supabaseAdmin } from "./db";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const importPeople = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator(
     (
       input: {
@@ -27,7 +29,6 @@ export const importPeople = createServerFn({ method: "POST" })
       const name = row.name.trim();
 
       const ticketLower = row.ticket_type?.toLowerCase() || "";
-      // Only architects and explorers get a visible tag
       const derivedTag = row.tag ||
         (ticketLower.includes("architect") ? "Arquiteto"
         : ticketLower.includes("explorer") ? "Explorer"

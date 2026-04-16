@@ -1,19 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db as supabaseAdmin } from "./db";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type DashboardInput = { from: string; to: string; event_id?: string };
 
-function applyEventFilter<T extends ReturnType<typeof supabaseAdmin.from>>(
-  query: T,
-  event_id?: string,
-): T {
-  if (event_id) {
-    return (query as any).eq("event_id", event_id) as T;
-  }
-  return query;
-}
-
 export const getDashboardStats = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
     let q1 = supabaseAdmin
@@ -47,6 +39,7 @@ export const getDashboardStats = createServerFn({ method: "POST" })
   });
 
 export const getDailyAttendance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
     let q = supabaseAdmin
@@ -68,6 +61,7 @@ export const getDailyAttendance = createServerFn({ method: "POST" })
   });
 
 export const getAccessTypeBreakdown = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
     let q = supabaseAdmin
@@ -87,6 +81,7 @@ export const getAccessTypeBreakdown = createServerFn({ method: "POST" })
   });
 
 export const getTopAttendees = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
     let q = supabaseAdmin
@@ -113,6 +108,7 @@ export const getTopAttendees = createServerFn({ method: "POST" })
   });
 
 export const getCheckinsForExport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
     let q = supabaseAdmin
@@ -129,6 +125,7 @@ export const getCheckinsForExport = createServerFn({ method: "POST" })
   });
 
 export const getEventsForDashboard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { from: string; to: string }) => input)
   .handler(async ({ data }) => {
     const { data: events, error } = await supabaseAdmin
