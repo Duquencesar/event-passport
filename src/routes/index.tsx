@@ -154,7 +154,7 @@ function CheckinPage() {
     const [checkins, count, todayEvents] = await Promise.all([
       getTodayCheckins(),
       getTodayCount(),
-      getTodayEvents(),
+      getTodayEventsWithStats(),
     ]);
     setTodayCheckins(checkins);
     setTodayCount(count);
