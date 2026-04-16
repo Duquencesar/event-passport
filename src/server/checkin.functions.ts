@@ -130,13 +130,12 @@ export const updateCheckin = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data }) => {
-    const updates: Record<string, string> = {};
-    if (data.period) updates.period = data.period;
-    if (data.access_type) updates.access_type = data.access_type;
-    
     const { error } = await supabaseAdmin
       .from("checkins")
-      .update(updates)
+      .update({
+        ...(data.period ? { period: data.period } : {}),
+        ...(data.access_type ? { access_type: data.access_type } : {}),
+      })
       .eq("id", data.checkin_id);
     if (error) throw new Error(error.message);
     return { success: true };
