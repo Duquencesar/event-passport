@@ -435,12 +435,6 @@ function CheckinPage() {
             </div>
           )}
 
-          <button
-            onClick={() => setSelectedEvent({ id: "", name: "", date: "", time: null, organizer: null, location: null })}
-            className="w-full glass-subtle rounded-2xl p-4 text-center text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all"
-          >
-            Check-in avulso (sem evento específico)
-          </button>
 
           {todayCheckins.length > 0 && (
             <div>
