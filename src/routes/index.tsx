@@ -33,7 +33,7 @@ import {
   updateCheckin,
   getPersonRegistrations,
 } from "@/server/checkin.functions";
-import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount } from "@/server/event.functions";
+import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents } from "@/server/event.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -131,6 +131,7 @@ function CheckinPage() {
 
   // Event-centric state
   const [events, setEvents] = useState<EventWithStats[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<EventWithStats[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
   const [eventCheckins, setEventCheckins] = useState<any[]>([]);
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
@@ -155,7 +156,14 @@ function CheckinPage() {
     ]);
     setTodayCheckins(checkins);
     setTodayCount(count);
-    setEvents(todayEvents);
+    if (todayEvents.length > 0) {
+      setEvents(todayEvents);
+      setUpcomingEvents([]);
+    } else {
+      setEvents([]);
+      const next = await getNextUpcomingEvents({ data: { limit: 3 } });
+      setUpcomingEvents(next as EventWithStats[]);
+    }
     setEventsLoaded(true);
   }, []);
 
@@ -415,6 +423,93 @@ function CheckinPage() {
                         <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
                           <div
                             className="h-full rounded-full bg-primary/70 transition-all duration-500"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+              </div>
+            </div>
+          ) : upcomingEvents.length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                  Em breve
+                </h3>
+                <Badge className="bg-amber-500/15 text-amber-400 border-0 rounded-lg text-[10px]">
+                  Nenhum evento hoje
+                </Badge>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+              {upcomingEvents.map((event) => {
+                const pct = event.registration_count > 0
+                  ? Math.min(100, Math.round((event.checkin_count / event.registration_count) * 100))
+                  : 0;
+                return (
+                  <button
+                    key={event.id}
+                    onClick={() => selectEvent(event)}
+                    className="w-full glass rounded-2xl p-5 text-left hover:bg-primary/5 transition-all duration-200 group opacity-80 hover:opacity-100"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge className="bg-amber-500/15 text-amber-400 border-0 rounded-lg text-[10px]">
+                              {event.date}
+                            </Badge>
+                          </div>
+                          <h4 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                            {event.name}
+                          </h4>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5" />
+                      </div>
+
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        {event.time && (
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" />
+                            {event.time}
+                          </span>
+                        )}
+                        {event.location && (
+                          <span className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {event.location}
+                          </span>
+                        )}
+                        {event.organizer && (
+                          <span className="flex items-center gap-1.5 truncate">
+                            <Users className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{event.organizer}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <Users className="w-3 h-3" />
+                            {event.registration_count} inscritos
+                          </span>
+                          <span className="flex items-center gap-1 text-primary font-medium">
+                            <UserCheck className="w-3 h-3" />
+                            {event.checkin_count} check-ins
+                          </span>
+                        </div>
+                        {event.registration_count > 0 && (
+                          <span className="text-muted-foreground font-medium">{pct}%</span>
+                        )}
+                      </div>
+
+                      {event.registration_count > 0 && (
+                        <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-amber-400/60 transition-all duration-500"
                             style={{ width: `${pct}%` }}
                           />
                         </div>
