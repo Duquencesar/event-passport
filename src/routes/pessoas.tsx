@@ -4,8 +4,27 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Users, Ticket, User, CalendarDays } from "lucide-react";
-import { getPeopleWithRegistrations, getPeopleCount, setDayPassDate } from "@/server/people.functions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, Users, Ticket, User, CalendarDays, Clock, CheckCircle2 } from "lucide-react";
+import {
+  getPeopleWithRegistrations,
+  getPeopleCount,
+  setDayPassDate,
+  getPersonCheckinHistory,
+  updatePersonTag,
+} from "@/server/people.functions";
 
 export const Route = createFileRoute("/pessoas")({
   head: () => ({
@@ -33,6 +52,15 @@ type PersonWithRegs = {
   }>;
 };
 
+type CheckinRecord = {
+  id: string;
+  date: string;
+  period: string;
+  access_type: string;
+  event_name: string | null;
+  checked_in_at: string;
+};
+
 const TAG_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
   Arquiteto: { bg: "bg-amber-500/15", text: "text-amber-400", dot: "bg-amber-400" },
   Explorer: { bg: "bg-sky-500/15", text: "text-sky-400", dot: "bg-sky-400" },
@@ -51,6 +79,13 @@ function PessoasPage() {
   const [filter, setFilter] = useState("");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Modal state
+  const [selectedPerson, setSelectedPerson] = useState<PersonWithRegs | null>(null);
+  const [checkinHistory, setCheckinHistory] = useState<CheckinRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [editTag, setEditTag] = useState("");
+  const [savingTag, setSavingTag] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -84,10 +119,43 @@ function PessoasPage() {
     if (tagFilter && tagFilter !== "__none__" && p.tag !== tagFilter) return false;
     if (filter.length >= 2) {
       const q = filter.toLowerCase();
-      return p.name.toLowerCase().includes(q);
+      return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
     }
     return true;
   });
+
+  const openProfile = async (person: PersonWithRegs) => {
+    setSelectedPerson(person);
+    setEditTag(person.tag || "");
+    setCheckinHistory([]);
+    setHistoryLoading(true);
+    try {
+      const history = await getPersonCheckinHistory({ data: { person_id: person.id } });
+      setCheckinHistory(history as CheckinRecord[]);
+    } catch {
+      setCheckinHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleSaveTag = async () => {
+    if (!selectedPerson) return;
+    setSavingTag(true);
+    try {
+      const newTag = editTag && editTag !== "__none__" ? editTag : "";
+      await updatePersonTag({ data: { person_id: selectedPerson.id, tag: newTag } });
+      // Update local state
+      setPeople((prev) =>
+        prev.map((p) =>
+          p.id === selectedPerson.id ? { ...p, tag: newTag || null } : p
+        )
+      );
+      setSelectedPerson((prev) => prev ? { ...prev, tag: newTag || null } : null);
+    } finally {
+      setSavingTag(false);
+    }
+  };
 
   return (
     <Layout>
@@ -109,7 +177,7 @@ function PessoasPage() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Filtrar por nome..."
+              placeholder="Filtrar por nome ou email..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="pl-12 h-12 rounded-2xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
@@ -176,15 +244,21 @@ function PessoasPage() {
             {filtered.map((p) => {
               const colors = p.tag ? getTagColor(p.tag) : null;
               return (
-                <div key={p.id} className="glass-subtle rounded-2xl p-4 flex flex-col gap-3 hover:bg-white/[0.04] transition-colors">
+                <button
+                  key={p.id}
+                  onClick={() => openProfile(p)}
+                  className="glass-subtle rounded-2xl p-4 flex flex-col gap-3 hover:bg-white/[0.06] transition-colors text-left cursor-pointer group w-full"
+                >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${colors ? colors.bg : "bg-muted/30"}`}>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${colors ? colors.bg : "bg-muted/30"} group-hover:scale-105 transition-transform`}>
                       <User className={`w-5 h-5 ${colors ? colors.text : "text-muted-foreground"}`} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold truncate leading-tight">{p.name}</p>
-                      {p.tag && (
+                      <p className="font-semibold truncate leading-tight group-hover:text-primary transition-colors">{p.name}</p>
+                      {p.tag ? (
                         <span className={`text-xs font-medium ${colors?.text}`}>{p.tag}</span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/50">Sem tag</span>
                       )}
                     </div>
                   </div>
@@ -204,15 +278,7 @@ function PessoasPage() {
                                   {new Date(r.day_pass_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                                 </span>
                               ) : (
-                                <input
-                                  type="date"
-                                  className="text-[10px] bg-transparent border border-border/40 rounded px-1 py-0.5 text-muted-foreground w-28"
-                                  onChange={async (e) => {
-                                    if (!e.target.value) return;
-                                    await setDayPassDate({ data: { registrationId: r.id, date: e.target.value } });
-                                    load();
-                                  }}
-                                />
+                                <span className="text-[10px] text-muted-foreground/60">sem data</span>
                               )}
                             </div>
                           )}
@@ -220,12 +286,142 @@ function PessoasPage() {
                       ))}
                     </div>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Profile Modal */}
+      <Dialog open={!!selectedPerson} onOpenChange={(open) => { if (!open) setSelectedPerson(null); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          {selectedPerson && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${selectedPerson.tag ? getTagColor(selectedPerson.tag).bg : "bg-muted/30"}`}>
+                    <User className={`w-5 h-5 ${selectedPerson.tag ? getTagColor(selectedPerson.tag).text : "text-muted-foreground"}`} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-lg leading-tight truncate">{selectedPerson.name}</p>
+                    <p className="text-sm text-muted-foreground font-normal truncate">{selectedPerson.email}</p>
+                  </div>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-5 mt-2">
+                {/* Tag editor */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Tag</label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={editTag || "__none__"}
+                      onValueChange={(v) => setEditTag(v === "__none__" ? "" : v)}
+                    >
+                      <SelectTrigger className="rounded-xl bg-background/50 flex-1">
+                        <SelectValue placeholder="Sem tag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">— Sem tag —</SelectItem>
+                        <SelectItem value="Arquiteto">Arquiteto</SelectItem>
+                        <SelectItem value="Explorer">Explorer</SelectItem>
+                        <SelectItem value="Day Pass">Day Pass</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveTag}
+                      disabled={savingTag || editTag === (selectedPerson.tag || "")}
+                      className="rounded-xl px-4"
+                    >
+                      {savingTag ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Registrations */}
+                {selectedPerson.registrations.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Inscrições</p>
+                    <div className="flex flex-col gap-1.5">
+                      {selectedPerson.registrations.map((r) => (
+                        <div key={r.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/20">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Ticket className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-sm truncate">{r.event_name}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px] rounded-lg border-border/40 shrink-0 ml-2">
+                            {r.ticket_type}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Check-in history */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-muted-foreground">Histórico de presenças</p>
+                    {!historyLoading && (
+                      <Badge className="bg-primary/10 text-primary border-0 rounded-lg text-xs">
+                        {checkinHistory.length} total
+                      </Badge>
+                    )}
+                  </div>
+
+                  {historyLoading ? (
+                    <div className="py-6 text-center">
+                      <p className="text-sm text-muted-foreground">Carregando...</p>
+                    </div>
+                  ) : checkinHistory.length === 0 ? (
+                    <div className="py-6 text-center glass-subtle rounded-xl">
+                      <p className="text-sm text-muted-foreground">Nenhum check-in registrado</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
+                      {checkinHistory.map((c) => (
+                        <div
+                          key={c.id}
+                          className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-muted/20 gap-3"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {c.event_name || "Check-in avulso"}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {c.period} · {c.access_type}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs font-medium text-foreground/80">
+                              {new Date(c.date + "T12:00:00").toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "short",
+                              })}
+                            </p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
+                              <Clock className="w-3 h-3" />
+                              {new Date(c.checked_in_at).toLocaleTimeString("pt-BR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

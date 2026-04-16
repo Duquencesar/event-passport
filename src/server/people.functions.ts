@@ -41,3 +41,27 @@ export const getPeopleCount = createServerFn({ method: "GET" }).handler(async ()
   if (error) throw new Error(error.message);
   return count || 0;
 });
+
+export const getPersonCheckinHistory = createServerFn({ method: "POST" })
+  .inputValidator((input: { person_id: string }) => input)
+  .handler(async ({ data }) => {
+    const { data: checkins, error } = await db
+      .from("checkins")
+      .select("id, date, period, access_type, event_name, checked_in_at")
+      .eq("person_id", data.person_id)
+      .order("checked_in_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    return checkins || [];
+  });
+
+export const updatePersonTag = createServerFn({ method: "POST" })
+  .inputValidator((input: { person_id: string; tag: string }) => input)
+  .handler(async ({ data }) => {
+    const { error } = await db
+      .from("people")
+      .update({ tag: data.tag || null })
+      .eq("id", data.person_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
