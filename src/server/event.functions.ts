@@ -32,6 +32,12 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" }).handler
   if (error) throw new Error(error.message);
   if (!events || events.length === 0) return [];
 
+  // Count architects/explorers once (they have access to all events)
+  const { count: fullAccessCount } = await supabaseAdmin
+    .from("registrations")
+    .select("person_id", { count: "exact", head: true })
+    .or("ticket_type.ilike.%architect%,ticket_type.ilike.%explorer%");
+
   const results = await Promise.all(
     events.map(async (event) => {
       const [regResult, checkinResult] = await Promise.all([
@@ -44,9 +50,11 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" }).handler
           .select("id", { count: "exact", head: true })
           .eq("event_id", event.id),
       ]);
+      // Event-specific registrations + full access holders (deduplicated count would be ideal but approximation is fine)
+      const eventSpecific = regResult.count || 0;
       return {
         ...event,
-        registration_count: regResult.count || 0,
+        registration_count: eventSpecific + (fullAccessCount || 0),
         checkin_count: checkinResult.count || 0,
       };
     })
