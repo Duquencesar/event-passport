@@ -1,50 +1,61 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db as supabaseAdmin } from "./db";
 
+type DashboardInput = { from: string; to: string; event_id?: string };
+
+function applyEventFilter<T extends ReturnType<typeof supabaseAdmin.from>>(
+  query: T,
+  event_id?: string,
+): T {
+  if (event_id) {
+    return (query as any).eq("event_id", event_id) as T;
+  }
+  return query;
+}
+
 export const getDashboardStats = createServerFn({ method: "POST" })
-  .inputValidator((input: { from: string; to: string }) => input)
+  .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
-    // Total checkins in range
-    const { count: totalCheckins } = await supabaseAdmin
+    let q1 = supabaseAdmin
       .from("checkins")
       .select("id", { count: "exact", head: true })
       .gte("date", data.from)
       .lte("date", data.to);
+    if (data.event_id) q1 = q1.eq("event_id", data.event_id);
+    const { count: totalCheckins } = await q1;
 
-    // Unique people
-    const { data: uniqueData } = await supabaseAdmin
+    let q2 = supabaseAdmin
       .from("checkins")
       .select("person_id")
       .gte("date", data.from)
       .lte("date", data.to);
-
+    if (data.event_id) q2 = q2.eq("event_id", data.event_id);
+    const { data: uniqueData } = await q2;
     const uniquePeople = new Set(uniqueData?.map((c) => c.person_id)).size;
 
-    // Architects active
-    const { data: archData } = await supabaseAdmin
+    let q3 = supabaseAdmin
       .from("checkins")
       .select("person_id, people!inner(tag)")
       .gte("date", data.from)
       .lte("date", data.to)
       .eq("people.tag", "Arquiteto");
-
+    if (data.event_id) q3 = q3.eq("event_id", data.event_id);
+    const { data: archData } = await q3;
     const architects = new Set(archData?.map((c) => c.person_id)).size;
 
-    return {
-      totalCheckins: totalCheckins || 0,
-      uniquePeople,
-      architects,
-    };
+    return { totalCheckins: totalCheckins || 0, uniquePeople, architects };
   });
 
 export const getDailyAttendance = createServerFn({ method: "POST" })
-  .inputValidator((input: { from: string; to: string }) => input)
+  .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
-    const { data: checkins } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("checkins")
       .select("date, id")
       .gte("date", data.from)
       .lte("date", data.to);
+    if (data.event_id) q = q.eq("event_id", data.event_id);
+    const { data: checkins } = await q;
 
     const byDate: Record<string, number> = {};
     for (const c of checkins || []) {
@@ -57,13 +68,15 @@ export const getDailyAttendance = createServerFn({ method: "POST" })
   });
 
 export const getAccessTypeBreakdown = createServerFn({ method: "POST" })
-  .inputValidator((input: { from: string; to: string }) => input)
+  .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
-    const { data: checkins } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("checkins")
       .select("access_type")
       .gte("date", data.from)
       .lte("date", data.to);
+    if (data.event_id) q = q.eq("event_id", data.event_id);
+    const { data: checkins } = await q;
 
     const byType: Record<string, number> = {};
     for (const c of checkins || []) {
@@ -74,13 +87,15 @@ export const getAccessTypeBreakdown = createServerFn({ method: "POST" })
   });
 
 export const getTopAttendees = createServerFn({ method: "POST" })
-  .inputValidator((input: { from: string; to: string }) => input)
+  .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
-    const { data: checkins } = await supabaseAdmin
+    let q = supabaseAdmin
       .from("checkins")
       .select("person_id, people(name, email, tag)")
       .gte("date", data.from)
       .lte("date", data.to);
+    if (data.event_id) q = q.eq("event_id", data.event_id);
+    const { data: checkins } = await q;
 
     const byPerson: Record<string, { name: string; email: string; tag: string | null; count: number }> = {};
     for (const c of checkins || []) {
@@ -95,4 +110,33 @@ export const getTopAttendees = createServerFn({ method: "POST" })
     return Object.values(byPerson)
       .sort((a, b) => b.count - a.count)
       .slice(0, 20);
+  });
+
+export const getCheckinsForExport = createServerFn({ method: "POST" })
+  .inputValidator((input: DashboardInput) => input)
+  .handler(async ({ data }) => {
+    let q = supabaseAdmin
+      .from("checkins")
+      .select("id, date, period, access_type, event_name, checked_in_at, people(name, email, tag)")
+      .gte("date", data.from)
+      .lte("date", data.to)
+      .order("date", { ascending: false })
+      .order("checked_in_at", { ascending: false });
+    if (data.event_id) q = q.eq("event_id", data.event_id);
+    const { data: checkins, error } = await q;
+    if (error) throw new Error(error.message);
+    return checkins || [];
+  });
+
+export const getEventsForDashboard = createServerFn({ method: "POST" })
+  .inputValidator((input: { from: string; to: string }) => input)
+  .handler(async ({ data }) => {
+    const { data: events, error } = await supabaseAdmin
+      .from("events")
+      .select("id, name, date")
+      .gte("date", data.from)
+      .lte("date", data.to)
+      .order("date", { ascending: true });
+    if (error) throw new Error(error.message);
+    return events || [];
   });
