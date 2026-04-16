@@ -19,7 +19,6 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const q = `%${data.query}%`;
     
-    // Get people registered for this event first
     const { data: registeredPeople } = await supabaseAdmin
       .from("registrations")
       .select("person_id, people!inner(id, name, email, tag)")
@@ -32,7 +31,6 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
       registered: true,
     }));
 
-    // If fewer than 10 results, also search all people
     if (registered.length < 10) {
       const registeredIds = registered.map((r) => r.id);
       const { data: others } = await supabaseAdmin
@@ -111,3 +109,45 @@ export const getTodayCount = createServerFn({ method: "GET" }).handler(async () 
   if (error) throw new Error(error.message);
   return count || 0;
 });
+
+export const deleteCheckin = createServerFn({ method: "POST" })
+  .inputValidator((input: { checkin_id: string }) => input)
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("checkins")
+      .delete()
+      .eq("id", data.checkin_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const updateCheckin = createServerFn({ method: "POST" })
+  .inputValidator(
+    (input: {
+      checkin_id: string;
+      period?: string;
+      access_type?: string;
+    }) => input,
+  )
+  .handler(async ({ data }) => {
+    const { error } = await supabaseAdmin
+      .from("checkins")
+      .update({
+        ...(data.period ? { period: data.period } : {}),
+        ...(data.access_type ? { access_type: data.access_type } : {}),
+      })
+      .eq("id", data.checkin_id);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const getPersonRegistrations = createServerFn({ method: "POST" })
+  .inputValidator((input: { person_id: string }) => input)
+  .handler(async ({ data }) => {
+    const { data: registrations, error } = await supabaseAdmin
+      .from("registrations")
+      .select("id, event_name, ticket_type, day_pass_date, event_id")
+      .eq("person_id", data.person_id);
+    if (error) throw new Error(error.message);
+    return registrations || [];
+  });

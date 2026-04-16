@@ -1,5 +1,7 @@
-import { Link, useLocation } from "@tanstack/react-router";
-import { Users, Upload, BarChart3, ClipboardList, CalendarDays } from "lucide-react";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { Users, Upload, BarChart3, ClipboardList, CalendarDays, LogOut } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { to: "/" as const, label: "Check-in", icon: ClipboardList },
@@ -11,11 +13,35 @@ const navItems = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const today = new Date().toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const navigate = useNavigate();
+  const { isAuthenticated, loading, logout } = useAuth();
+  const [today, setToday] = useState("");
+
+  useEffect(() => {
+    setToday(
+      new Date().toLocaleDateString("pt-BR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      })
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate({ to: "/login" });
+    }
+  }, [loading, isAuthenticated, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen text-foreground">
@@ -49,9 +75,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
               })}
             </nav>
           </div>
-          <span className="text-sm text-muted-foreground capitalize font-medium">
-            {today}
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground capitalize font-medium">
+              {today}
+            </span>
+            <button
+              onClick={logout}
+              className="text-muted-foreground hover:text-foreground transition-colors p-2 rounded-xl hover:bg-accent/60"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
       <main className="max-w-6xl mx-auto px-6 py-8">{children}</main>
