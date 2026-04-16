@@ -165,10 +165,19 @@ function PessoasPage() {
             <h2 className="text-3xl font-bold tracking-tight">Inscritos</h2>
             <p className="text-muted-foreground text-sm mt-1">Pessoas cadastradas no sistema</p>
           </div>
-          <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
-            <Users className="w-5 h-5 text-primary" />
-            <span className="text-2xl font-bold text-foreground">{totalCount}</span>
-            <span className="text-sm text-muted-foreground">pessoas</span>
+          <div className="flex items-center gap-4">
+            {totalCount.checkedIn > 0 && (
+              <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-bold text-foreground">{totalCount.checkedIn}</span>
+                <span className="text-sm text-muted-foreground">passaram</span>
+              </div>
+            )}
+            <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
+              <Users className="w-5 h-5 text-primary" />
+              <span className="text-2xl font-bold text-foreground">{totalCount.total}</span>
+              <span className="text-sm text-muted-foreground">inscritos</span>
+            </div>
           </div>
         </div>
 
