@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
 import { db as supabaseAdmin } from "./db";
 
 export const getEvents = createServerFn({ method: "GET" }).handler(async () => {
@@ -12,7 +13,7 @@ export const getEvents = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const getTodayEvents = createServerFn({ method: "GET" }).handler(async () => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = await getBrasiliaTodayKey();
   const { data, error } = await supabaseAdmin
     .from("events")
     .select("*")
@@ -23,7 +24,7 @@ export const getTodayEvents = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const getTodayEventsWithStats = createServerFn({ method: "GET" }).handler(async () => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = await getBrasiliaTodayKey();
   const { data: events, error } = await supabaseAdmin
     .from("events")
     .select("*")
@@ -32,7 +33,6 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" }).handler
   if (error) throw new Error(error.message);
   if (!events || events.length === 0) return [];
 
-  // Count architects/explorers once (they have access to all events)
   const { count: fullAccessCount } = await supabaseAdmin
     .from("registrations")
     .select("person_id", { count: "exact", head: true })
@@ -50,20 +50,21 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" }).handler
           .select("id", { count: "exact", head: true })
           .eq("event_id", event.id),
       ]);
-      // Event-specific registrations + full access holders (deduplicated count would be ideal but approximation is fine)
+
       const eventSpecific = regResult.count || 0;
       return {
         ...event,
         registration_count: eventSpecific + (fullAccessCount || 0),
         checkin_count: checkinResult.count || 0,
       };
-    })
+    }),
   );
+
   return results;
 });
 
 export const getUpcomingEvents = createServerFn({ method: "GET" }).handler(async () => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = await getBrasiliaTodayKey();
   const { data, error } = await supabaseAdmin
     .from("events")
     .select("*")

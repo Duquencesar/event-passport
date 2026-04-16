@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
 import { db as supabaseAdmin } from "./db";
 
 export const searchPeople = createServerFn({ method: "POST" })
@@ -18,7 +19,7 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
   .inputValidator((input: { query: string; event_id: string }) => input)
   .handler(async ({ data }) => {
     const q = `%${data.query}%`;
-    
+
     const { data: registeredPeople } = await supabaseAdmin
       .from("registrations")
       .select("person_id, people!inner(id, name, email, tag)")
@@ -38,11 +39,11 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
         .select("id, name, email, tag")
         .or(`name.ilike.${q},email.ilike.${q}`)
         .limit(10 - registered.length);
-      
+
       const additional = (others || [])
         .filter((p) => !registeredIds.includes(p.id))
         .map((p) => ({ ...p, registered: false }));
-      
+
       return [...registered, ...additional];
     }
 
@@ -60,6 +61,8 @@ export const createCheckin = createServerFn({ method: "POST" })
     }) => input,
   )
   .handler(async ({ data }) => {
+    const today = await getBrasiliaTodayKey();
+
     const { data: checkin, error } = await supabaseAdmin
       .from("checkins")
       .insert({
@@ -68,6 +71,7 @@ export const createCheckin = createServerFn({ method: "POST" })
         access_type: data.access_type,
         event_name: data.event_name || null,
         event_id: data.event_id || null,
+        date: today,
       })
       .select("id")
       .single();
@@ -76,7 +80,7 @@ export const createCheckin = createServerFn({ method: "POST" })
   });
 
 export const getTodayCheckins = createServerFn({ method: "GET" }).handler(async () => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = await getBrasiliaTodayKey();
   const { data: checkins, error } = await supabaseAdmin
     .from("checkins")
     .select("id, period, access_type, event_name, checked_in_at, person_id, event_id, people(name, tag)")
@@ -101,7 +105,7 @@ export const getEventCheckins = createServerFn({ method: "POST" })
   });
 
 export const getTodayCount = createServerFn({ method: "GET" }).handler(async () => {
-  const today = new Date().toISOString().split("T")[0];
+  const today = await getBrasiliaTodayKey();
   const { count, error } = await supabaseAdmin
     .from("checkins")
     .select("id", { count: "exact", head: true })

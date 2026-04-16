@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
 import { db as supabaseAdmin } from "./db";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/telegram";
@@ -33,7 +34,7 @@ async function sendTelegramMessage(chatId: number, text: string) {
 }
 
 async function buildDailyReport(): Promise<string> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = await getBrasiliaTodayKey();
 
   const { count: totalPeople } = await supabaseAdmin
     .from("people")
@@ -59,7 +60,6 @@ async function buildDailyReport(): Promise<string> {
     .eq("date", today);
   const uniqueToday = new Set(todayPeople?.map((c) => c.person_id)).size;
 
-  // Today's events
   const { data: todayEvents } = await supabaseAdmin
     .from("events")
     .select("id, name, time, location")
@@ -83,7 +83,6 @@ async function buildDailyReport(): Promise<string> {
   if (todayEvents && todayEvents.length > 0) {
     lines.push(``, `📆 <b>Eventos Hoje</b>`);
     for (const ev of todayEvents) {
-      // Get check-in count per event
       const { count: evCheckins } = await supabaseAdmin
         .from("checkins")
         .select("id", { count: "exact", head: true })
@@ -103,7 +102,7 @@ async function buildDailyReport(): Promise<string> {
 }
 
 async function buildEventsList(): Promise<string> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = await getBrasiliaTodayKey();
   const { data: upcoming } = await supabaseAdmin
     .from("events")
     .select("name, date, time, location")

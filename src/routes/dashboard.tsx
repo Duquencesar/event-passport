@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getCurrentBrasiliaDateKeySync, shiftBrasiliaDateKeyByDays } from "@/lib/brasilia-time";
 import { Users, HardHat, TrendingUp, RefreshCw } from "lucide-react";
 import {
   BarChart,
@@ -54,11 +55,9 @@ export const Route = createFileRoute("/dashboard")({
     to: (search as Record<string, string>).to,
   }),
   loader: async ({ deps }) => {
-    const today = new Date();
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setDate(today.getDate() - 30);
-    const from = deps.from || thirtyDaysAgo.toISOString().split("T")[0];
-    const to = deps.to || today.toISOString().split("T")[0];
+    const today = getCurrentBrasiliaDateKeySync();
+    const from = deps.from || shiftBrasiliaDateKeyByDays(today, -30);
+    const to = deps.to || today;
     return loadDashboard(from, to);
   },
   component: DashboardPage,
@@ -73,12 +72,11 @@ const PIE_COLORS = [
 
 function DashboardPage() {
   const data = Route.useLoaderData();
-  const today = new Date();
-  const thirtyDaysAgo = new Date(today);
-  thirtyDaysAgo.setDate(today.getDate() - 30);
+  const initialTo = getCurrentBrasiliaDateKeySync();
+  const initialFrom = shiftBrasiliaDateKeyByDays(initialTo, -30);
 
-  const [from, setFrom] = useState(thirtyDaysAgo.toISOString().split("T")[0]);
-  const [to, setTo] = useState(today.toISOString().split("T")[0]);
+  const [from, setFrom] = useState(initialFrom);
+  const [to, setTo] = useState(initialTo);
   const [loading, setLoading] = useState(false);
   const [liveData, setLiveData] = useState<typeof data | null>(null);
 
