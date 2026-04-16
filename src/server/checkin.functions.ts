@@ -155,3 +155,24 @@ export const getPersonRegistrations = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return registrations || [];
   });
+
+export const checkDuplicateCheckin = createServerFn({ method: "POST" })
+  .inputValidator((input: { person_id: string; event_id?: string }) => input)
+  .handler(async ({ data }) => {
+    const today = await getBrasiliaTodayKey();
+    let query = supabaseAdmin
+      .from("checkins")
+      .select("id, period, access_type, checked_in_at, event_name")
+      .eq("person_id", data.person_id)
+      .eq("date", today);
+
+    if (data.event_id) {
+      query = query.eq("event_id", data.event_id);
+    } else {
+      query = query.is("event_id", null);
+    }
+
+    const { data: existing, error } = await query.limit(1);
+    if (error) throw new Error(error.message);
+    return existing?.[0] || null;
+  });

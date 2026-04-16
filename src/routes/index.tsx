@@ -32,6 +32,7 @@ import {
   deleteCheckin,
   updateCheckin,
   getPersonRegistrations,
+  checkDuplicateCheckin,
 } from "@/server/checkin.functions";
 import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents } from "@/server/event.functions";
 
@@ -142,6 +143,11 @@ function CheckinPage() {
   const [accessWarning, setAccessWarning] = useState<AccessWarning | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
 
+  // Duplicate check-in detection
+  const [duplicateCheckin, setDuplicateCheckin] = useState<{
+    id: string; period: string; access_type: string; checked_in_at: string; event_name: string | null;
+  } | null>(null);
+
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPeriod, setEditPeriod] = useState("");
@@ -243,21 +249,33 @@ function CheckinPage() {
     setSelected(person);
     setQuery(person.name);
     setResults([]);
+    setDuplicateCheckin(null);
 
-    // Fetch registrations and check access
+    // Fetch registrations, check access, and check for duplicate
     try {
-      const regs = await getPersonRegistrations({ data: { person_id: person.id } });
+      const [regs, duplicate] = await Promise.all([
+        getPersonRegistrations({ data: { person_id: person.id } }),
+        checkDuplicateCheckin({
+          data: {
+            person_id: person.id,
+            event_id: selectedEvent?.id || undefined,
+          },
+        }),
+      ]);
       setRegistrations(regs);
       const warning = checkAccess(regs, selectedEvent, selectedEvent?.date);
       setAccessWarning(warning);
+      setDuplicateCheckin(duplicate as typeof duplicateCheckin);
     } catch {
       setAccessWarning({ type: "warning", message: "Não foi possível verificar inscrições" });
     }
   };
 
-  const handleCheckin = async () => {
+  const handleCheckin = async (force = false) => {
     if (!selected) return;
+    if (!force && duplicateCheckin) return; // Safety guard
     setLoading(true);
+    setDuplicateCheckin(null);
     try {
       await createCheckin({
         data: {
@@ -272,6 +290,7 @@ function CheckinPage() {
       setQuery("");
       setResults([]);
       setAccessWarning(null);
+      setDuplicateCheckin(null);
       setTimeout(() => {
         setSelected(null);
         setSuccess(false);
@@ -711,6 +730,37 @@ function CheckinPage() {
                 </div>
               )}
 
+              {/* Duplicate check-in warning */}
+              {duplicateCheckin && (
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-amber-400">Já fez check-in hoje</p>
+                      <p className="text-xs text-amber-400/80 mt-0.5">
+                        Registrado às{" "}
+                        {new Date(duplicateCheckin.checked_in_at).toLocaleTimeString("pt-BR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {" — "}
+                        {duplicateCheckin.period} · {duplicateCheckin.access_type}
+                        {duplicateCheckin.event_name && ` · ${duplicateCheckin.event_name}`}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCheckin(true)}
+                    disabled={loading}
+                    className="w-full rounded-xl border-amber-500/40 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                  >
+                    {loading ? "Registrando..." : "Confirmar mesmo assim"}
+                  </Button>
+                </div>
+              )}
+
               {/* Period */}
               <div className="flex items-center gap-3">
                 <span className="text-sm text-muted-foreground font-medium w-20">Período</span>
@@ -747,15 +797,17 @@ function CheckinPage() {
                 </div>
               </div>
 
-              {/* Confirm */}
-              <Button
-                onClick={handleCheckin}
-                disabled={loading}
-                className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg shadow-primary/20"
-                size="lg"
-              >
-                {loading ? "Registrando..." : "Confirmar Check-in"}
-              </Button>
+              {/* Confirm — hidden when duplicate warning is shown (user must use the secondary button) */}
+              {!duplicateCheckin && (
+                <Button
+                  onClick={() => handleCheckin(false)}
+                  disabled={loading}
+                  className="w-full h-14 text-lg font-bold rounded-2xl shadow-lg shadow-primary/20"
+                  size="lg"
+                >
+                  {loading ? "Registrando..." : "Confirmar Check-in"}
+                </Button>
+              )}
             </div>
           )}
 
