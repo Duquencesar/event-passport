@@ -16,6 +16,7 @@ import { Route as EventosRouteImport } from './routes/eventos'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksTelegramPollRouteImport } from './routes/hooks/telegram-poll'
+import { Route as HooksTelegramDailyReportRouteImport } from './routes/hooks/telegram-daily-report'
 
 const PessoasRoute = PessoasRouteImport.update({
   id: '/pessoas',
@@ -52,6 +53,12 @@ const HooksTelegramPollRoute = HooksTelegramPollRouteImport.update({
   path: '/hooks/telegram-poll',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HooksTelegramDailyReportRoute =
+  HooksTelegramDailyReportRouteImport.update({
+    id: '/hooks/telegram-daily-report',
+    path: '/hooks/telegram-daily-report',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
+  '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +77,7 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
+  '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
 export interface FileRoutesById {
@@ -79,6 +88,7 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
+  '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +100,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
+    | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +110,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
+    | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
   id:
     | '__root__'
@@ -108,6 +120,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
+    | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +131,7 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   PessoasRoute: typeof PessoasRoute
+  HooksTelegramDailyReportRoute: typeof HooksTelegramDailyReportRoute
   HooksTelegramPollRoute: typeof HooksTelegramPollRoute
 }
 
@@ -172,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HooksTelegramPollRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hooks/telegram-daily-report': {
+      id: '/hooks/telegram-daily-report'
+      path: '/hooks/telegram-daily-report'
+      fullPath: '/hooks/telegram-daily-report'
+      preLoaderRoute: typeof HooksTelegramDailyReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -182,8 +203,18 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   PessoasRoute: PessoasRoute,
+  HooksTelegramDailyReportRoute: HooksTelegramDailyReportRoute,
   HooksTelegramPollRoute: HooksTelegramPollRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
