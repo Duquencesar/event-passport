@@ -32,7 +32,7 @@ import {
   updateCheckin,
   getPersonRegistrations,
 } from "@/server/checkin.functions";
-import { getTodayEvents, getEventCheckinCount, getEventRegistrationCount } from "@/server/event.functions";
+import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount } from "@/server/event.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,7 +45,8 @@ export const Route = createFileRoute("/")({
 });
 
 type Person = { id: string; name: string; email: string; tag: string | null; registered?: boolean };
-type Event = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
+type EventBase = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
+type EventWithStats = EventBase & { registration_count: number; checkin_count: number };
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; event_id: string | null };
 
 type AccessWarning = {
