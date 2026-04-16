@@ -1,9 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db as supabaseAdmin } from "./db";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { withAuthHeaders } from "@/middleware/auth-client";
 
 export const importPeople = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator(
     (
       input: {
