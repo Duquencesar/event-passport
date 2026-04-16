@@ -50,6 +50,7 @@ function ImportPage() {
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<{ created: number; updated: number; registrations: number } | null>(null);
   const [eventNameOverride, setEventNameOverride] = useState("");
+  const [defaultTag, setDefaultTag] = useState("");
 
   // Event selection
   const [events, setEvents] = useState<Event[]>([]);
@@ -114,7 +115,8 @@ function ImportPage() {
       }));
 
     try {
-      const res = await importPeople({ data: { rows: mapped } });
+      const resolvedDefaultTag = defaultTag && defaultTag !== "__none__" ? defaultTag : undefined;
+      const res = await importPeople({ data: { rows: mapped, default_tag: resolvedDefaultTag } });
       setResult(res);
     } catch (err) {
       console.error(err);
@@ -211,6 +213,27 @@ function ImportPage() {
                   />
                 </div>
               )}
+              <div className="space-y-1.5 col-span-2">
+                <label className="text-sm text-muted-foreground font-medium">
+                  Tag padrão <span className="text-muted-foreground/60">(para quem não tiver tag na coluna acima)</span>
+                </label>
+                <Select value={defaultTag} onValueChange={setDefaultTag}>
+                  <SelectTrigger className="rounded-xl bg-background/50">
+                    <SelectValue placeholder="Sem tag padrão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Sem tag padrão —</SelectItem>
+                    <SelectItem value="Arquiteto">Arquiteto</SelectItem>
+                    <SelectItem value="Explorer">Explorer</SelectItem>
+                    <SelectItem value="Day Pass">Day Pass</SelectItem>
+                  </SelectContent>
+                </Select>
+                {defaultTag && defaultTag !== "__none__" && (
+                  <p className="text-xs text-amber-400/80">
+                    Inscritos sem tag definida receberão a tag <strong>{defaultTag}</strong>
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Preview */}

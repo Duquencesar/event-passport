@@ -13,6 +13,7 @@ export const importPeople = createServerFn({ method: "POST" })
           tag?: string;
           event_id?: string;
         }>;
+        default_tag?: string;
       },
     ) => input,
   )
@@ -26,11 +27,12 @@ export const importPeople = createServerFn({ method: "POST" })
       const name = row.name.trim();
 
       const ticketLower = row.ticket_type?.toLowerCase() || "";
-      const tag = row.tag ||
+      const derivedTag = row.tag ||
         (ticketLower.includes("architect") ? "Arquiteto"
         : ticketLower.includes("explorer") ? "Explorer"
         : ticketLower.includes("day pass") ? "Day Pass"
         : null);
+      const tag = derivedTag || data.default_tag || null;
 
       const { data: existing } = await supabaseAdmin
         .from("people")
