@@ -27,10 +27,10 @@ export const importPeople = createServerFn({ method: "POST" })
       const name = row.name.trim();
 
       const ticketLower = row.ticket_type?.toLowerCase() || "";
+      // Only architects and explorers get a visible tag
       const derivedTag = row.tag ||
         (ticketLower.includes("architect") ? "Arquiteto"
         : ticketLower.includes("explorer") ? "Explorer"
-        : ticketLower.includes("day pass") ? "Day Pass"
         : null);
       const tag = derivedTag || data.default_tag || null;
 
