@@ -20,6 +20,7 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const q = `%${data.query}%`;
 
+    // 1. People registered specifically for this event
     const { data: registeredPeople } = await supabaseAdmin
       .from("registrations")
       .select("person_id, people!inner(id, name, email, tag)")
@@ -31,9 +32,27 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
       ...(r.people as unknown as { id: string; name: string; email: string; tag: string | null }),
       registered: true,
     }));
+    const registeredIds = new Set(registered.map((r) => r.id));
 
+    // 2. Architects and Explorers have full access to all events
     if (registered.length < 10) {
-      const registeredIds = registered.map((r) => r.id);
+      const { data: fullAccessPeople } = await supabaseAdmin
+        .from("people")
+        .select("id, name, email, tag")
+        .or(`tag.eq.Arquiteto,tag.eq.Explorer`)
+        .or(`name.ilike.${q},email.ilike.${q}`)
+        .limit(10 - registered.length);
+
+      for (const p of fullAccessPeople || []) {
+        if (!registeredIds.has(p.id)) {
+          registered.push({ ...p, registered: true });
+          registeredIds.add(p.id);
+        }
+      }
+    }
+
+    // 3. Fill remaining slots with other people (not registered)
+    if (registered.length < 10) {
       const { data: others } = await supabaseAdmin
         .from("people")
         .select("id, name, email, tag")
@@ -41,7 +60,7 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
         .limit(10 - registered.length);
 
       const additional = (others || [])
-        .filter((p) => !registeredIds.includes(p.id))
+        .filter((p) => !registeredIds.has(p.id))
         .map((p) => ({ ...p, registered: false }));
 
       return [...registered, ...additional];

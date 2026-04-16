@@ -33,10 +33,11 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" }).handler
   if (error) throw new Error(error.message);
   if (!events || events.length === 0) return [];
 
+  // Count distinct people with full access (Arquiteto or Explorer tag)
   const { count: fullAccessCount } = await supabaseAdmin
-    .from("registrations")
-    .select("person_id", { count: "exact", head: true })
-    .or("ticket_type.ilike.%architect%,ticket_type.ilike.%explorer%");
+    .from("people")
+    .select("id", { count: "exact", head: true })
+    .or("tag.eq.Arquiteto,tag.eq.Explorer");
 
   const results = await Promise.all(
     events.map(async (event) => {
@@ -90,9 +91,9 @@ export const getNextUpcomingEvents = createServerFn({ method: "POST" })
     if (!events || events.length === 0) return [];
 
     const { count: fullAccessCount } = await supabaseAdmin
-      .from("registrations")
-      .select("person_id", { count: "exact", head: true })
-      .or("ticket_type.ilike.%architect%,ticket_type.ilike.%explorer%");
+      .from("people")
+      .select("id", { count: "exact", head: true })
+      .or("tag.eq.Arquiteto,tag.eq.Explorer");
 
     const results = await Promise.all(
       events.map(async (event) => {
@@ -136,9 +137,9 @@ export const getEventRegistrationCount = createServerFn({ method: "POST" })
         .select("id", { count: "exact", head: true })
         .eq("event_id", data.event_id),
       supabaseAdmin
-        .from("registrations")
-        .select("person_id", { count: "exact", head: true })
-        .or("ticket_type.ilike.%architect%,ticket_type.ilike.%explorer%"),
+        .from("people")
+        .select("id", { count: "exact", head: true })
+        .or("tag.eq.Arquiteto,tag.eq.Explorer"),
     ]);
     return (eventSpecific.count || 0) + (fullAccess.count || 0);
   });
