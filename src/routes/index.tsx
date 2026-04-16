@@ -14,6 +14,12 @@ import {
   ChevronRight,
   ArrowLeft,
   Users,
+  AlertTriangle,
+  ShieldCheck,
+  Trash2,
+  Pencil,
+  X,
+  Check,
 } from "lucide-react";
 import {
   searchPeople,
@@ -22,6 +28,9 @@ import {
   getEventCheckins,
   getTodayCheckins,
   getTodayCount,
+  deleteCheckin,
+  updateCheckin,
+  getPersonRegistrations,
 } from "@/server/checkin.functions";
 import { getTodayEvents, getEventCheckinCount, getEventRegistrationCount } from "@/server/event.functions";
 
@@ -37,6 +46,78 @@ export const Route = createFileRoute("/")({
 
 type Person = { id: string; name: string; email: string; tag: string | null; registered?: boolean };
 type Event = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
+type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; event_id: string | null };
+
+type AccessWarning = {
+  type: "ok" | "warning" | "danger";
+  message: string;
+};
+
+function checkAccess(
+  registrations: Registration[],
+  selectedEvent: Event | null,
+  eventDate?: string,
+): AccessWarning {
+  if (!registrations.length) {
+    return { type: "danger", message: "Sem inscrição encontrada" };
+  }
+
+  const ticketTypes = registrations.map((r) => r.ticket_type.toLowerCase());
+  
+  // Architect and Explorer have full access
+  const hasFullAccess = ticketTypes.some(
+    (t) => t.includes("architect") || t.includes("explorer")
+  );
+  if (hasFullAccess) {
+    const accessType = ticketTypes.find((t) => t.includes("architect"))
+      ? "Architect"
+      : "Explorer";
+    return { type: "ok", message: `Acesso total (${accessType})` };
+  }
+
+  // Day Pass - check date
+  const dayPasses = registrations.filter((r) =>
+    r.ticket_type.toLowerCase().includes("day pass") || r.ticket_type.toLowerCase().includes("day-pass")
+  );
+  if (dayPasses.length > 0) {
+    const today = eventDate || new Date().toISOString().split("T")[0];
+    const hasValidDayPass = dayPasses.some((dp) => dp.day_pass_date === today);
+    if (hasValidDayPass) {
+      return { type: "ok", message: "Day Pass válido para hoje" };
+    }
+    const dates = dayPasses.map((dp) => dp.day_pass_date).filter(Boolean);
+    if (dates.length > 0) {
+      return {
+        type: "warning",
+        message: `Day Pass para ${dates.join(", ")} — não é válido para hoje`,
+      };
+    }
+    return { type: "warning", message: "Day Pass sem data definida" };
+  }
+
+  // Event-specific ticket
+  if (selectedEvent && selectedEvent.id) {
+    const hasEventReg = registrations.some(
+      (r) => r.event_id === selectedEvent.id
+    );
+    if (hasEventReg) {
+      return { type: "ok", message: "Inscrito neste evento" };
+    }
+    // Check by name match
+    const hasNameMatch = registrations.some(
+      (r) => r.event_name.toLowerCase() === selectedEvent.name.toLowerCase()
+    );
+    if (hasNameMatch) {
+      return { type: "ok", message: "Inscrito neste evento" };
+    }
+    return {
+      type: "warning",
+      message: `Não inscrito neste evento. Ingressos: ${registrations.map((r) => r.ticket_type).join(", ")}`,
+    };
+  }
+
+  return { type: "ok", message: `Ingresso: ${registrations.map((r) => r.ticket_type).join(", ")}` };
+}
 
 function CheckinPage() {
   const [query, setQuery] = useState("");
@@ -57,6 +138,16 @@ function CheckinPage() {
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
   const [eventRegCount, setEventRegCount] = useState(0);
   const [eventsLoaded, setEventsLoaded] = useState(false);
+
+  // Access warning
+  const [accessWarning, setAccessWarning] = useState<AccessWarning | null>(null);
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+
+  // Edit state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editPeriod, setEditPeriod] = useState("");
+  const [editAccessType, setEditAccessType] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadToday = useCallback(async () => {
     const [checkins, count, todayEvents] = await Promise.all([
@@ -80,6 +171,7 @@ function CheckinPage() {
     setResults([]);
     setSelected(null);
     setSuccess(false);
+    setAccessWarning(null);
     const [checkins, checkinCount, regCount] = await Promise.all([
       getEventCheckins({ data: { event_id: event.id } }),
       getEventCheckinCount({ data: { event_id: event.id } }),
@@ -94,6 +186,7 @@ function CheckinPage() {
     setQuery(value);
     setSelected(null);
     setSuccess(false);
+    setAccessWarning(null);
     if (value.length < 2) {
       setResults([]);
       return;
@@ -108,6 +201,22 @@ function CheckinPage() {
       setResults([]);
     } finally {
       setSearching(false);
+    }
+  };
+
+  const handleSelectPerson = async (person: Person) => {
+    setSelected(person);
+    setQuery(person.name);
+    setResults([]);
+
+    // Fetch registrations and check access
+    try {
+      const regs = await getPersonRegistrations({ data: { person_id: person.id } });
+      setRegistrations(regs);
+      const warning = checkAccess(regs, selectedEvent, selectedEvent?.date);
+      setAccessWarning(warning);
+    } catch {
+      setAccessWarning({ type: "warning", message: "Não foi possível verificar inscrições" });
     }
   };
 
@@ -127,12 +236,12 @@ function CheckinPage() {
       setSuccess(true);
       setQuery("");
       setResults([]);
+      setAccessWarning(null);
       setTimeout(() => {
         setSelected(null);
         setSuccess(false);
       }, 2000);
 
-      // Refresh counts
       if (selectedEvent) {
         const [checkins, count] = await Promise.all([
           getEventCheckins({ data: { event_id: selectedEvent.id } }),
@@ -149,6 +258,48 @@ function CheckinPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDelete = async (checkinId: string) => {
+    try {
+      await deleteCheckin({ data: { checkin_id: checkinId } });
+      // Refresh
+      if (selectedEvent && selectedEvent.id) {
+        const [checkins, count] = await Promise.all([
+          getEventCheckins({ data: { event_id: selectedEvent.id } }),
+          getEventCheckinCount({ data: { event_id: selectedEvent.id } }),
+        ]);
+        setEventCheckins(checkins);
+        setEventCheckinCount(count);
+      }
+      const [allCheckins, allCount] = await Promise.all([getTodayCheckins(), getTodayCount()]);
+      setTodayCheckins(allCheckins);
+      setTodayCount(allCount);
+    } catch (err) {
+      console.error(err);
+    }
+    setDeletingId(null);
+  };
+
+  const handleUpdate = async (checkinId: string) => {
+    try {
+      await updateCheckin({
+        data: {
+          checkin_id: checkinId,
+          period: editPeriod || undefined,
+          access_type: editAccessType || undefined,
+        },
+      });
+      if (selectedEvent && selectedEvent.id) {
+        const checkins = await getEventCheckins({ data: { event_id: selectedEvent.id } });
+        setEventCheckins(checkins);
+      }
+      const allCheckins = await getTodayCheckins();
+      setTodayCheckins(allCheckins);
+    } catch (err) {
+      console.error(err);
+    }
+    setEditingId(null);
   };
 
   const accessTypes = ["IP Village", "Day Pass", "Explorers", "Workshop/Café"];
@@ -170,7 +321,6 @@ function CheckinPage() {
             </div>
           </div>
 
-          {/* Today's events */}
           {events.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
@@ -214,7 +364,6 @@ function CheckinPage() {
             </div>
           )}
 
-          {/* Quick check-in without event */}
           <button
             onClick={() => setSelectedEvent({ id: "", name: "", date: "", time: null, organizer: null, location: null })}
             className="w-full glass-subtle rounded-2xl p-4 text-center text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 transition-all"
@@ -222,7 +371,6 @@ function CheckinPage() {
             Check-in avulso (sem evento específico)
           </button>
 
-          {/* Today's feed */}
           {todayCheckins.length > 0 && (
             <div>
               <h3 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-widest">
@@ -261,8 +409,8 @@ function CheckinPage() {
     );
   }
 
-  // Check-in screen (with or without event)
   const isEventMode = selectedEvent && selectedEvent.id !== "";
+  const currentCheckins = isEventMode ? eventCheckins : todayCheckins;
 
   return (
     <Layout>
@@ -279,6 +427,7 @@ function CheckinPage() {
                 setQuery("");
                 setResults([]);
                 setSuccess(false);
+                setAccessWarning(null);
               }}
               className="rounded-xl"
             >
@@ -340,11 +489,7 @@ function CheckinPage() {
               {results.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => {
-                    setSelected(p);
-                    setQuery(p.name);
-                    setResults([]);
-                  }}
+                  onClick={() => handleSelectPerson(p)}
                   className="w-full text-left px-5 py-4 hover:bg-primary/5 transition-all duration-200 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
@@ -388,6 +533,26 @@ function CheckinPage() {
                   )}
                 </div>
               </div>
+
+              {/* Access Warning */}
+              {accessWarning && (
+                <div
+                  className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium ${
+                    accessWarning.type === "ok"
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : accessWarning.type === "warning"
+                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        : "bg-red-500/10 text-red-400 border border-red-500/20"
+                  }`}
+                >
+                  {accessWarning.type === "ok" ? (
+                    <ShieldCheck className="w-5 h-5 shrink-0" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 shrink-0" />
+                  )}
+                  {accessWarning.message}
+                </div>
+              )}
 
               {/* Period */}
               <div className="flex items-center gap-3">
@@ -448,36 +613,138 @@ function CheckinPage() {
           )}
         </div>
 
-        {/* Event check-ins feed */}
+        {/* Check-ins feed with edit/delete */}
         <div>
           <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest">
             {isEventMode ? "Check-ins deste evento" : "Check-ins de hoje"}
           </h3>
           <div className="space-y-2">
-            {(isEventMode ? eventCheckins : todayCheckins).length === 0 && (
+            {currentCheckins.length === 0 && (
               <div className="glass-subtle rounded-2xl py-8 text-center">
                 <p className="text-muted-foreground text-sm">Nenhum check-in registrado</p>
               </div>
             )}
-            {(isEventMode ? eventCheckins : todayCheckins).map((c: any) => (
+            {currentCheckins.map((c: any) => (
               <div
                 key={c.id}
-                className="glass-subtle rounded-2xl flex items-center justify-between px-5 py-3.5"
+                className="glass-subtle rounded-2xl px-5 py-3.5"
               >
-                <div className="flex items-center gap-3">
-                  <span className="font-medium text-sm">{c.people?.name}</span>
-                  {c.people?.tag && (
-                    <Badge variant="secondary" className="text-xs rounded-lg">{c.people.tag}</Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Badge variant="outline" className="text-xs rounded-lg border-border/40">{c.access_type}</Badge>
-                  <span>{c.period}</span>
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(c.checked_in_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </div>
+                {editingId === c.id ? (
+                  // Edit mode
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-sm">{c.people?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs text-muted-foreground w-16">Período</span>
+                      {(["Manhã", "Tarde"] as const).map((p) => (
+                        <Button
+                          key={p}
+                          variant={editPeriod === p ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setEditPeriod(p)}
+                          className="rounded-lg text-xs h-7 px-3"
+                        >
+                          {p}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="text-xs text-muted-foreground w-16">Acesso</span>
+                      {accessTypes.map((t) => (
+                        <Button
+                          key={t}
+                          variant={editAccessType === t ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setEditAccessType(t)}
+                          className="rounded-lg text-xs h-7 px-3"
+                        >
+                          {t}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingId(null)}
+                        className="rounded-lg h-8"
+                      >
+                        <X className="w-3.5 h-3.5 mr-1" />
+                        Cancelar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdate(c.id)}
+                        className="rounded-lg h-8"
+                      >
+                        <Check className="w-3.5 h-3.5 mr-1" />
+                        Salvar
+                      </Button>
+                    </div>
+                  </div>
+                ) : deletingId === c.id ? (
+                  // Delete confirmation
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-destructive font-medium">
+                      Desfazer check-in de {c.people?.name}?
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletingId(null)}
+                        className="rounded-lg h-8"
+                      >
+                        Não
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(c.id)}
+                        className="rounded-lg h-8"
+                      >
+                        Sim, desfazer
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  // Normal view
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-sm">{c.people?.name}</span>
+                      {c.people?.tag && (
+                        <Badge variant="secondary" className="text-xs rounded-lg">{c.people.tag}</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Badge variant="outline" className="text-xs rounded-lg border-border/40">{c.access_type}</Badge>
+                      <span>{c.period}</span>
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {new Date(c.checked_in_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setEditingId(c.id);
+                          setEditPeriod(c.period);
+                          setEditAccessType(c.access_type);
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+                        title="Editar"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(c.id)}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+                        title="Desfazer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
