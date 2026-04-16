@@ -19,7 +19,9 @@ export const Route = createFileRoute("/hooks/telegram-daily-report")({
         }
 
         try {
-          const result = await sendDailyReport();
+          const body = await request.json() as { period?: string };
+          const period = body.period === "afternoon" ? "afternoon" : "morning";
+          const result = await sendDailyReport({ data: { period } });
           return new Response(JSON.stringify(result), {
             headers: { "Content-Type": "application/json" },
           });
