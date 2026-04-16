@@ -56,7 +56,7 @@ type AccessWarning = {
 
 function checkAccess(
   registrations: Registration[],
-  selectedEvent: Event | null,
+  selectedEvent: EventBase | null,
   eventDate?: string,
 ): AccessWarning {
   if (!registrations.length) {
@@ -133,8 +133,8 @@ function CheckinPage() {
   const [searching, setSearching] = useState(false);
 
   // Event-centric state
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [events, setEvents] = useState<EventWithStats[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
   const [eventCheckins, setEventCheckins] = useState<any[]>([]);
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
   const [eventRegCount, setEventRegCount] = useState(0);
@@ -166,7 +166,7 @@ function CheckinPage() {
     loadToday();
   });
 
-  const selectEvent = async (event: Event) => {
+  const selectEvent = async (event: EventBase) => {
     setSelectedEvent(event);
     setQuery("");
     setResults([]);
