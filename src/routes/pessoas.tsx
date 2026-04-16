@@ -347,17 +347,22 @@ function PessoasPage() {
                 {/* Registrations */}
                 {selectedPerson.registrations.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">Inscrições</p>
-                    <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-muted-foreground">Inscrições</p>
+                      <Badge className="bg-primary/10 text-primary border-0 rounded-lg text-xs">
+                        {selectedPerson.registrations.length} evento{selectedPerson.registrations.length !== 1 ? "s" : ""}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
                       {selectedPerson.registrations.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/20">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Ticket className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-sm truncate">{r.event_name}</span>
+                        <div key={r.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-muted/20 group/reg">
+                          <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                            <CalendarDays className="w-4 h-4 text-primary/70" />
                           </div>
-                          <Badge variant="outline" className="text-[10px] rounded-lg border-border/40 shrink-0 ml-2">
-                            {r.ticket_type}
-                          </Badge>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate leading-tight">{r.event_name}</p>
+                            <p className="text-xs text-muted-foreground/70 mt-0.5">{r.ticket_type} · via {r.source}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
