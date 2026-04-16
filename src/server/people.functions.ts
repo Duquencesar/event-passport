@@ -1,18 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export const listPeople = createServerFn({ method: "GET" }).handler(async () => {
-  const { data, error } = await db
-    .from("people")
-    .select("id, name, email, tag, created_at")
-    .order("name", { ascending: true })
+export const listPeople = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { data, error } = await db
+      .from("people")
+      .select("id, name, email, tag, created_at")
+      .order("name", { ascending: true })
       .limit(2000);
-  if (error) throw new Error(error.message);
-  return data || [];
-});
+    if (error) throw new Error(error.message);
+    return data || [];
+  });
 
-export const getPeopleWithRegistrations = createServerFn({ method: "GET" }).handler(
-  async () => {
+export const getPeopleWithRegistrations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
     const { data, error } = await db
       .from("people")
       .select("id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at, day_pass_date)")
@@ -20,10 +24,10 @@ export const getPeopleWithRegistrations = createServerFn({ method: "GET" }).hand
       .limit(2000);
     if (error) throw new Error(error.message);
     return data || [];
-  },
-);
+  });
 
 export const setDayPassDate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { registrationId: string; date: string }) => input)
   .handler(async ({ data }) => {
     const { error } = await db
@@ -34,27 +38,29 @@ export const setDayPassDate = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-export const getPeopleCount = createServerFn({ method: "GET" }).handler(async () => {
-  const { count: total, error } = await db
-    .from("people")
-    .select("id", { count: "exact", head: true });
-  if (error) throw new Error(error.message);
+export const getPeopleCount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { count: total, error } = await db
+      .from("people")
+      .select("id", { count: "exact", head: true });
+    if (error) throw new Error(error.message);
 
-  // Get distinct people who checked in by selecting unique person_ids
-  const { data: checkinPersons } = await db
-    .from("checkins")
-    .select("person_id")
-    .limit(10000);
+    const { data: checkinPersons } = await db
+      .from("checkins")
+      .select("person_id")
+      .limit(10000);
 
-  const distinctCheckedIn = new Set((checkinPersons || []).map((c) => c.person_id)).size;
+    const distinctCheckedIn = new Set((checkinPersons || []).map((c) => c.person_id)).size;
 
-  return {
-    total: total || 0,
-    checkedIn: distinctCheckedIn,
-  };
-});
+    return {
+      total: total || 0,
+      checkedIn: distinctCheckedIn,
+    };
+  });
 
 export const getPersonCheckinHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { person_id: string }) => input)
   .handler(async ({ data }) => {
     const { data: checkins, error } = await db
@@ -68,6 +74,7 @@ export const getPersonCheckinHistory = createServerFn({ method: "POST" })
   });
 
 export const updatePersonTag = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { person_id: string; tag: string }) => input)
   .handler(async ({ data }) => {
     const { error } = await db
