@@ -35,11 +35,23 @@ export const setDayPassDate = createServerFn({ method: "POST" })
   });
 
 export const getPeopleCount = createServerFn({ method: "GET" }).handler(async () => {
-  const { count, error } = await db
+  const { count: total, error } = await db
     .from("people")
     .select("id", { count: "exact", head: true });
   if (error) throw new Error(error.message);
-  return count || 0;
+
+  // Get distinct people who checked in by selecting unique person_ids
+  const { data: checkinPersons } = await db
+    .from("checkins")
+    .select("person_id")
+    .limit(10000);
+
+  const distinctCheckedIn = new Set((checkinPersons || []).map((c) => c.person_id)).size;
+
+  return {
+    total: total || 0,
+    checkedIn: distinctCheckedIn,
+  };
 });
 
 export const getPersonCheckinHistory = createServerFn({ method: "POST" })
