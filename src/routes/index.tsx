@@ -323,7 +323,11 @@ function CheckinPage() {
           </div>
 
           {events.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                Eventos de hoje — {events.length} evento{events.length !== 1 ? "s" : ""}
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2">
               {events.map((event) => {
                 const pct = event.registration_count > 0
                   ? Math.min(100, Math.round((event.checkin_count / event.registration_count) * 100))
