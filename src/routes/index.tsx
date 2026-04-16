@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatBrasiliaTime, getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 import {
   Search,
   UserCheck,
@@ -64,8 +65,7 @@ function checkAccess(
   }
 
   const ticketTypes = registrations.map((r) => r.ticket_type.toLowerCase());
-  
-  // Architect and Explorer have full access
+
   const hasFullAccess = ticketTypes.some(
     (t) => t.includes("architect") || t.includes("explorer")
   );
@@ -76,12 +76,11 @@ function checkAccess(
     return { type: "ok", message: `Acesso total (${accessType})` };
   }
 
-  // Day Pass - check date
   const dayPasses = registrations.filter((r) =>
     r.ticket_type.toLowerCase().includes("day pass") || r.ticket_type.toLowerCase().includes("day-pass")
   );
   if (dayPasses.length > 0) {
-    const today = eventDate || new Date().toISOString().split("T")[0];
+    const today = eventDate || getCurrentBrasiliaDateKeySync();
     const hasValidDayPass = dayPasses.some((dp) => dp.day_pass_date === today);
     if (hasValidDayPass) {
       return { type: "ok", message: "Day Pass válido para hoje" };
@@ -96,7 +95,6 @@ function checkAccess(
     return { type: "warning", message: "Day Pass sem data definida" };
   }
 
-  // Event-specific ticket
   if (selectedEvent && selectedEvent.id) {
     const hasEventReg = registrations.some(
       (r) => r.event_id === selectedEvent.id
@@ -104,7 +102,6 @@ function checkAccess(
     if (hasEventReg) {
       return { type: "ok", message: "Inscrito neste evento" };
     }
-    // Check by name match
     const hasNameMatch = registrations.some(
       (r) => r.event_name.toLowerCase() === selectedEvent.name.toLowerCase()
     );

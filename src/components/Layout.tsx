@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Users, Upload, BarChart3, ClipboardList, CalendarDays, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { formatBrasiliaLongDate } from "@/lib/brasilia-time";
 import { useEffect, useState } from "react";
 
 const navItems = [
@@ -18,13 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [today, setToday] = useState("");
 
   useEffect(() => {
-    setToday(
-      new Date().toLocaleDateString("pt-BR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      })
-    );
+    setToday(formatBrasiliaLongDate(new Date()));
   }, []);
 
   useEffect(() => {
