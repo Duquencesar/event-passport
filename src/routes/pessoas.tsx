@@ -272,27 +272,22 @@ function PessoasPage() {
                     </div>
                   </div>
                   {p.registrations.length > 0 && (
-                    <div className="flex flex-col gap-1.5">
-                      {p.registrations.map((r) => (
-                        <div key={r.id} className="flex items-center gap-1.5 flex-wrap">
-                          <Badge variant="outline" className="text-[10px] rounded-lg border-border/40 px-2 py-0.5">
-                            <Ticket className="w-2.5 h-2.5 mr-1 shrink-0" />
-                            <span className="truncate">{r.event_name}</span>
-                          </Badge>
-                          {p.tag === "Day Pass" && (
-                            <div className="flex items-center gap-1">
-                              <CalendarDays className="w-3 h-3 text-emerald-400" />
-                              {r.day_pass_date ? (
-                                <span className="text-[10px] text-emerald-400 font-medium">
-                                  {new Date(r.day_pass_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                                </span>
-                              ) : (
-                                <span className="text-[10px] text-muted-foreground/60">sem data</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                    <div className="flex flex-wrap gap-1">
+                      {p.registrations.slice(0, 3).map((r) => (
+                        <span
+                          key={r.id}
+                          className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-white/[0.04] border border-border/20 text-muted-foreground max-w-[140px]"
+                          title={`${r.event_name} — ${r.ticket_type}`}
+                        >
+                          <CalendarDays className="w-2.5 h-2.5 shrink-0 text-primary/60" />
+                          <span className="truncate">{r.event_name.replace(/\s*[@|]\s*.*/g, '').replace(/\s*-\s*Guests.*/, '')}</span>
+                        </span>
                       ))}
+                      {p.registrations.length > 3 && (
+                        <span className="inline-flex items-center text-[10px] px-2 py-0.5 rounded-md bg-primary/8 text-primary/70 font-medium">
+                          +{p.registrations.length - 3}
+                        </span>
+                      )}
                     </div>
                   )}
                 </button>
