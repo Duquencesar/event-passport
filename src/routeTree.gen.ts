@@ -16,7 +16,6 @@ import { Route as EventosRouteImport } from './routes/eventos'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksTelegramPollRouteImport } from './routes/hooks/telegram-poll'
-import { Route as ApiCreateStaffRouteImport } from './routes/api/create-staff'
 
 const PessoasRoute = PessoasRouteImport.update({
   id: '/pessoas',
@@ -53,11 +52,6 @@ const HooksTelegramPollRoute = HooksTelegramPollRouteImport.update({
   path: '/hooks/telegram-poll',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiCreateStaffRoute = ApiCreateStaffRouteImport.update({
-  id: '/api/create-staff',
-  path: '/api/create-staff',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,7 +60,6 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
-  '/api/create-staff': typeof ApiCreateStaffRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
 export interface FileRoutesByTo {
@@ -76,7 +69,6 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
-  '/api/create-staff': typeof ApiCreateStaffRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
 export interface FileRoutesById {
@@ -87,7 +79,6 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
-  '/api/create-staff': typeof ApiCreateStaffRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
 export interface FileRouteTypes {
@@ -99,7 +90,6 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
-    | '/api/create-staff'
     | '/hooks/telegram-poll'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -109,7 +99,6 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
-    | '/api/create-staff'
     | '/hooks/telegram-poll'
   id:
     | '__root__'
@@ -119,7 +108,6 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
-    | '/api/create-staff'
     | '/hooks/telegram-poll'
   fileRoutesById: FileRoutesById
 }
@@ -130,7 +118,6 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   PessoasRoute: typeof PessoasRoute
-  ApiCreateStaffRoute: typeof ApiCreateStaffRoute
   HooksTelegramPollRoute: typeof HooksTelegramPollRoute
 }
 
@@ -185,13 +172,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HooksTelegramPollRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/create-staff': {
-      id: '/api/create-staff'
-      path: '/api/create-staff'
-      fullPath: '/api/create-staff'
-      preLoaderRoute: typeof ApiCreateStaffRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -202,7 +182,6 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   PessoasRoute: PessoasRoute,
-  ApiCreateStaffRoute: ApiCreateStaffRoute,
   HooksTelegramPollRoute: HooksTelegramPollRoute,
 }
 export const routeTree = rootRouteImport
