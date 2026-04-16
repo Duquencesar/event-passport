@@ -32,7 +32,7 @@ import {
   updateCheckin,
   getPersonRegistrations,
 } from "@/server/checkin.functions";
-import { getTodayEvents, getEventCheckinCount, getEventRegistrationCount } from "@/server/event.functions";
+import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount } from "@/server/event.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,7 +45,8 @@ export const Route = createFileRoute("/")({
 });
 
 type Person = { id: string; name: string; email: string; tag: string | null; registered?: boolean };
-type Event = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
+type EventBase = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
+type EventWithStats = EventBase & { registration_count: number; checkin_count: number };
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; event_id: string | null };
 
 type AccessWarning = {
@@ -55,7 +56,7 @@ type AccessWarning = {
 
 function checkAccess(
   registrations: Registration[],
-  selectedEvent: Event | null,
+  selectedEvent: EventBase | null,
   eventDate?: string,
 ): AccessWarning {
   if (!registrations.length) {
@@ -132,8 +133,8 @@ function CheckinPage() {
   const [searching, setSearching] = useState(false);
 
   // Event-centric state
-  const [events, setEvents] = useState<Event[]>([]);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [events, setEvents] = useState<EventWithStats[]>([]);
+  const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
   const [eventCheckins, setEventCheckins] = useState<any[]>([]);
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
   const [eventRegCount, setEventRegCount] = useState(0);
@@ -153,7 +154,7 @@ function CheckinPage() {
     const [checkins, count, todayEvents] = await Promise.all([
       getTodayCheckins(),
       getTodayCount(),
-      getTodayEvents(),
+      getTodayEventsWithStats(),
     ]);
     setTodayCheckins(checkins);
     setTodayCount(count);
@@ -165,7 +166,7 @@ function CheckinPage() {
     loadToday();
   });
 
-  const selectEvent = async (event: Event) => {
+  const selectEvent = async (event: EventBase) => {
     setSelectedEvent(event);
     setQuery("");
     setResults([]);
@@ -324,20 +325,28 @@ function CheckinPage() {
           {events.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                Eventos de hoje
+                Eventos de hoje — {events.length} evento{events.length !== 1 ? "s" : ""}
               </h3>
-              {events.map((event) => (
-                <button
-                  key={event.id}
-                  onClick={() => selectEvent(event)}
-                  className="w-full glass rounded-2xl p-5 text-left hover:bg-primary/5 transition-all duration-200 group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1.5">
-                      <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                        {event.name}
-                      </h4>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="grid gap-3 sm:grid-cols-2">
+              {events.map((event) => {
+                const pct = event.registration_count > 0
+                  ? Math.min(100, Math.round((event.checkin_count / event.registration_count) * 100))
+                  : 0;
+                return (
+                  <button
+                    key={event.id}
+                    onClick={() => selectEvent(event)}
+                    className="w-full glass rounded-2xl p-5 text-left hover:bg-primary/5 transition-all duration-200 group"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <h4 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                          {event.name}
+                        </h4>
+                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5" />
+                      </div>
+
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         {event.time && (
                           <span className="flex items-center gap-1.5">
                             <Clock className="w-3.5 h-3.5" />
@@ -350,12 +359,45 @@ function CheckinPage() {
                             {event.location}
                           </span>
                         )}
+                        {event.organizer && (
+                          <span className="flex items-center gap-1.5 truncate">
+                            <Users className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{event.organizer}</span>
+                          </span>
+                        )}
                       </div>
+
+                      {/* Stats row */}
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <Users className="w-3 h-3" />
+                            {event.registration_count} inscritos
+                          </span>
+                          <span className="flex items-center gap-1 text-primary font-medium">
+                            <UserCheck className="w-3 h-3" />
+                            {event.checkin_count} check-ins
+                          </span>
+                        </div>
+                        {event.registration_count > 0 && (
+                          <span className="text-muted-foreground font-medium">{pct}%</span>
+                        )}
+                      </div>
+
+                      {/* Progress bar */}
+                      {event.registration_count > 0 && (
+                        <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-primary/70 transition-all duration-500"
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
-                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
+              </div>
             </div>
           ) : (
             <div className="glass rounded-3xl py-16 text-center">
