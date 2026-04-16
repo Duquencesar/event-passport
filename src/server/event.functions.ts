@@ -88,12 +88,17 @@ export const getEventCheckinCount = createServerFn({ method: "POST" })
 export const getEventRegistrationCount = createServerFn({ method: "POST" })
   .inputValidator((input: { event_id: string }) => input)
   .handler(async ({ data }) => {
-    const { count, error } = await supabaseAdmin
-      .from("registrations")
-      .select("id", { count: "exact", head: true })
-      .eq("event_id", data.event_id);
-    if (error) throw new Error(error.message);
-    return count || 0;
+    const [eventSpecific, fullAccess] = await Promise.all([
+      supabaseAdmin
+        .from("registrations")
+        .select("id", { count: "exact", head: true })
+        .eq("event_id", data.event_id),
+      supabaseAdmin
+        .from("registrations")
+        .select("person_id", { count: "exact", head: true })
+        .or("ticket_type.ilike.%architect%,ticket_type.ilike.%explorer%"),
+    ]);
+    return (eventSpecific.count || 0) + (fullAccess.count || 0);
   });
 
 export const createEvent = createServerFn({ method: "POST" })
