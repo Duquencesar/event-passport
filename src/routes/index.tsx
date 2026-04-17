@@ -52,7 +52,7 @@ export const Route = createFileRoute("/")({
 type Person = { id: string; name: string; email: string; tag: string | null; registered?: boolean };
 type EventBase = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
 type EventWithStats = EventBase & { registration_count: number; checkin_count: number };
-type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; event_id: string | null };
+type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null };
 
 type AccessWarning = {
   type: "ok" | "warning" | "danger";
