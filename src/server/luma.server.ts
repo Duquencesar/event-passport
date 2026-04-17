@@ -200,14 +200,24 @@ export type SyncEventResult = {
 };
 
 export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventResult> {
-  // 1. Garantir evento no banco
+  // 1. Garantir evento no banco (prioriza match por luma_event_id)
   let internalEventId: string | null = null;
-  const { data: existingEvent } = await supabaseAdmin
+  const { data: byLumaId } = await supabaseAdmin
     .from("events")
     .select("id")
-    .eq("name", input.eventName)
-    .eq("date", input.eventDate)
+    .eq("luma_event_id", input.lumaEventId)
     .maybeSingle();
+
+  const existingEvent =
+    byLumaId ||
+    (
+      await supabaseAdmin
+        .from("events")
+        .select("id")
+        .eq("name", input.eventName)
+        .eq("date", input.eventDate)
+        .maybeSingle()
+    ).data;
 
   if (existingEvent) {
     internalEventId = existingEvent.id;
@@ -218,6 +228,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         location: input.eventLocation,
         organizer: input.eventOrganizer,
         url: input.eventUrl,
+        luma_event_id: input.lumaEventId,
       })
       .eq("id", internalEventId);
   } else {
@@ -230,6 +241,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         location: input.eventLocation,
         organizer: input.eventOrganizer,
         url: input.eventUrl,
+        luma_event_id: input.lumaEventId,
       })
       .select("id")
       .single();
