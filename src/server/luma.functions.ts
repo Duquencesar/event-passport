@@ -227,6 +227,7 @@ export const lumaSyncEvent = createServerFn({ method: "POST" })
       }
 
       // Evitar registrations duplicadas para o mesmo evento
+      if (!internalEventId) continue;
       const { data: existingReg } = await supabaseAdmin
         .from("registrations")
         .select("id")
