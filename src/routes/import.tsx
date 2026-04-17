@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { importPeople } from "@/server/import.functions";
 import { getUpcomingEvents } from "@/server/event.functions";
-import { lumaListEvents, lumaSyncEvent } from "@/server/luma.functions";
+import { lumaListEvents, lumaSyncEvent, lumaSyncAll } from "@/server/luma.functions";
 
 export const Route = createFileRoute("/import")({
   head: () => ({
@@ -309,6 +309,28 @@ function LumaSyncTab() {
   const [lumaEvents, setLumaEvents] = useState<LumaEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync completo (usa secrets do servidor)
+  const [autoSyncing, setAutoSyncing] = useState(false);
+  const [autoResult, setAutoResult] = useState<{
+    events_processed: number;
+    totals: { guests: number; created: number; updated: number; registrations: number; checkins: number };
+  } | null>(null);
+  const [autoError, setAutoError] = useState<string | null>(null);
+
+  const handleAutoSync = async () => {
+    setAutoSyncing(true);
+    setAutoError(null);
+    setAutoResult(null);
+    try {
+      const res = await lumaSyncAll({ data: {} });
+      setAutoResult({ events_processed: (res as any).events_processed, totals: (res as any).totals });
+    } catch (err: any) {
+      setAutoError(err?.message || "Erro ao sincronizar com o Luma.");
+    } finally {
+      setAutoSyncing(false);
+    }
+  };
+
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [defaultTag, setDefaultTag] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -398,17 +420,57 @@ function LumaSyncTab() {
 
   return (
     <div className="space-y-8">
-      {/* Info banner */}
-      <div className="glass rounded-2xl px-5 py-4 flex items-start gap-3 border border-primary/15">
-        <Zap className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+      {/* Sync automático (usa secrets do servidor) */}
+      <div className="glass rounded-3xl p-6 space-y-4 border border-primary/20">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+            <Zap className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 space-y-1">
+            <h3 className="text-base font-semibold">Sincronização automática</h3>
+            <p className="text-sm text-muted-foreground">
+              Importa <strong>todos os eventos futuros</strong> do calendário do Ipê Village + inscritos + check-ins
+              feitos no app do Luma. Roda automaticamente toda hora; clique abaixo para forçar agora.
+            </p>
+          </div>
+        </div>
+        <Button
+          onClick={handleAutoSync}
+          disabled={autoSyncing}
+          className="w-full h-12 font-bold rounded-2xl shadow-lg shadow-primary/20"
+        >
+          <RefreshCw className={`w-5 h-5 mr-2 ${autoSyncing ? "animate-spin" : ""}`} />
+          {autoSyncing ? "Sincronizando…" : "Sincronizar tudo agora"}
+        </Button>
+        {autoError && (
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{autoError}</span>
+          </div>
+        )}
+        {autoResult && (
+          <div className="glass-subtle rounded-2xl px-4 py-3 space-y-2">
+            <p className="text-sm font-semibold text-primary flex items-center gap-2">
+              <CheckCircle className="w-4 h-4" /> {autoResult.events_processed} eventos sincronizados
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs text-muted-foreground">
+              <span><strong className="text-foreground">{autoResult.totals.guests}</strong> participantes</span>
+              <span><strong className="text-emerald-400">{autoResult.totals.created}</strong> novos</span>
+              <span><strong className="text-primary">{autoResult.totals.updated}</strong> atualizados</span>
+              <span><strong className="text-secondary">{autoResult.totals.registrations}</strong> inscrições</span>
+              <span><strong className="text-amber-400">{autoResult.totals.checkins}</strong> check-ins</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Info banner — modo manual */}
+      <div className="glass rounded-2xl px-5 py-4 flex items-start gap-3">
+        <Zap className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <p className="text-sm font-semibold">Sincronização direta com o Luma</p>
+          <p className="text-sm font-semibold">Modo manual (escolher eventos específicos)</p>
           <p className="text-sm text-muted-foreground">
-            Importa eventos e participantes diretamente via API, sem precisar exportar CSV.
-            Encontre sua API Key em <strong>lu.ma → Settings → Integrations → API Keys</strong>.
-            O Calendar API ID está na URL do seu calendário:{" "}
-            <span className="font-mono text-xs bg-muted/40 px-1.5 py-0.5 rounded">lu.ma/c/</span>
-            <strong>cal_xxxxxx</strong>.
+            Use abaixo se quiser sincronizar só eventos selecionados ou usar uma API Key/Calendar diferente.
           </p>
         </div>
       </div>
