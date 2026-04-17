@@ -245,11 +245,12 @@ function PessoasPage() {
 
         {/* Stats bar */}
         {!loading && people.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
               { tag: "Arquiteto", label: "Arquitetos" },
               { tag: "Explorer",  label: "Explorers" },
               { tag: "Day Pass",  label: "Day Pass" },
+              { tag: "Weekly",    label: "Weekly" },
               { tag: "__none__",  label: "Sem tag" },
             ].map(({ tag, label }) => {
               const cfg = getTagConfig(tag === "__none__" ? null : tag);
