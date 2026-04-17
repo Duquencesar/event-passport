@@ -17,6 +17,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksTelegramPollRouteImport } from './routes/hooks/telegram-poll'
 import { Route as HooksTelegramDailyReportRouteImport } from './routes/hooks/telegram-daily-report'
+import { Route as HooksLumaSyncRouteImport } from './routes/hooks/luma-sync'
 
 const PessoasRoute = PessoasRouteImport.update({
   id: '/pessoas',
@@ -59,6 +60,11 @@ const HooksTelegramDailyReportRoute =
     path: '/hooks/telegram-daily-report',
     getParentRoute: () => rootRouteImport,
   } as any)
+const HooksLumaSyncRoute = HooksLumaSyncRouteImport.update({
+  id: '/hooks/luma-sync',
+  path: '/hooks/luma-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
+  '/hooks/luma-sync': typeof HooksLumaSyncRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
+  '/hooks/luma-sync': typeof HooksLumaSyncRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
+  '/hooks/luma-sync': typeof HooksLumaSyncRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
 }
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
+    | '/hooks/luma-sync'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
   fileRoutesByTo: FileRoutesByTo
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
+    | '/hooks/luma-sync'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
   id:
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/pessoas'
+    | '/hooks/luma-sync'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
   fileRoutesById: FileRoutesById
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   PessoasRoute: typeof PessoasRoute
+  HooksLumaSyncRoute: typeof HooksLumaSyncRoute
   HooksTelegramDailyReportRoute: typeof HooksTelegramDailyReportRoute
   HooksTelegramPollRoute: typeof HooksTelegramPollRoute
 }
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HooksTelegramDailyReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hooks/luma-sync': {
+      id: '/hooks/luma-sync'
+      path: '/hooks/luma-sync'
+      fullPath: '/hooks/luma-sync'
+      preLoaderRoute: typeof HooksLumaSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -203,9 +223,19 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   PessoasRoute: PessoasRoute,
+  HooksLumaSyncRoute: HooksLumaSyncRoute,
   HooksTelegramDailyReportRoute: HooksTelegramDailyReportRoute,
   HooksTelegramPollRoute: HooksTelegramPollRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

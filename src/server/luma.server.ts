@@ -1,0 +1,413 @@
+/**
+ * Helpers server-only para integração Luma.
+ * Usados tanto por server functions (UI) quanto pela rota /hooks/luma-sync (cron).
+ *
+ * Endpoints usados:
+ *   GET /public/v1/calendar/list-events  — lista eventos do calendário
+ *   GET /public/v1/event/get-guests      — lista participantes (com checked_in_at)
+ */
+
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const LUMA_BASE = "https://api.lu.ma/public/v1";
+
+export type LumaEventEntry = {
+  api_id: string;
+  name: string;
+  start_at: string;
+  end_at: string;
+  url: string;
+  geo_address_json: { address?: string; city?: string; country?: string } | null;
+  hosts: Array<{ name: string; api_id: string }>;
+};
+
+export type LumaGuest = {
+  api_id: string;
+  user_email: string;
+  user_name: string;
+  approval_status: "approved" | "pending" | "declined" | string;
+  event_ticket: { name?: string | null; api_id?: string } | null;
+  checked_in_at: string | null;
+  registered_at: string;
+};
+
+type LumaGuestEntry = {
+  api_id: string;
+  guest: LumaGuest;
+};
+
+type LumaGuestPage = {
+  entries: LumaGuestEntry[];
+  has_more: boolean;
+  next_cursor: string | null;
+};
+
+// ─── HTTP helper ─────────────────────────────────────────────────────────────
+
+export async function lumaFetch<T>(
+  apiKey: string,
+  path: string,
+  params?: Record<string, string>,
+): Promise<T> {
+  const url = new URL(`${LUMA_BASE}${path}`);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      url.searchParams.set(k, v);
+    }
+  }
+  const res = await fetch(url.toString(), {
+    headers: {
+      "x-luma-api-key": apiKey,
+      Accept: "application/json",
+    },
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Luma API ${res.status}: ${body}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// ─── Date helpers (America/Sao_Paulo) ────────────────────────────────────────
+
+export function toDateKey(isoString: string): string {
+  const d = new Date(isoString);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(d);
+  const y = parts.find((p) => p.type === "year")?.value ?? "";
+  const m = parts.find((p) => p.type === "month")?.value ?? "";
+  const day = parts.find((p) => p.type === "day")?.value ?? "";
+  return `${y}-${m}-${day}`;
+}
+
+export function toTimeKey(isoString: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(isoString));
+}
+
+/** Mapeia ticket type do Luma para tag interna */
+export function ticketToTag(ticketName: string): string | null {
+  const lower = ticketName.toLowerCase();
+  if (lower.includes("architect") || lower.includes("arquiteto")) return "Arquiteto";
+  if (lower.includes("explorer")) return "Explorer";
+  if (lower.includes("day pass") || lower.includes("day-pass")) return "Day Pass";
+  return null;
+}
+
+/** Determina o período (manha/tarde/noite) a partir de um ISO timestamp */
+export function isoToPeriod(isoString: string): "manha" | "tarde" | "noite" {
+  const hourStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    hour: "2-digit",
+    hour12: false,
+  }).format(new Date(isoString));
+  const hour = parseInt(hourStr, 10);
+  if (hour < 12) return "manha";
+  if (hour < 18) return "tarde";
+  return "noite";
+}
+
+// ─── Listagem ────────────────────────────────────────────────────────────────
+
+export type NormalizedLumaEvent = {
+  api_id: string;
+  name: string;
+  date: string;
+  time: string;
+  location: string | null;
+  organizer: string | null;
+  url: string | null;
+  start_at: string;
+};
+
+export async function listCalendarEvents(
+  apiKey: string,
+  calendarApiId: string,
+): Promise<NormalizedLumaEvent[]> {
+  const result = await lumaFetch<{ entries: Array<{ event: LumaEventEntry }> }>(
+    apiKey,
+    "/calendar/list-events",
+    { calendar_api_id: calendarApiId },
+  );
+  return (result.entries || []).map((e) => ({
+    api_id: e.event.api_id,
+    name: e.event.name,
+    date: toDateKey(e.event.start_at),
+    time: toTimeKey(e.event.start_at),
+    location:
+      e.event.geo_address_json?.city || e.event.geo_address_json?.address || null,
+    organizer: e.event.hosts?.[0]?.name || null,
+    url: e.event.url || null,
+    start_at: e.event.start_at,
+  }));
+}
+
+// ─── Sync de um evento (inscritos + check-ins) ───────────────────────────────
+
+export type SyncEventInput = {
+  apiKey: string;
+  lumaEventId: string;
+  eventName: string;
+  eventDate: string;
+  eventTime: string;
+  eventLocation: string | null;
+  eventOrganizer: string | null;
+  eventUrl: string | null;
+  defaultTag?: string;
+};
+
+export type SyncEventResult = {
+  total_guests: number;
+  created: number;
+  updated: number;
+  registrations: number;
+  checkins: number;
+  event_id: string | null;
+};
+
+export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventResult> {
+  // 1. Garantir evento no banco
+  let internalEventId: string | null = null;
+  const { data: existingEvent } = await supabaseAdmin
+    .from("events")
+    .select("id")
+    .eq("name", input.eventName)
+    .eq("date", input.eventDate)
+    .maybeSingle();
+
+  if (existingEvent) {
+    internalEventId = existingEvent.id;
+    await supabaseAdmin
+      .from("events")
+      .update({
+        time: input.eventTime || null,
+        location: input.eventLocation,
+        organizer: input.eventOrganizer,
+        url: input.eventUrl,
+      })
+      .eq("id", internalEventId);
+  } else {
+    const { data: newEvent } = await supabaseAdmin
+      .from("events")
+      .insert({
+        name: input.eventName,
+        date: input.eventDate,
+        time: input.eventTime || null,
+        location: input.eventLocation,
+        organizer: input.eventOrganizer,
+        url: input.eventUrl,
+      })
+      .select("id")
+      .single();
+    internalEventId = newEvent?.id || null;
+  }
+
+  // 2. Buscar todos os participantes (paginação)
+  let allGuests: LumaGuest[] = [];
+  let cursor: string | undefined = undefined;
+  let pageCount = 0;
+
+  while (pageCount < 50) {
+    const params: Record<string, string> = {
+      event_api_id: input.lumaEventId,
+      pagination_limit: "100",
+    };
+    if (cursor) params.pagination_cursor = cursor;
+
+    const page = await lumaFetch<LumaGuestPage>(
+      input.apiKey,
+      "/event/get-guests",
+      params,
+    );
+    const guests = (page.entries || []).map((e) => e.guest);
+    allGuests = allGuests.concat(guests);
+
+    if (!page.has_more || !page.next_cursor) break;
+    cursor = page.next_cursor;
+    pageCount++;
+  }
+
+  const approved = allGuests.filter((g) => g.approval_status === "approved");
+
+  // 3. Upsert people, registrations, checkins
+  let created = 0;
+  let updated = 0;
+  let registrations = 0;
+  let checkins = 0;
+
+  for (const guest of approved) {
+    if (!guest.user_email?.trim() || !guest.user_name?.trim()) continue;
+
+    const email = guest.user_email.toLowerCase().trim();
+    const name = guest.user_name.trim();
+    const ticketName = guest.event_ticket?.name || "Geral";
+    const tag = ticketToTag(ticketName) || input.defaultTag || null;
+
+    // Upsert person
+    const { data: existing } = await supabaseAdmin
+      .from("people")
+      .select("id, tag")
+      .eq("email", email)
+      .maybeSingle();
+
+    let personId: string;
+
+    if (existing) {
+      personId = existing.id;
+      await supabaseAdmin
+        .from("people")
+        .update({ name, ...(tag && !existing.tag ? { tag } : {}) })
+        .eq("id", personId);
+      updated++;
+    } else {
+      const { data: newPerson, error } = await supabaseAdmin
+        .from("people")
+        .insert({ name, email, tag })
+        .select("id")
+        .single();
+      if (error || !newPerson) continue;
+      personId = newPerson.id;
+      created++;
+    }
+
+    if (!internalEventId) continue;
+
+    // Registration (evita duplicar)
+    const { data: existingReg } = await supabaseAdmin
+      .from("registrations")
+      .select("id")
+      .eq("person_id", personId)
+      .eq("event_id", internalEventId)
+      .maybeSingle();
+
+    if (!existingReg) {
+      await supabaseAdmin.from("registrations").insert({
+        person_id: personId,
+        event_name: input.eventName,
+        ticket_type: ticketName,
+        source: "luma_api",
+        event_id: internalEventId,
+      });
+      registrations++;
+    }
+
+    // Check-in vindo do Luma (espelha no banco)
+    if (guest.checked_in_at) {
+      const { data: existingCheckin } = await supabaseAdmin
+        .from("checkins")
+        .select("id")
+        .eq("person_id", personId)
+        .eq("event_id", internalEventId)
+        .maybeSingle();
+
+      if (!existingCheckin) {
+        await supabaseAdmin.from("checkins").insert({
+          person_id: personId,
+          event_id: internalEventId,
+          event_name: input.eventName,
+          date: input.eventDate,
+          period: isoToPeriod(guest.checked_in_at),
+          access_type: ticketName,
+          source: "luma",
+          checked_in_at: guest.checked_in_at,
+        });
+        checkins++;
+      }
+    }
+  }
+
+  return {
+    total_guests: approved.length,
+    created,
+    updated,
+    registrations,
+    checkins,
+    event_id: internalEventId,
+  };
+}
+
+// ─── Sync completo (todos os eventos do calendário) ──────────────────────────
+
+export type FullSyncResult = {
+  ok: true;
+  events_processed: number;
+  totals: {
+    guests: number;
+    created: number;
+    updated: number;
+    registrations: number;
+    checkins: number;
+  };
+  per_event: Array<{ name: string; date: string } & SyncEventResult>;
+};
+
+export async function syncEntireCalendar(opts: {
+  apiKey: string;
+  calendarApiId: string;
+  defaultTag?: string;
+  /** Só sincroniza eventos a partir desta data (YYYY-MM-DD). Default: 7 dias atrás */
+  sinceDate?: string;
+}): Promise<FullSyncResult> {
+  const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId);
+
+  const cutoff =
+    opts.sinceDate ||
+    (() => {
+      const d = new Date();
+      d.setDate(d.getDate() - 7);
+      return toDateKey(d.toISOString());
+    })();
+
+  const upcoming = events.filter((e) => e.date >= cutoff);
+
+  const totals = { guests: 0, created: 0, updated: 0, registrations: 0, checkins: 0 };
+  const per_event: FullSyncResult["per_event"] = [];
+
+  for (const event of upcoming) {
+    try {
+      const res = await syncLumaEvent({
+        apiKey: opts.apiKey,
+        lumaEventId: event.api_id,
+        eventName: event.name,
+        eventDate: event.date,
+        eventTime: event.time,
+        eventLocation: event.location,
+        eventOrganizer: event.organizer,
+        eventUrl: event.url,
+        defaultTag: opts.defaultTag,
+      });
+      totals.guests += res.total_guests;
+      totals.created += res.created;
+      totals.updated += res.updated;
+      totals.registrations += res.registrations;
+      totals.checkins += res.checkins;
+      per_event.push({ name: event.name, date: event.date, ...res });
+    } catch (err) {
+      console.error(`Failed to sync event ${event.name}:`, err);
+      per_event.push({
+        name: event.name,
+        date: event.date,
+        total_guests: -1,
+        created: 0,
+        updated: 0,
+        registrations: 0,
+        checkins: 0,
+        event_id: null,
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    events_processed: upcoming.length,
+    totals,
+    per_event,
+  };
+}
