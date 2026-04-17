@@ -33,6 +33,14 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Ipê Village - Check-In" },
       { name: "description", content: "Sistema de check-in para Ipê Village" },
+      { property: "og:title", content: "Ipê Village - Check-In" },
+      { name: "twitter:title", content: "Ipê Village - Check-In" },
+      { property: "og:description", content: "Sistema de check-in para Ipê Village" },
+      { name: "twitter:description", content: "Sistema de check-in para Ipê Village" },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ecee8459-2938-41a9-ac6a-19ebec4993d0/id-preview-c025c444--ebafd381-81cb-4824-8ffa-acfba3788bda.lovable.app-1776435567053.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ecee8459-2938-41a9-ac6a-19ebec4993d0/id-preview-c025c444--ebafd381-81cb-4824-8ffa-acfba3788bda.lovable.app-1776435567053.png" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:type", content: "website" },
     ],
     links: [
       {
