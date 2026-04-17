@@ -7,7 +7,7 @@
  *   GET /public/v1/event/get-guests      — lista participantes (com checked_in_at)
  */
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db as supabaseAdmin } from "./db";
 
 const LUMA_BASE = "https://api.lu.ma/public/v1";
 
@@ -21,20 +21,25 @@ export type LumaEventEntry = {
   hosts: Array<{ name: string; api_id: string }>;
 };
 
+// API do Luma usa formatos diferentes em alguns endpoints.
+// Aceitamos ambos: user_email/email, user_name/name.
 export type LumaGuest = {
   api_id: string;
-  user_email: string;
-  user_name: string;
+  user_email?: string;
+  email?: string;
+  user_name?: string;
+  name?: string;
   approval_status: "approved" | "pending" | "declined" | string;
-  event_ticket: { name?: string | null; api_id?: string } | null;
+  event_ticket?: { name?: string | null; api_id?: string } | null;
+  ticket?: { name?: string | null; api_id?: string } | null;
   checked_in_at: string | null;
   registered_at: string;
 };
 
 type LumaGuestEntry = {
   api_id: string;
-  guest: LumaGuest;
-};
+  guest?: LumaGuest;
+} & Partial<LumaGuest>;
 
 type LumaGuestPage = {
   entries: LumaGuestEntry[];
@@ -131,12 +136,33 @@ export async function listCalendarEvents(
   apiKey: string,
   calendarApiId: string,
 ): Promise<NormalizedLumaEvent[]> {
-  const result = await lumaFetch<{ entries: Array<{ event: LumaEventEntry }> }>(
-    apiKey,
-    "/calendar/list-events",
-    { calendar_api_id: calendarApiId },
-  );
-  return (result.entries || []).map((e) => ({
+  // A API retorna eventos do mais antigo para o mais recente, paginados.
+  // Para garantir que pegamos os futuros, paginamos até o fim (ou cap de segurança).
+  const allEntries: Array<{ event: LumaEventEntry }> = [];
+  let cursor: string | undefined;
+  let pages = 0;
+  const MAX_PAGES = 30; // 30 × 50 = 1500 eventos (mais que suficiente)
+
+  while (pages < MAX_PAGES) {
+    const params: Record<string, string> = {
+      calendar_api_id: calendarApiId,
+      pagination_limit: "50",
+    };
+    if (cursor) params.pagination_cursor = cursor;
+
+    const page = await lumaFetch<{
+      entries: Array<{ event: LumaEventEntry }>;
+      has_more: boolean;
+      next_cursor: string | null;
+    }>(apiKey, "/calendar/list-events", params);
+
+    allEntries.push(...(page.entries || []));
+    if (!page.has_more || !page.next_cursor) break;
+    cursor = page.next_cursor;
+    pages++;
+  }
+
+  return allEntries.map((e) => ({
     api_id: e.event.api_id,
     name: e.event.name,
     date: toDateKey(e.event.start_at),
@@ -226,7 +252,8 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
       "/event/get-guests",
       params,
     );
-    const guests = (page.entries || []).map((e) => e.guest);
+    // Aceita ambos formatos: { entries: [{ guest: {...} }] } ou { entries: [{...}] }
+    const guests: LumaGuest[] = (page.entries || []).map((e) => (e.guest ?? (e as unknown as LumaGuest)));
     allGuests = allGuests.concat(guests);
 
     if (!page.has_more || !page.next_cursor) break;
@@ -243,11 +270,13 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
   let checkins = 0;
 
   for (const guest of approved) {
-    if (!guest.user_email?.trim() || !guest.user_name?.trim()) continue;
+    const rawEmail = guest.user_email || guest.email || "";
+    const rawName = guest.user_name || guest.name || "";
+    if (!rawEmail.trim() || !rawName.trim()) continue;
 
-    const email = guest.user_email.toLowerCase().trim();
-    const name = guest.user_name.trim();
-    const ticketName = guest.event_ticket?.name || "Geral";
+    const email = rawEmail.toLowerCase().trim();
+    const name = rawName.trim();
+    const ticketName = guest.event_ticket?.name || guest.ticket?.name || "Geral";
     const tag = ticketToTag(ticketName) || input.defaultTag || null;
 
     // Upsert person
