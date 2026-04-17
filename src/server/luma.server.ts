@@ -252,7 +252,8 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
       "/event/get-guests",
       params,
     );
-    const guests = (page.entries || []).map((e) => e.guest);
+    // Aceita ambos formatos: { entries: [{ guest: {...} }] } ou { entries: [{...}] }
+    const guests: LumaGuest[] = (page.entries || []).map((e) => (e.guest ?? (e as unknown as LumaGuest)));
     allGuests = allGuests.concat(guests);
 
     if (!page.has_more || !page.next_cursor) break;
@@ -269,10 +270,12 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
   let checkins = 0;
 
   for (const guest of approved) {
-    if (!guest.user_email?.trim() || !guest.user_name?.trim()) continue;
+    const rawEmail = guest.user_email || guest.email || "";
+    const rawName = guest.user_name || guest.name || "";
+    if (!rawEmail.trim() || !rawName.trim()) continue;
 
-    const email = guest.user_email.toLowerCase().trim();
-    const name = guest.user_name.trim();
+    const email = rawEmail.toLowerCase().trim();
+    const name = rawName.trim();
     const ticketName = guest.event_ticket?.name || "Geral";
     const tag = ticketToTag(ticketName) || input.defaultTag || null;
 
