@@ -62,6 +62,7 @@ type PersonWithRegs = {
     source: string;
     imported_at: string;
     day_pass_date: string | null;
+    week_pass_start_date: string | null;
   }>;
 };
 
@@ -78,6 +79,7 @@ const TAG_CONFIG: Record<string, { bg: string; text: string; dot: string; icon: 
   Arquiteto: { bg: "bg-amber-500/15", text: "text-amber-400", dot: "bg-amber-400", icon: HardHat, border: "border-amber-500/20" },
   Explorer:  { bg: "bg-sky-500/15",   text: "text-sky-400",   dot: "bg-sky-400",   icon: Compass,  border: "border-sky-500/20" },
   "Day Pass":{ bg: "bg-emerald-500/15",text: "text-emerald-400",dot:"bg-emerald-400",icon: CreditCard,border:"border-emerald-500/20"},
+  "Weekly":  { bg: "bg-violet-500/15", text: "text-violet-400", dot: "bg-violet-400", icon: CalendarDays, border: "border-violet-500/20" },
 };
 const DEFAULT_TAG = { bg: "bg-muted/30", text: "text-muted-foreground", dot: "bg-muted-foreground", icon: Tag, border: "border-border/30" };
 
