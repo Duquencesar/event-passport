@@ -513,6 +513,37 @@ function PessoasPage() {
                     </div>
                   )}
 
+                  {/* Weekly Pass start date */}
+                  {selectedPerson.registrations.some(r => r.week_pass_start_date !== null || selectedPerson.tag === "Weekly") && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-muted-foreground">Weekly Pass (7 dias a partir de)</label>
+                      {selectedPerson.registrations.map((r) => (
+                        r.week_pass_start_date !== null || selectedPerson.tag === "Weekly" ? (
+                          <div key={`wp-${r.id}`} className="flex items-center justify-between px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/15">
+                            <span className="text-sm truncate">{r.event_name}</span>
+                            {r.week_pass_start_date ? (
+                              <span className="text-xs text-violet-400 font-medium ml-2 shrink-0">
+                                {new Date(r.week_pass_start_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                                {" → "}
+                                {new Date(new Date(r.week_pass_start_date + "T12:00:00").getTime() + 6 * 86400000).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                              </span>
+                            ) : (
+                              <input
+                                type="date"
+                                className="text-xs bg-transparent border border-violet-500/30 rounded px-2 py-0.5 text-violet-400 w-32 ml-2"
+                                onChange={async (e) => {
+                                  if (!e.target.value) return;
+                                  await setWeekPassStartDate({ data: { registrationId: r.id, date: e.target.value } });
+                                  load();
+                                }}
+                              />
+                            )}
+                          </div>
+                        ) : null
+                      ))}
+                    </div>
+                  )}
+
                   {/* Inscriptions */}
                   {selectedPerson.registrations.length > 0 && (
                     <div className="space-y-2">
