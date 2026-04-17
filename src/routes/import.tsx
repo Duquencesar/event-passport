@@ -302,14 +302,6 @@ function CsvImportTab() {
 // ─── Luma Sync tab ────────────────────────────────────────────────────────────
 
 function LumaSyncTab() {
-  const [apiKey, setApiKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
-  const [calendarId, setCalendarId] = useState("");
-  const [loadingEvents, setLoadingEvents] = useState(false);
-  const [lumaEvents, setLumaEvents] = useState<LumaEvent[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync completo (usa secrets do servidor)
   const [autoSyncing, setAutoSyncing] = useState(false);
   const [autoResult, setAutoResult] = useState<{
     events_processed: number;
@@ -329,93 +321,6 @@ function LumaSyncTab() {
     } finally {
       setAutoSyncing(false);
     }
-  };
-
-  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
-  const [defaultTag, setDefaultTag] = useState("");
-  const [syncing, setSyncing] = useState(false);
-  const [syncResults, setSyncResults] = useState<Array<{
-    name: string;
-    total_guests: number;
-    created: number;
-    updated: number;
-    registrations: number;
-  }>>([]);
-  const [syncDone, setSyncDone] = useState(false);
-
-  const fetchEvents = async () => {
-    if (!apiKey.trim() || !calendarId.trim()) return;
-    setLoadingEvents(true);
-    setError(null);
-    setLumaEvents([]);
-    try {
-      const events = await lumaListEvents({ data: { api_key: apiKey.trim(), calendar_api_id: calendarId.trim() } });
-      setLumaEvents(events as LumaEvent[]);
-    } catch (err: any) {
-      setError(err?.message || "Erro ao conectar com o Luma. Verifique a API Key e o Calendar ID.");
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
-
-  const toggleEvent = (id: string) => {
-    setSelectedEvents((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const selectAll = () => setSelectedEvents(new Set(lumaEvents.map((e) => e.api_id)));
-  const clearAll = () => setSelectedEvents(new Set());
-
-  const handleSync = async () => {
-    if (selectedEvents.size === 0) return;
-    setSyncing(true);
-    setSyncResults([]);
-    setSyncDone(false);
-
-    const resolvedTag = defaultTag && defaultTag !== "__none__" ? defaultTag : undefined;
-    const toSync = lumaEvents.filter((e) => selectedEvents.has(e.api_id));
-    const results: typeof syncResults = [];
-
-    for (const event of toSync) {
-      try {
-        const res = await lumaSyncEvent({
-          data: {
-            api_key: apiKey.trim(),
-            luma_event_id: event.api_id,
-            event_name: event.name,
-            event_date: event.date,
-            event_time: event.time,
-            event_location: event.location,
-            event_organizer: event.organizer,
-            event_url: event.url,
-            default_tag: resolvedTag,
-          },
-        });
-        results.push({
-          name: event.name,
-          total_guests: (res as any).total_guests,
-          created: (res as any).created,
-          updated: (res as any).updated,
-          registrations: (res as any).registrations,
-        });
-      } catch (err: any) {
-        results.push({
-          name: event.name,
-          total_guests: -1,
-          created: 0,
-          updated: 0,
-          registrations: 0,
-        });
-      }
-    }
-
-    setSyncResults(results);
-    setSyncDone(true);
-    setSyncing(false);
   };
 
   return (
