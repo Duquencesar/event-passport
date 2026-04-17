@@ -22,6 +22,7 @@ export type Database = {
           event_id: string | null
           event_name: string | null
           id: string
+          luma_guest_id: string | null
           period: string
           person_id: string
           source: string
@@ -33,6 +34,7 @@ export type Database = {
           event_id?: string | null
           event_name?: string | null
           id?: string
+          luma_guest_id?: string | null
           period: string
           person_id: string
           source?: string
@@ -44,6 +46,7 @@ export type Database = {
           event_id?: string | null
           event_name?: string | null
           id?: string
+          luma_guest_id?: string | null
           period?: string
           person_id?: string
           source?: string
@@ -78,6 +81,7 @@ export type Database = {
           date: string
           id: string
           location: string | null
+          luma_event_id: string | null
           name: string
           organizer: string | null
           time: string | null
@@ -88,6 +92,7 @@ export type Database = {
           date: string
           id?: string
           location?: string | null
+          luma_event_id?: string | null
           name: string
           organizer?: string | null
           time?: string | null
@@ -98,6 +103,7 @@ export type Database = {
           date?: string
           id?: string
           location?: string | null
+          luma_event_id?: string | null
           name?: string
           organizer?: string | null
           time?: string | null
@@ -136,6 +142,7 @@ export type Database = {
           event_name: string
           id: string
           imported_at: string
+          luma_guest_id: string | null
           person_id: string
           source: string
           ticket_type: string
@@ -147,6 +154,7 @@ export type Database = {
           event_name: string
           id?: string
           imported_at?: string
+          luma_guest_id?: string | null
           person_id: string
           source?: string
           ticket_type: string
@@ -158,6 +166,7 @@ export type Database = {
           event_name?: string
           id?: string
           imported_at?: string
+          luma_guest_id?: string | null
           person_id?: string
           source?: string
           ticket_type?: string

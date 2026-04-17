@@ -200,14 +200,24 @@ export type SyncEventResult = {
 };
 
 export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventResult> {
-  // 1. Garantir evento no banco
+  // 1. Garantir evento no banco (prioriza match por luma_event_id)
   let internalEventId: string | null = null;
-  const { data: existingEvent } = await supabaseAdmin
+  const { data: byLumaId } = await supabaseAdmin
     .from("events")
     .select("id")
-    .eq("name", input.eventName)
-    .eq("date", input.eventDate)
+    .eq("luma_event_id", input.lumaEventId)
     .maybeSingle();
+
+  const existingEvent =
+    byLumaId ||
+    (
+      await supabaseAdmin
+        .from("events")
+        .select("id")
+        .eq("name", input.eventName)
+        .eq("date", input.eventDate)
+        .maybeSingle()
+    ).data;
 
   if (existingEvent) {
     internalEventId = existingEvent.id;
@@ -218,6 +228,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         location: input.eventLocation,
         organizer: input.eventOrganizer,
         url: input.eventUrl,
+        luma_event_id: input.lumaEventId,
       })
       .eq("id", internalEventId);
   } else {
@@ -230,6 +241,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         location: input.eventLocation,
         organizer: input.eventOrganizer,
         url: input.eventUrl,
+        luma_event_id: input.lumaEventId,
       })
       .select("id")
       .single();
@@ -309,13 +321,23 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
 
     if (!internalEventId) continue;
 
-    // Registration (evita duplicar)
-    const { data: existingReg } = await supabaseAdmin
+    // Registration (match por luma_guest_id, fallback para person+event)
+    const { data: existingByGuest } = await supabaseAdmin
       .from("registrations")
       .select("id")
-      .eq("person_id", personId)
-      .eq("event_id", internalEventId)
+      .eq("luma_guest_id", guest.api_id)
       .maybeSingle();
+
+    const existingReg =
+      existingByGuest ||
+      (
+        await supabaseAdmin
+          .from("registrations")
+          .select("id")
+          .eq("person_id", personId)
+          .eq("event_id", internalEventId)
+          .maybeSingle()
+      ).data;
 
     if (!existingReg) {
       await supabaseAdmin.from("registrations").insert({
@@ -324,8 +346,15 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         ticket_type: ticketName,
         source: "luma_api",
         event_id: internalEventId,
+        luma_guest_id: guest.api_id,
       });
       registrations++;
+    } else if (!existingByGuest) {
+      // Atualiza registro antigo para incluir o luma_guest_id
+      await supabaseAdmin
+        .from("registrations")
+        .update({ luma_guest_id: guest.api_id })
+        .eq("id", existingReg.id);
     }
 
     // Check-in vindo do Luma (espelha no banco)
@@ -347,8 +376,14 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
           access_type: ticketName,
           source: "luma",
           checked_in_at: guest.checked_in_at,
+          luma_guest_id: guest.api_id,
         });
         checkins++;
+      } else {
+        await supabaseAdmin
+          .from("checkins")
+          .update({ luma_guest_id: guest.api_id })
+          .eq("id", existingCheckin.id);
       }
     }
   }
