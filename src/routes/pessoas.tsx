@@ -37,6 +37,7 @@ import {
   getPersonCheckinHistory,
   updatePersonTag,
 } from "@/server/people.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/pessoas")({
   head: () => ({
@@ -127,6 +128,26 @@ function PessoasPage() {
   }, []);
 
   useEffect(() => { load(); }, []);
+
+  // Realtime: recarrega lista quando novas pessoas/inscrições chegam (ex: sync do Luma)
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const debouncedReload = () => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => { load(); }, 800);
+    };
+
+    const channel = supabase
+      .channel("pessoas-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "people" }, debouncedReload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "registrations" }, debouncedReload)
+      .subscribe();
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      supabase.removeChannel(channel);
+    };
+  }, [load]);
 
   const tags = useMemo(() => {
     const set = new Set<string>();
