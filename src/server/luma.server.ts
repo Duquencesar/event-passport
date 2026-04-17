@@ -7,7 +7,7 @@
  *   GET /public/v1/event/get-guests      — lista participantes (com checked_in_at)
  */
 
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db as supabaseAdmin } from "./db";
 
 const LUMA_BASE = "https://api.lu.ma/public/v1";
 
