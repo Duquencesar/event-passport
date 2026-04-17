@@ -2,13 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
 import { fetchAllRows } from "./pagination";
 
+// IMPORTANTE: emails são PII e NUNCA devem ser retornados para o cliente.
+// Server functions usam service role internamente para cruzamento (Luma/import),
+// mas só expõem name, tag e dados não-sensíveis.
+
 export const listPeople = createServerFn({ method: "GET" })
   .handler(async () => {
-    type Row = { id: string; name: string; email: string; tag: string | null; created_at: string };
+    type Row = { id: string; name: string; tag: string | null; created_at: string };
     return fetchAllRows<Row>((from, to) =>
       db
         .from("people")
-        .select("id, name, email, tag, created_at")
+        .select("id, name, tag, created_at")
         .order("name", { ascending: true })
         .range(from, to) as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>,
     );
@@ -19,7 +23,6 @@ export const getPeopleWithRegistrations = createServerFn({ method: "GET" })
     type Row = {
       id: string;
       name: string;
-      email: string;
       tag: string | null;
       created_at: string;
       registrations: Array<{
@@ -36,7 +39,7 @@ export const getPeopleWithRegistrations = createServerFn({ method: "GET" })
       db
         .from("people")
         .select(
-          "id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at, day_pass_date, week_pass_start_date)",
+          "id, name, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at, day_pass_date, week_pass_start_date)",
         )
         .order("name", { ascending: true })
         .range(from, to) as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>,

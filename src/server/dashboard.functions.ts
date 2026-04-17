@@ -94,12 +94,12 @@ export const getTopAttendees = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     type Row = {
       person_id: string;
-      people: { name: string; email: string; tag: string | null } | null;
+      people: { name: string; tag: string | null } | null;
     };
     const checkins = await fetchAllRows<Row>((from, to) => {
       let q = supabaseAdmin
         .from("checkins")
-        .select("person_id, people(name, email, tag)")
+        .select("person_id, people(name, tag)")
         .gte("date", data.from)
         .lte("date", data.to)
         .range(from, to);
@@ -107,12 +107,12 @@ export const getTopAttendees = createServerFn({ method: "POST" })
       return q as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>;
     });
 
-    const byPerson: Record<string, { name: string; email: string; tag: string | null; count: number }> = {};
+    const byPerson: Record<string, { name: string; tag: string | null; count: number }> = {};
     for (const c of checkins) {
       const p = c.people;
       if (!p) continue;
       if (!byPerson[c.person_id]) {
-        byPerson[c.person_id] = { name: p.name, email: p.email, tag: p.tag, count: 0 };
+        byPerson[c.person_id] = { name: p.name, tag: p.tag, count: 0 };
       }
       byPerson[c.person_id].count++;
     }
@@ -125,6 +125,7 @@ export const getTopAttendees = createServerFn({ method: "POST" })
 export const getCheckinsForExport = createServerFn({ method: "POST" })
   .inputValidator((input: DashboardInput) => input)
   .handler(async ({ data }) => {
+    // Export NÃO inclui email — apenas dados operacionais necessários.
     type Row = {
       id: string;
       date: string;
@@ -132,12 +133,12 @@ export const getCheckinsForExport = createServerFn({ method: "POST" })
       access_type: string;
       event_name: string | null;
       checked_in_at: string;
-      people: { name: string; email: string; tag: string | null } | null;
+      people: { name: string; tag: string | null } | null;
     };
     return fetchAllRows<Row>((from, to) => {
       let q = supabaseAdmin
         .from("checkins")
-        .select("id, date, period, access_type, event_name, checked_in_at, people(name, email, tag)")
+        .select("id, date, period, access_type, event_name, checked_in_at, people(name, tag)")
         .gte("date", data.from)
         .lte("date", data.to)
         .order("date", { ascending: false })
