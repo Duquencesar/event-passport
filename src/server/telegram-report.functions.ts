@@ -40,45 +40,121 @@ function parseTime(timeStr: string | null): number {
   return parseInt(match[1]) * 60 + parseInt(match[2]);
 }
 
+/** Retorna se a data `today` (YYYY-MM-DD) cai dentro da semana do passe semanal */
+function isWeeklyActive(weeklyStartDate: string, today: string): boolean {
+  const start = new Date(weeklyStartDate + "T12:00:00");
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const todayDate = new Date(today + "T12:00:00");
+  return todayDate >= start && todayDate <= end;
+}
+
 async function buildPeriodReport(period: "morning" | "afternoon"): Promise<string> {
   const today = await getBrasiliaTodayKey();
   const isMorning = period === "morning";
   const periodLabel = isMorning ? "Manhã" : "Tarde";
   const periodEmoji = isMorning ? "🌅" : "🌇";
-  // Morning: events starting before 13:00, Afternoon: 13:00+
-  const cutoff = 13 * 60; // 13:00 in minutes
+  const cutoff = 13 * 60; // 13:00 em minutos
 
+  // ── Check-ins do dia ──────────────────────────────────────────────────────
   const { count: todayCheckins } = await supabaseAdmin
     .from("checkins")
     .select("id", { count: "exact", head: true })
     .eq("date", today);
 
-  const { data: todayPeople } = await supabaseAdmin
+  const { data: todayPeopleData } = await supabaseAdmin
     .from("checkins")
     .select("person_id")
     .eq("date", today);
-  const uniqueToday = new Set(todayPeople?.map((c) => c.person_id)).size;
+  const uniqueToday = new Set(todayPeopleData?.map((c) => c.person_id)).size;
 
+  // ── Breakdown por tag (quem fez check-in hoje) ───────────────────────────
+  const { data: tagCheckins } = await supabaseAdmin
+    .from("checkins")
+    .select("person_id, people!inner(tag)")
+    .eq("date", today);
+
+  const tagBreakdown: Record<string, Set<string>> = {};
+  for (const c of tagCheckins || []) {
+    const tag = (c.people as any)?.tag || "Geral";
+    if (!tagBreakdown[tag]) tagBreakdown[tag] = new Set();
+    tagBreakdown[tag].add(c.person_id);
+  }
+
+  // ── Day Pass válidos hoje ─────────────────────────────────────────────────
+  const { count: dayPassValid } = await supabaseAdmin
+    .from("registrations")
+    .select("id", { count: "exact", head: true })
+    .eq("day_pass_date", today);
+
+  // ── Passes Semanais ativos hoje ───────────────────────────────────────────
+  const { data: weeklyRegs } = await supabaseAdmin
+    .from("registrations")
+    .select("person_id, weekly_start_date")
+    .not("weekly_start_date", "is", null);
+
+  const weeklyActiveIds = new Set(
+    (weeklyRegs || [])
+      .filter((r) => r.weekly_start_date && isWeeklyActive(r.weekly_start_date, today))
+      .map((r) => r.person_id)
+  );
+
+  // ── Totais de cadastro ────────────────────────────────────────────────────
+  const [
+    { count: totalArquitetos },
+    { count: totalExplorers },
+    { count: totalWeekly },
+  ] = await Promise.all([
+    supabaseAdmin.from("people").select("id", { count: "exact", head: true }).eq("tag", "Arquiteto"),
+    supabaseAdmin.from("people").select("id", { count: "exact", head: true }).eq("tag", "Explorer"),
+    supabaseAdmin.from("people").select("id", { count: "exact", head: true }).eq("tag", "Weekly"),
+  ]);
+
+  // ── Eventos do período ────────────────────────────────────────────────────
   const { data: allTodayEvents } = await supabaseAdmin
     .from("events")
     .select("id, name, time, location")
     .eq("date", today)
     .order("time", { ascending: true });
 
-  // Filter events by period
   const periodEvents = (allTodayEvents || []).filter((ev) => {
     const mins = parseTime(ev.time);
     return isMorning ? mins < cutoff : mins >= cutoff;
   });
 
+  // ── Monta mensagem ────────────────────────────────────────────────────────
   const lines = [
     `${periodEmoji} <b>Ipê Village — Relatório ${periodLabel}</b>`,
     `📅 ${today}`,
     ``,
     `✅ <b>Check-ins Hoje (acumulado)</b>`,
-    `• Check-ins: ${todayCheckins || 0} | Pessoas únicas: ${uniqueToday}`,
+    `• Total: ${todayCheckins || 0} | Pessoas únicas: ${uniqueToday}`,
   ];
 
+  // Breakdown por categoria
+  const arquitetosCheckin = tagBreakdown["Arquiteto"]?.size || 0;
+  const explorersCheckin  = tagBreakdown["Explorer"]?.size || 0;
+  const weeklyCheckin     = tagBreakdown["Weekly"]?.size || 0;
+  const dayPassCheckin    = tagBreakdown["Day Pass"]?.size || 0;
+  const geralCheckin      = tagBreakdown["Geral"]?.size || 0;
+
+  if (uniqueToday > 0) {
+    lines.push(``, `📊 <b>Por categoria (check-ins)</b>`);
+    if (arquitetosCheckin > 0) lines.push(`• 🏛 Arquitetos: ${arquitetosCheckin}`);
+    if (explorersCheckin  > 0) lines.push(`• 🧭 Explorers: ${explorersCheckin}`);
+    if (weeklyCheckin     > 0) lines.push(`• 📆 Passe Semanal: ${weeklyCheckin}`);
+    if (dayPassCheckin    > 0) lines.push(`• 🎫 Day Pass: ${dayPassCheckin}`);
+    if (geralCheckin      > 0) lines.push(`• 👤 Geral: ${geralCheckin}`);
+  }
+
+  // Capacidade de acesso hoje
+  lines.push(``, `🔑 <b>Acessos válidos hoje</b>`);
+  lines.push(`• 🏛 Arquitetos: ${totalArquitetos || 0} cadastrados`);
+  lines.push(`• 🧭 Explorers: ${totalExplorers || 0} cadastrados`);
+  lines.push(`• 📆 Passes Semanais ativos: ${weeklyActiveIds.size} (${totalWeekly || 0} totais)`);
+  lines.push(`• 🎫 Day Passes válidos hoje: ${dayPassValid || 0}`);
+
+  // Eventos do período
   if (periodEvents.length > 0) {
     lines.push(``, `📆 <b>Eventos — ${periodLabel}</b>`);
     for (const ev of periodEvents) {

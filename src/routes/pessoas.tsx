@@ -76,10 +76,10 @@ type CheckinRecord = {
 };
 
 const TAG_CONFIG: Record<string, { bg: string; text: string; dot: string; icon: React.ElementType; border: string }> = {
-  Arquiteto: { bg: "bg-amber-500/15", text: "text-amber-400", dot: "bg-amber-400", icon: HardHat, border: "border-amber-500/20" },
-  Explorer:  { bg: "bg-sky-500/15",   text: "text-sky-400",   dot: "bg-sky-400",   icon: Compass,  border: "border-sky-500/20" },
+  Arquiteto: { bg: "bg-amber-500/15", text: "text-amber-400", dot: "bg-amber-400", icon: HardHat,    border: "border-amber-500/20" },
+  Explorer:  { bg: "bg-sky-500/15",   text: "text-sky-400",   dot: "bg-sky-400",   icon: Compass,   border: "border-sky-500/20" },
+  Weekly:    { bg: "bg-violet-500/15",text: "text-violet-400",dot: "bg-violet-400",icon: CalendarDays,border:"border-violet-500/20"},
   "Day Pass":{ bg: "bg-emerald-500/15",text: "text-emerald-400",dot:"bg-emerald-400",icon: CreditCard,border:"border-emerald-500/20"},
-  "Weekly":  { bg: "bg-violet-500/15", text: "text-violet-400", dot: "bg-violet-400", icon: CalendarDays, border: "border-violet-500/20" },
 };
 const DEFAULT_TAG = { bg: "bg-muted/30", text: "text-muted-foreground", dot: "bg-muted-foreground", icon: Tag, border: "border-border/30" };
 
@@ -248,8 +248,8 @@ function PessoasPage() {
             {[
               { tag: "Arquiteto", label: "Arquitetos" },
               { tag: "Explorer",  label: "Explorers" },
+              { tag: "Weekly",    label: "Semanal" },
               { tag: "Day Pass",  label: "Day Pass" },
-              { tag: "Weekly",    label: "Weekly" },
               { tag: "__none__",  label: "Sem tag" },
             ].map(({ tag, label }) => {
               const cfg = getTagConfig(tag === "__none__" ? null : tag);
@@ -470,8 +470,8 @@ function PessoasPage() {
                           <SelectItem value="__none__">— Sem tag —</SelectItem>
                           <SelectItem value="Arquiteto">Arquiteto</SelectItem>
                           <SelectItem value="Explorer">Explorer</SelectItem>
+                          <SelectItem value="Weekly">Weekly (Passe Semanal)</SelectItem>
                           <SelectItem value="Day Pass">Day Pass</SelectItem>
-                          <SelectItem value="Weekly">Weekly Pass</SelectItem>
                         </SelectContent>
                       </Select>
                       <Button

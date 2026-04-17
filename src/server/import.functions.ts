@@ -30,6 +30,7 @@ export const importPeople = createServerFn({ method: "POST" })
       const derivedTag = row.tag ||
         (ticketLower.includes("architect") ? "Arquiteto"
         : ticketLower.includes("explorer") ? "Explorer"
+        : ticketLower.includes("weekly") || ticketLower.includes("semanal") ? "Weekly"
         : null);
       const tag = derivedTag || data.default_tag || null;
 
