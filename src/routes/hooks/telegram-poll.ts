@@ -27,7 +27,7 @@ export const Route = createFileRoute("/hooks/telegram-poll")({
         } catch (err) {
           console.error("Telegram poll error:", err);
           return new Response(
-            JSON.stringify({ error: String(err) }),
+            JSON.stringify({ error: "Internal server error" }),
             { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
