@@ -37,6 +37,7 @@ import {
   getPersonCheckinHistory,
   updatePersonTag,
 } from "@/server/people.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/pessoas")({
   head: () => ({
