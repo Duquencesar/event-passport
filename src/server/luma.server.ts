@@ -131,12 +131,33 @@ export async function listCalendarEvents(
   apiKey: string,
   calendarApiId: string,
 ): Promise<NormalizedLumaEvent[]> {
-  const result = await lumaFetch<{ entries: Array<{ event: LumaEventEntry }> }>(
-    apiKey,
-    "/calendar/list-events",
-    { calendar_api_id: calendarApiId },
-  );
-  return (result.entries || []).map((e) => ({
+  // A API retorna eventos do mais antigo para o mais recente, paginados.
+  // Para garantir que pegamos os futuros, paginamos até o fim (ou cap de segurança).
+  const allEntries: Array<{ event: LumaEventEntry }> = [];
+  let cursor: string | undefined;
+  let pages = 0;
+  const MAX_PAGES = 30; // 30 × 50 = 1500 eventos (mais que suficiente)
+
+  while (pages < MAX_PAGES) {
+    const params: Record<string, string> = {
+      calendar_api_id: calendarApiId,
+      pagination_limit: "50",
+    };
+    if (cursor) params.pagination_cursor = cursor;
+
+    const page = await lumaFetch<{
+      entries: Array<{ event: LumaEventEntry }>;
+      has_more: boolean;
+      next_cursor: string | null;
+    }>(apiKey, "/calendar/list-events", params);
+
+    allEntries.push(...(page.entries || []));
+    if (!page.has_more || !page.next_cursor) break;
+    cursor = page.next_cursor;
+    pages++;
+  }
+
+  return allEntries.map((e) => ({
     api_id: e.event.api_id,
     name: e.event.name,
     date: toDateKey(e.event.start_at),
