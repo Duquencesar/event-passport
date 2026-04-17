@@ -132,6 +132,7 @@ export type Database = {
           person_id: string
           source: string
           ticket_type: string
+          week_pass_start_date: string | null
         }
         Insert: {
           day_pass_date?: string | null
@@ -142,6 +143,7 @@ export type Database = {
           person_id: string
           source?: string
           ticket_type: string
+          week_pass_start_date?: string | null
         }
         Update: {
           day_pass_date?: string | null
@@ -152,6 +154,7 @@ export type Database = {
           person_id?: string
           source?: string
           ticket_type?: string
+          week_pass_start_date?: string | null
         }
         Relationships: [
           {
