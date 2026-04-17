@@ -1,41 +1,39 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
+import { getBrasiliaTodayKey, getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
+import { hasFullAccessTag, isDayPassValidToday, isWeeklyPassValidToday } from "@/lib/access-validation";
 import { db as supabaseAdmin } from "./db";
 
 export const searchPeople = createServerFn({ method: "POST" })
   .inputValidator((input: { query: string }) => input)
   .handler(async ({ data }) => {
     const q = `%${data.query}%`;
+    const today = getCurrentBrasiliaDateKeySync();
 
-    // Apenas pessoas com acesso: têm pelo menos 1 inscrição (Day Pass / evento Luma).
-    const { data: withRegs, error } = await supabaseAdmin
+    const { data: rows, error } = await supabaseAdmin
       .from("people")
-      .select("id, name, email, tag, registrations!inner(id)")
+      .select("id, name, email, tag, registrations(ticket_type, day_pass_date, week_pass_start_date, event_id)")
       .or(`name.ilike.${q},email.ilike.${q}`)
-      .limit(50);
+      .limit(100);
     if (error) throw new Error(error.message);
 
-    const merged = (withRegs || []).map((p) => ({
-      id: p.id, name: p.name, email: p.email, tag: p.tag,
-    }));
-    const seen = new Set(merged.map((p) => p.id));
-
-    // Inclui Arquitetos/Explorers (acesso total) mesmo sem inscrição.
-    const { data: tagged } = await supabaseAdmin
-      .from("people")
-      .select("id, name, email, tag")
-      .in("tag", ["Arquiteto", "Explorer"])
-      .or(`name.ilike.${q},email.ilike.${q}`)
-      .limit(50);
-
-    for (const p of tagged || []) {
-      if (!seen.has(p.id)) {
-        merged.push(p);
-        seen.add(p.id);
+    const result: Array<{ id: string; name: string; email: string; tag: string | null }> = [];
+    for (const p of rows || []) {
+      // Acesso total via tag
+      if (hasFullAccessTag(p.tag)) {
+        result.push({ id: p.id, name: p.name, email: p.email, tag: p.tag });
+        continue;
       }
+      // Senão, precisa ter Day Pass ou Weekly Pass válido HOJE
+      const regs = (p.registrations as Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null }>) || [];
+      const validToday = regs.some(
+        (r) => isDayPassValidToday(r, today) || isWeeklyPassValidToday(r, today),
+      );
+      if (validToday) {
+        result.push({ id: p.id, name: p.name, email: p.email, tag: p.tag });
+      }
+      if (result.length >= 10) break;
     }
-
-    return merged.slice(0, 10);
+    return result;
   });
 
 export const searchPeopleForEvent = createServerFn({ method: "POST" })
@@ -74,22 +72,30 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Fill remaining slots with other people (not registered)
+    // 3. Pessoas com Day Pass / Weekly válido HOJE (acesso global do dia)
     if (registered.length < 10) {
-      const { data: others } = await supabaseAdmin
+      const today = getCurrentBrasiliaDateKeySync();
+      const { data: dayWeek } = await supabaseAdmin
         .from("people")
-        .select("id, name, email, tag")
+        .select("id, name, email, tag, registrations(ticket_type, day_pass_date, week_pass_start_date)")
         .or(`name.ilike.${q},email.ilike.${q}`)
-        .limit(10 - registered.length);
+        .limit(50);
 
-      const additional = (others || [])
-        .filter((p) => !registeredIds.has(p.id))
-        .map((p) => ({ ...p, registered: false }));
-
-      return [...registered, ...additional];
+      for (const p of dayWeek || []) {
+        if (registeredIds.has(p.id)) continue;
+        const regs = (p.registrations as Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null }>) || [];
+        const validToday = regs.some(
+          (r) => isDayPassValidToday(r, today) || isWeeklyPassValidToday(r, today),
+        );
+        if (validToday) {
+          registered.push({ id: p.id, name: p.name, email: p.email, tag: p.tag, registered: true });
+          registeredIds.add(p.id);
+          if (registered.length >= 10) break;
+        }
+      }
     }
 
-    return registered;
+    return registered.slice(0, 10);
   });
 
 export const createCheckin = createServerFn({ method: "POST" })
@@ -194,7 +200,7 @@ export const getPersonRegistrations = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: registrations, error } = await supabaseAdmin
       .from("registrations")
-      .select("id, event_name, ticket_type, day_pass_date, event_id")
+      .select("id, event_name, ticket_type, day_pass_date, week_pass_start_date, event_id")
       .eq("person_id", data.person_id);
     if (error) throw new Error(error.message);
     return registrations || [];

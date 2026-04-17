@@ -34,6 +34,7 @@ import {
   getPeopleWithRegistrations,
   getPeopleCount,
   setDayPassDate,
+  setWeekPassStartDate,
   getPersonCheckinHistory,
   updatePersonTag,
 } from "@/server/people.functions";
@@ -62,6 +63,7 @@ type PersonWithRegs = {
     source: string;
     imported_at: string;
     day_pass_date: string | null;
+    week_pass_start_date: string | null;
   }>;
 };
 
@@ -78,6 +80,7 @@ const TAG_CONFIG: Record<string, { bg: string; text: string; dot: string; icon: 
   Arquiteto: { bg: "bg-amber-500/15", text: "text-amber-400", dot: "bg-amber-400", icon: HardHat, border: "border-amber-500/20" },
   Explorer:  { bg: "bg-sky-500/15",   text: "text-sky-400",   dot: "bg-sky-400",   icon: Compass,  border: "border-sky-500/20" },
   "Day Pass":{ bg: "bg-emerald-500/15",text: "text-emerald-400",dot:"bg-emerald-400",icon: CreditCard,border:"border-emerald-500/20"},
+  "Weekly":  { bg: "bg-violet-500/15", text: "text-violet-400", dot: "bg-violet-400", icon: CalendarDays, border: "border-violet-500/20" },
 };
 const DEFAULT_TAG = { bg: "bg-muted/30", text: "text-muted-foreground", dot: "bg-muted-foreground", icon: Tag, border: "border-border/30" };
 
@@ -242,11 +245,12 @@ function PessoasPage() {
 
         {/* Stats bar */}
         {!loading && people.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             {[
               { tag: "Arquiteto", label: "Arquitetos" },
               { tag: "Explorer",  label: "Explorers" },
               { tag: "Day Pass",  label: "Day Pass" },
+              { tag: "Weekly",    label: "Weekly" },
               { tag: "__none__",  label: "Sem tag" },
             ].map(({ tag, label }) => {
               const cfg = getTagConfig(tag === "__none__" ? null : tag);
@@ -467,6 +471,7 @@ function PessoasPage() {
                           <SelectItem value="Arquiteto">Arquiteto</SelectItem>
                           <SelectItem value="Explorer">Explorer</SelectItem>
                           <SelectItem value="Day Pass">Day Pass</SelectItem>
+                          <SelectItem value="Weekly">Weekly Pass</SelectItem>
                         </SelectContent>
                       </Select>
                       <Button
@@ -499,6 +504,37 @@ function PessoasPage() {
                                 onChange={async (e) => {
                                   if (!e.target.value) return;
                                   await setDayPassDate({ data: { registrationId: r.id, date: e.target.value } });
+                                  load();
+                                }}
+                              />
+                            )}
+                          </div>
+                        ) : null
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Weekly Pass start date */}
+                  {selectedPerson.registrations.some(r => r.week_pass_start_date !== null || selectedPerson.tag === "Weekly") && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-sm font-medium text-muted-foreground">Weekly Pass (7 dias a partir de)</label>
+                      {selectedPerson.registrations.map((r) => (
+                        r.week_pass_start_date !== null || selectedPerson.tag === "Weekly" ? (
+                          <div key={`wp-${r.id}`} className="flex items-center justify-between px-3 py-2 rounded-xl bg-violet-500/5 border border-violet-500/15">
+                            <span className="text-sm truncate">{r.event_name}</span>
+                            {r.week_pass_start_date ? (
+                              <span className="text-xs text-violet-400 font-medium ml-2 shrink-0">
+                                {new Date(r.week_pass_start_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                                {" → "}
+                                {new Date(new Date(r.week_pass_start_date + "T12:00:00").getTime() + 6 * 86400000).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                              </span>
+                            ) : (
+                              <input
+                                type="date"
+                                className="text-xs bg-transparent border border-violet-500/30 rounded px-2 py-0.5 text-violet-400 w-32 ml-2"
+                                onChange={async (e) => {
+                                  if (!e.target.value) return;
+                                  await setWeekPassStartDate({ data: { registrationId: r.id, date: e.target.value } });
                                   load();
                                 }}
                               />

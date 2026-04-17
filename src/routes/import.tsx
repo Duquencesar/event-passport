@@ -221,6 +221,7 @@ function CsvImportTab() {
                   <SelectItem value="Arquiteto">Arquiteto</SelectItem>
                   <SelectItem value="Explorer">Explorer</SelectItem>
                   <SelectItem value="Day Pass">Day Pass</SelectItem>
+                  <SelectItem value="Weekly">Weekly Pass</SelectItem>
                 </SelectContent>
               </Select>
               {defaultTag && defaultTag !== "__none__" && (
