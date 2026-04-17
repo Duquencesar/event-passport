@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -82,6 +82,7 @@ const PIE_COLORS = [
 
 function DashboardPage() {
   const data = Route.useLoaderData();
+  const router = useRouter();
   const initialTo = getCurrentBrasiliaDateKeySync();
   const initialFrom = shiftBrasiliaDateKeyByDays(initialTo, -30);
 
@@ -106,6 +107,24 @@ function DashboardPage() {
       setLoading(false);
     }
   };
+
+  // Always refetch on mount (so navigating back shows fresh data)
+  // and auto-refresh every 30s while the dashboard is open.
+  useEffect(() => {
+    refresh();
+    const interval = setInterval(() => {
+      refresh();
+    }, 30_000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Force loader re-run when window regains focus
+  useEffect(() => {
+    const onFocus = () => router.invalidate();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [router]);
 
   const handleEventFilter = async (eventId: string) => {
     setSelectedEventId(eventId);
