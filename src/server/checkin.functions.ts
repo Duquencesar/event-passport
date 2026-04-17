@@ -1,11 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
 import { db as supabaseAdmin } from "./db";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { withAuthHeaders } from "@/middleware/auth-client";
 
 export const searchPeople = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { query: string }) => input)
   .handler(async ({ data }) => {
     const q = `%${data.query}%`;
@@ -19,7 +16,6 @@ export const searchPeople = createServerFn({ method: "POST" })
   });
 
 export const searchPeopleForEvent = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { query: string; event_id: string }) => input)
   .handler(async ({ data }) => {
     const q = `%${data.query}%`;
@@ -74,7 +70,6 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
   });
 
 export const createCheckin = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator(
     (input: {
       person_id: string;
@@ -104,7 +99,6 @@ export const createCheckin = createServerFn({ method: "POST" })
   });
 
 export const getTodayCheckins = createServerFn({ method: "GET" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .handler(async () => {
     const today = await getBrasiliaTodayKey();
     const { data: checkins, error } = await supabaseAdmin
@@ -118,7 +112,6 @@ export const getTodayCheckins = createServerFn({ method: "GET" })
   });
 
 export const getEventCheckins = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { event_id: string }) => input)
   .handler(async ({ data }) => {
     const { data: checkins, error } = await supabaseAdmin
@@ -132,7 +125,6 @@ export const getEventCheckins = createServerFn({ method: "POST" })
   });
 
 export const getTodayCount = createServerFn({ method: "GET" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .handler(async () => {
     const today = await getBrasiliaTodayKey();
     const { count, error } = await supabaseAdmin
@@ -144,7 +136,6 @@ export const getTodayCount = createServerFn({ method: "GET" })
   });
 
 export const deleteCheckin = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { checkin_id: string }) => input)
   .handler(async ({ data }) => {
     const { error } = await supabaseAdmin
@@ -156,7 +147,6 @@ export const deleteCheckin = createServerFn({ method: "POST" })
   });
 
 export const updateCheckin = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator(
     (input: {
       checkin_id: string;
@@ -177,7 +167,6 @@ export const updateCheckin = createServerFn({ method: "POST" })
   });
 
 export const getPersonRegistrations = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { person_id: string }) => input)
   .handler(async ({ data }) => {
     const { data: registrations, error } = await supabaseAdmin
@@ -189,7 +178,6 @@ export const getPersonRegistrations = createServerFn({ method: "POST" })
   });
 
 export const checkDuplicateCheckin = createServerFn({ method: "POST" })
-  .middleware([withAuthHeaders, requireSupabaseAuth])
   .inputValidator((input: { person_id: string; event_id?: string }) => input)
   .handler(async ({ data }) => {
     const today = await getBrasiliaTodayKey();
