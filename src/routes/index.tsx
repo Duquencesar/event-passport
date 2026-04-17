@@ -94,11 +94,13 @@ function checkAccess(
     return { type: "ok", message: `Acesso total (${accessType})` };
   }
 
+  const today = eventDate || getCurrentBrasiliaDateKeySync();
+
+  // Day Pass: válido apenas no dia exato
   const dayPasses = registrations.filter((r) =>
     r.ticket_type.toLowerCase().includes("day pass") || r.ticket_type.toLowerCase().includes("day-pass")
   );
   if (dayPasses.length > 0) {
-    const today = eventDate || getCurrentBrasiliaDateKeySync();
     const hasValidDayPass = dayPasses.some((dp) => dp.day_pass_date === today);
     if (hasValidDayPass) {
       return { type: "ok", message: "Day Pass válido para hoje" };
@@ -111,6 +113,24 @@ function checkAccess(
       };
     }
     return { type: "warning", message: "Day Pass sem data definida" };
+  }
+
+  // Weekly Pass: válido por 7 dias a partir de week_pass_start_date
+  const weeklyPasses = registrations.filter((r) =>
+    r.ticket_type.toLowerCase().includes("week") || r.ticket_type.toLowerCase().includes("weekly")
+  );
+  if (weeklyPasses.length > 0) {
+    const validWeekly = weeklyPasses.find((wp) => {
+      if (!wp.week_pass_start_date) return false;
+      const [y, m, d] = wp.week_pass_start_date.split("-").map(Number);
+      const endDt = new Date(Date.UTC(y, m - 1, d + 6, 12));
+      const endKey = `${endDt.getUTCFullYear()}-${String(endDt.getUTCMonth() + 1).padStart(2, "0")}-${String(endDt.getUTCDate()).padStart(2, "0")}`;
+      return today >= wp.week_pass_start_date && today <= endKey;
+    });
+    if (validWeekly) {
+      return { type: "ok", message: `Weekly Pass válido (até 7 dias a partir de ${validWeekly.week_pass_start_date})` };
+    }
+    return { type: "warning", message: "Weekly Pass fora da janela de 7 dias" };
   }
 
   if (selectedEvent && selectedEvent.id) {
