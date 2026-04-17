@@ -34,6 +34,7 @@ import {
   getPeopleWithRegistrations,
   getPeopleCount,
   setDayPassDate,
+  setWeekPassStartDate,
   getPersonCheckinHistory,
   updatePersonTag,
 } from "@/server/people.functions";
