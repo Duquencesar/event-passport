@@ -24,6 +24,7 @@ export type Database = {
           id: string
           period: string
           person_id: string
+          source: string
         }
         Insert: {
           access_type: string
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           period: string
           person_id: string
+          source?: string
         }
         Update: {
           access_type?: string
@@ -44,6 +46,7 @@ export type Database = {
           id?: string
           period?: string
           person_id?: string
+          source?: string
         }
         Relationships: [
           {
