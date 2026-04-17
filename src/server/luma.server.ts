@@ -276,7 +276,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
 
     const email = rawEmail.toLowerCase().trim();
     const name = rawName.trim();
-    const ticketName = guest.event_ticket?.name || "Geral";
+    const ticketName = guest.event_ticket?.name || guest.ticket?.name || "Geral";
     const tag = ticketToTag(ticketName) || input.defaultTag || null;
 
     // Upsert person
