@@ -200,7 +200,7 @@ export const getPersonRegistrations = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: registrations, error } = await supabaseAdmin
       .from("registrations")
-      .select("id, event_name, ticket_type, day_pass_date, event_id")
+      .select("id, event_name, ticket_type, day_pass_date, week_pass_start_date, event_id")
       .eq("person_id", data.person_id);
     if (error) throw new Error(error.message);
     return registrations || [];
