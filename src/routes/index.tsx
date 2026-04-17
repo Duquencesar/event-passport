@@ -59,6 +59,20 @@ type AccessWarning = {
   message: string;
 };
 
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return "nunca";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  if (diffMs < 0) return "agora";
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return "há instantes";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24);
+  return `há ${d} dia${d !== 1 ? "s" : ""}`;
+}
+
 function checkAccess(
   registrations: Registration[],
   selectedEvent: EventBase | null,
