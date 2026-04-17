@@ -29,14 +29,10 @@ import {
   RefreshCw,
   Zap,
   AlertTriangle,
-  ChevronRight,
-  Users,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { importPeople } from "@/server/import.functions";
 import { getUpcomingEvents } from "@/server/event.functions";
-import { lumaListEvents, lumaSyncEvent, lumaSyncAll } from "@/server/luma.functions";
+import { lumaSyncAll } from "@/server/luma.functions";
 
 export const Route = createFileRoute("/import")({
   head: () => ({
