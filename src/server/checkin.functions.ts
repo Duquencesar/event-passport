@@ -6,13 +6,36 @@ export const searchPeople = createServerFn({ method: "POST" })
   .inputValidator((input: { query: string }) => input)
   .handler(async ({ data }) => {
     const q = `%${data.query}%`;
-    const { data: people, error } = await supabaseAdmin
+
+    // Apenas pessoas com acesso: têm pelo menos 1 inscrição (Day Pass / evento Luma).
+    const { data: withRegs, error } = await supabaseAdmin
+      .from("people")
+      .select("id, name, email, tag, registrations!inner(id)")
+      .or(`name.ilike.${q},email.ilike.${q}`)
+      .limit(50);
+    if (error) throw new Error(error.message);
+
+    const merged = (withRegs || []).map((p) => ({
+      id: p.id, name: p.name, email: p.email, tag: p.tag,
+    }));
+    const seen = new Set(merged.map((p) => p.id));
+
+    // Inclui Arquitetos/Explorers (acesso total) mesmo sem inscrição.
+    const { data: tagged } = await supabaseAdmin
       .from("people")
       .select("id, name, email, tag")
+      .in("tag", ["Arquiteto", "Explorer"])
       .or(`name.ilike.${q},email.ilike.${q}`)
-      .limit(10);
-    if (error) throw new Error(error.message);
-    return people || [];
+      .limit(50);
+
+    for (const p of tagged || []) {
+      if (!seen.has(p.id)) {
+        merged.push(p);
+        seen.add(p.id);
+      }
+    }
+
+    return merged.slice(0, 10);
   });
 
 export const searchPeopleForEvent = createServerFn({ method: "POST" })
