@@ -21,20 +21,25 @@ export type LumaEventEntry = {
   hosts: Array<{ name: string; api_id: string }>;
 };
 
+// API do Luma usa formatos diferentes em alguns endpoints.
+// Aceitamos ambos: user_email/email, user_name/name.
 export type LumaGuest = {
   api_id: string;
-  user_email: string;
-  user_name: string;
+  user_email?: string;
+  email?: string;
+  user_name?: string;
+  name?: string;
   approval_status: "approved" | "pending" | "declined" | string;
-  event_ticket: { name?: string | null; api_id?: string } | null;
+  event_ticket?: { name?: string | null; api_id?: string } | null;
+  ticket?: { name?: string | null; api_id?: string } | null;
   checked_in_at: string | null;
   registered_at: string;
 };
 
 type LumaGuestEntry = {
   api_id: string;
-  guest: LumaGuest;
-};
+  guest?: LumaGuest;
+} & Partial<LumaGuest>;
 
 type LumaGuestPage = {
   entries: LumaGuestEntry[];
