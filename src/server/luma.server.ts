@@ -102,6 +102,7 @@ export function ticketToTag(ticketName: string): string | null {
   const lower = ticketName.toLowerCase();
   if (lower.includes("architect") || lower.includes("arquiteto")) return "Arquiteto";
   if (lower.includes("explorer")) return "Explorer";
+  if (lower.includes("week pass") || lower.includes("weekly") || lower.includes("week-pass")) return "Weekly";
   if (lower.includes("day pass") || lower.includes("day-pass")) return "Day Pass";
   return null;
 }
