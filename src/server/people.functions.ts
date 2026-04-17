@@ -1,26 +1,48 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
 
+const PAGE_SIZE = 1000;
+
+/** Paginador genérico — Supabase/PostgREST limita cada request a 1000 linhas. */
+async function fetchAllPaginated<T>(
+  buildQuery: (from: number, to: number) => Promise<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  while (true) {
+    const to = from + PAGE_SIZE - 1;
+    const { data, error } = await buildQuery(from, to);
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+
 export const listPeople = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { data, error } = await db
-      .from("people")
-      .select("id, name, email, tag, created_at")
-      .order("name", { ascending: true })
-      .limit(2000);
-    if (error) throw new Error(error.message);
-    return data || [];
+    return fetchAllPaginated((from, to) =>
+      db
+        .from("people")
+        .select("id, name, email, tag, created_at")
+        .order("name", { ascending: true })
+        .range(from, to),
+    );
   });
 
 export const getPeopleWithRegistrations = createServerFn({ method: "GET" })
   .handler(async () => {
-    const { data, error } = await db
-      .from("people")
-      .select("id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at, day_pass_date)")
-      .order("name", { ascending: true })
-      .limit(2000);
-    if (error) throw new Error(error.message);
-    return data || [];
+    return fetchAllPaginated((from, to) =>
+      db
+        .from("people")
+        .select(
+          "id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at, day_pass_date)",
+        )
+        .order("name", { ascending: true })
+        .range(from, to),
+    );
   });
 
 export const setDayPassDate = createServerFn({ method: "POST" })
