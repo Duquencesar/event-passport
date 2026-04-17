@@ -35,6 +35,8 @@ import {
   checkDuplicateCheckin,
 } from "@/server/checkin.functions";
 import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents } from "@/server/event.functions";
+import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
@@ -56,6 +58,20 @@ type AccessWarning = {
   type: "ok" | "warning" | "danger";
   message: string;
 };
+
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return "nunca";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  if (diffMs < 0) return "agora";
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return "há instantes";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24);
+  return `há ${d} dia${d !== 1 ? "s" : ""}`;
+}
 
 function checkAccess(
   registrations: Registration[],
@@ -158,6 +174,20 @@ function CheckinPage() {
   const [editAccessType, setEditAccessType] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Luma sync status
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [, forceTick] = useState(0);
+
+  const refreshLastSync = useCallback(async () => {
+    try {
+      const r = await getLastLumaSync();
+      setLastSync(r.last_sync);
+    } catch (err) {
+      console.error("getLastLumaSync failed:", err);
+    }
+  }, []);
+
   const loadToday = useCallback(async () => {
     const [checkins, count, todayEvents] = await Promise.all([
       getTodayCheckins(),
@@ -180,7 +210,32 @@ function CheckinPage() {
   // biome-ignore lint: load on mount
   useEffect(() => {
     loadToday();
+    refreshLastSync();
   }, []);
+
+  // Re-render every 30s so "há X minutos" stays fresh
+  useEffect(() => {
+    const t = setInterval(() => forceTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await triggerLumaSync();
+      const t = result.totals;
+      toast.success("Sincronização concluída", {
+        description: `${result.events_processed} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
+      });
+      await Promise.all([loadToday(), refreshLastSync()]);
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Falha ao sincronizar";
+      toast.error("Erro na sincronização", { description: msg });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Auto-refresh every 30 seconds
   const selectedEventRef = useRef(selectedEvent);
@@ -382,6 +437,25 @@ function CheckinPage() {
               <span className="text-2xl font-bold text-foreground">{todayCount}</span>
               <span className="text-sm text-muted-foreground">hoje</span>
             </div>
+          </div>
+
+          {/* Luma sync banner */}
+          <div className="glass-subtle rounded-2xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <RefreshCw className={`w-4 h-4 text-primary ${syncing ? "animate-spin" : ""}`} />
+              <span className="text-muted-foreground">Última sincronização do Luma:</span>
+              <span className="font-medium text-foreground">{formatRelativeTime(lastSync)}</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleManualSync}
+              disabled={syncing}
+              className="rounded-xl gap-2"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando..." : "Sincronizar agora"}
+            </Button>
           </div>
 
           {events.length > 0 ? (
