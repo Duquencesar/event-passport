@@ -35,6 +35,7 @@ import {
   checkDuplicateCheckin,
 } from "@/server/checkin.functions";
 import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents } from "@/server/event.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -314,7 +315,9 @@ function CheckinPage() {
       setTodayCheckins(allCheckins);
       setTodayCount(allCount);
     } catch (err) {
-      console.error(err);
+      console.error("Check-in failed:", err);
+      const msg = err instanceof Error ? err.message : "Erro ao registrar check-in";
+      toast.error("Falha no check-in", { description: msg });
     } finally {
       setLoading(false);
     }
