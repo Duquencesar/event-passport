@@ -29,14 +29,10 @@ import {
   RefreshCw,
   Zap,
   AlertTriangle,
-  ChevronRight,
-  Users,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { importPeople } from "@/server/import.functions";
 import { getUpcomingEvents } from "@/server/event.functions";
-import { lumaListEvents, lumaSyncEvent, lumaSyncAll } from "@/server/luma.functions";
+import { lumaSyncAll } from "@/server/luma.functions";
 
 export const Route = createFileRoute("/import")({
   head: () => ({
@@ -49,16 +45,6 @@ export const Route = createFileRoute("/import")({
 });
 
 type Event = { id: string; name: string; date: string; time: string | null };
-type LumaEvent = {
-  api_id: string;
-  name: string;
-  date: string;
-  time: string;
-  location: string | null;
-  organizer: string | null;
-  url: string | null;
-  start_at: string;
-};
 
 // ─── CSV Import tab ───────────────────────────────────────────────────────────
 
@@ -302,14 +288,6 @@ function CsvImportTab() {
 // ─── Luma Sync tab ────────────────────────────────────────────────────────────
 
 function LumaSyncTab() {
-  const [apiKey, setApiKey] = useState("");
-  const [showKey, setShowKey] = useState(false);
-  const [calendarId, setCalendarId] = useState("");
-  const [loadingEvents, setLoadingEvents] = useState(false);
-  const [lumaEvents, setLumaEvents] = useState<LumaEvent[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  // Sync completo (usa secrets do servidor)
   const [autoSyncing, setAutoSyncing] = useState(false);
   const [autoResult, setAutoResult] = useState<{
     events_processed: number;
@@ -329,93 +307,6 @@ function LumaSyncTab() {
     } finally {
       setAutoSyncing(false);
     }
-  };
-
-  const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
-  const [defaultTag, setDefaultTag] = useState("");
-  const [syncing, setSyncing] = useState(false);
-  const [syncResults, setSyncResults] = useState<Array<{
-    name: string;
-    total_guests: number;
-    created: number;
-    updated: number;
-    registrations: number;
-  }>>([]);
-  const [syncDone, setSyncDone] = useState(false);
-
-  const fetchEvents = async () => {
-    if (!apiKey.trim() || !calendarId.trim()) return;
-    setLoadingEvents(true);
-    setError(null);
-    setLumaEvents([]);
-    try {
-      const events = await lumaListEvents({ data: { api_key: apiKey.trim(), calendar_api_id: calendarId.trim() } });
-      setLumaEvents(events as LumaEvent[]);
-    } catch (err: any) {
-      setError(err?.message || "Erro ao conectar com o Luma. Verifique a API Key e o Calendar ID.");
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
-
-  const toggleEvent = (id: string) => {
-    setSelectedEvents((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const selectAll = () => setSelectedEvents(new Set(lumaEvents.map((e) => e.api_id)));
-  const clearAll = () => setSelectedEvents(new Set());
-
-  const handleSync = async () => {
-    if (selectedEvents.size === 0) return;
-    setSyncing(true);
-    setSyncResults([]);
-    setSyncDone(false);
-
-    const resolvedTag = defaultTag && defaultTag !== "__none__" ? defaultTag : undefined;
-    const toSync = lumaEvents.filter((e) => selectedEvents.has(e.api_id));
-    const results: typeof syncResults = [];
-
-    for (const event of toSync) {
-      try {
-        const res = await lumaSyncEvent({
-          data: {
-            api_key: apiKey.trim(),
-            luma_event_id: event.api_id,
-            event_name: event.name,
-            event_date: event.date,
-            event_time: event.time,
-            event_location: event.location,
-            event_organizer: event.organizer,
-            event_url: event.url,
-            default_tag: resolvedTag,
-          },
-        });
-        results.push({
-          name: event.name,
-          total_guests: (res as any).total_guests,
-          created: (res as any).created,
-          updated: (res as any).updated,
-          registrations: (res as any).registrations,
-        });
-      } catch (err: any) {
-        results.push({
-          name: event.name,
-          total_guests: -1,
-          created: 0,
-          updated: 0,
-          registrations: 0,
-        });
-      }
-    }
-
-    setSyncResults(results);
-    setSyncDone(true);
-    setSyncing(false);
   };
 
   return (
@@ -464,196 +355,6 @@ function LumaSyncTab() {
         )}
       </div>
 
-      {/* Info banner — modo manual */}
-      <div className="glass rounded-2xl px-5 py-4 flex items-start gap-3">
-        <Zap className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="text-sm font-semibold">Modo manual (escolher eventos específicos)</p>
-          <p className="text-sm text-muted-foreground">
-            Use abaixo se quiser sincronizar só eventos selecionados ou usar uma API Key/Calendar diferente.
-          </p>
-        </div>
-      </div>
-
-      {/* Credentials */}
-      <div className="glass rounded-3xl p-6 space-y-4">
-        <h3 className="text-sm font-semibold">Credenciais Luma</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground font-medium">API Key</label>
-            <div className="relative">
-              <Input
-                type={showKey ? "text" : "password"}
-                placeholder="luma_api_key_..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="rounded-xl bg-background/50 pr-10 font-mono text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowKey((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground font-medium">Calendar API ID</label>
-            <Input
-              placeholder="cal_xxxxxxxxxxxxxx"
-              value={calendarId}
-              onChange={(e) => setCalendarId(e.target.value)}
-              className="rounded-xl bg-background/50 font-mono text-sm"
-            />
-          </div>
-        </div>
-        <Button
-          onClick={fetchEvents}
-          disabled={loadingEvents || !apiKey.trim() || !calendarId.trim()}
-          className="rounded-xl"
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${loadingEvents ? "animate-spin" : ""}`} />
-          {loadingEvents ? "Buscando eventos..." : "Buscar eventos do Luma"}
-        </Button>
-
-        {error && (
-          <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{error}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Event list */}
-      {lumaEvents.length > 0 && !syncDone && (
-        <div className="glass rounded-3xl p-6 space-y-5">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <h3 className="text-sm font-semibold">{lumaEvents.length} eventos encontrados</h3>
-              <Badge className="bg-primary/10 text-primary border-0 rounded-lg text-xs">
-                {selectedEvents.size} selecionados
-              </Badge>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={selectAll} className="rounded-xl text-xs">
-                Selecionar todos
-              </Button>
-              <Button size="sm" variant="outline" onClick={clearAll} className="rounded-xl text-xs">
-                Limpar
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-            {lumaEvents.map((event) => {
-              const selected = selectedEvents.has(event.api_id);
-              return (
-                <button
-                  key={event.api_id}
-                  onClick={() => toggleEvent(event.api_id)}
-                  className={`w-full text-left px-4 py-3.5 rounded-xl transition-all duration-150 flex items-center gap-3 ${
-                    selected
-                      ? "bg-primary/10 border border-primary/30"
-                      : "bg-muted/20 border border-transparent hover:bg-muted/30"
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-                    selected ? "bg-primary border-primary" : "border-border/50"
-                  }`}>
-                    {selected && <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{event.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {event.date}
-                      {event.time && ` às ${event.time}`}
-                      {event.location && ` · ${event.location}`}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Default tag */}
-          <div className="space-y-1.5">
-            <label className="text-sm text-muted-foreground font-medium">
-              Tag padrão <span className="text-muted-foreground/60">(para participantes sem tipo de ticket definido)</span>
-            </label>
-            <Select value={defaultTag} onValueChange={setDefaultTag}>
-              <SelectTrigger className="rounded-xl bg-background/50 w-60">
-                <SelectValue placeholder="Sem tag padrão" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">— Sem tag padrão —</SelectItem>
-                <SelectItem value="Arquiteto">Arquiteto</SelectItem>
-                <SelectItem value="Explorer">Explorer</SelectItem>
-                <SelectItem value="Day Pass">Day Pass</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button
-            onClick={handleSync}
-            disabled={syncing || selectedEvents.size === 0}
-            className="w-full h-12 font-bold rounded-2xl shadow-lg shadow-primary/20"
-          >
-            <Users className="w-5 h-5 mr-2" />
-            {syncing
-              ? "Sincronizando..."
-              : `Sincronizar ${selectedEvents.size} evento${selectedEvents.size !== 1 ? "s" : ""}`}
-          </Button>
-        </div>
-      )}
-
-      {/* Sync progress */}
-      {syncing && (
-        <div className="glass rounded-3xl p-6 text-center space-y-3">
-          <RefreshCw className="w-8 h-8 text-primary animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Sincronizando participantes do Luma...</p>
-          <p className="text-xs text-muted-foreground/60">
-            Isso pode levar alguns segundos por evento.
-          </p>
-        </div>
-      )}
-
-      {/* Results */}
-      {syncDone && syncResults.length > 0 && (
-        <div className="glass rounded-3xl p-6 space-y-5">
-          <div className="flex items-center gap-3">
-            <CheckCircle className="w-6 h-6 text-primary" />
-            <h3 className="font-bold text-lg">Sincronização concluída!</h3>
-          </div>
-          <div className="space-y-3">
-            {syncResults.map((r, i) => (
-              <div key={i} className="glass-subtle rounded-2xl px-4 py-3">
-                <p className="font-medium text-sm mb-2 truncate">{r.name}</p>
-                {r.total_guests < 0 ? (
-                  <p className="text-xs text-red-400 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Erro ao sincronizar este evento
-                  </p>
-                ) : (
-                  <div className="flex gap-4 text-xs text-muted-foreground">
-                    <span><strong className="text-foreground">{r.total_guests}</strong> participantes</span>
-                    <span><strong className="text-emerald-400">{r.created}</strong> novos</span>
-                    <span><strong className="text-primary">{r.updated}</strong> atualizados</span>
-                    <span><strong className="text-secondary">{r.registrations}</strong> inscrições</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            className="rounded-xl"
-            onClick={() => { setSyncDone(false); setSyncResults([]); setSelectedEvents(new Set()); }}
-          >
-            Sincronizar novamente
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
