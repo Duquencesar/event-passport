@@ -425,6 +425,25 @@ function CheckinPage() {
             </div>
           </div>
 
+          {/* Luma sync banner */}
+          <div className="glass-subtle rounded-2xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <RefreshCw className={`w-4 h-4 text-primary ${syncing ? "animate-spin" : ""}`} />
+              <span className="text-muted-foreground">Última sincronização do Luma:</span>
+              <span className="font-medium text-foreground">{formatRelativeTime(lastSync)}</span>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleManualSync}
+              disabled={syncing}
+              className="rounded-xl gap-2"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Sincronizando..." : "Sincronizar agora"}
+            </Button>
+          </div>
+
           {events.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
