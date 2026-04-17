@@ -160,6 +160,20 @@ function CheckinPage() {
   const [editAccessType, setEditAccessType] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Luma sync status
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [, forceTick] = useState(0);
+
+  const refreshLastSync = useCallback(async () => {
+    try {
+      const r = await getLastLumaSync();
+      setLastSync(r.last_sync);
+    } catch (err) {
+      console.error("getLastLumaSync failed:", err);
+    }
+  }, []);
+
   const loadToday = useCallback(async () => {
     const [checkins, count, todayEvents] = await Promise.all([
       getTodayCheckins(),
@@ -182,7 +196,32 @@ function CheckinPage() {
   // biome-ignore lint: load on mount
   useEffect(() => {
     loadToday();
+    refreshLastSync();
   }, []);
+
+  // Re-render every 30s so "há X minutos" stays fresh
+  useEffect(() => {
+    const t = setInterval(() => forceTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await triggerLumaSync();
+      const t = result.totals;
+      toast.success("Sincronização concluída", {
+        description: `${t.events} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
+      });
+      await Promise.all([loadToday(), refreshLastSync()]);
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Falha ao sincronizar";
+      toast.error("Erro na sincronização", { description: msg });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Auto-refresh every 30 seconds
   const selectedEventRef = useRef(selectedEvent);
