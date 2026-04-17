@@ -53,7 +53,6 @@ export const Route = createFileRoute("/pessoas")({
 type PersonWithRegs = {
   id: string;
   name: string;
-  email: string;
   tag: string | null;
   created_at: string;
   registrations: Array<{
@@ -174,7 +173,7 @@ function PessoasPage() {
       if (tagFilter && tagFilter !== "__none__" && p.tag !== tagFilter) return false;
       if (filter.length >= 2) {
         const q = filter.toLowerCase();
-        return p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q);
+        return p.name.toLowerCase().includes(q);
       }
       return true;
     });
@@ -280,7 +279,7 @@ function PessoasPage() {
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou email..."
+              placeholder="Buscar por nome..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="pl-12 h-12 rounded-2xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
@@ -448,8 +447,9 @@ function PessoasPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-lg leading-tight truncate">{selectedPerson.name}</p>
-                      {/* Email only in modal — protected context */}
-                      <p className="text-sm text-muted-foreground font-normal truncate">{selectedPerson.email}</p>
+                      {selectedPerson.tag && (
+                        <p className="text-sm text-muted-foreground font-normal truncate">{selectedPerson.tag}</p>
+                      )}
                     </div>
                   </DialogTitle>
                 </DialogHeader>

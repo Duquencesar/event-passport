@@ -9,27 +9,26 @@ export const searchPeople = createServerFn({ method: "POST" })
     const q = `%${data.query}%`;
     const today = getCurrentBrasiliaDateKeySync();
 
+    // Server cruza por email internamente, mas NUNCA retorna ao cliente.
     const { data: rows, error } = await supabaseAdmin
       .from("people")
-      .select("id, name, email, tag, registrations(ticket_type, day_pass_date, week_pass_start_date, event_id)")
+      .select("id, name, tag, registrations(ticket_type, day_pass_date, week_pass_start_date, event_id)")
       .or(`name.ilike.${q},email.ilike.${q}`)
       .limit(100);
     if (error) throw new Error(error.message);
 
-    const result: Array<{ id: string; name: string; email: string; tag: string | null }> = [];
+    const result: Array<{ id: string; name: string; tag: string | null }> = [];
     for (const p of rows || []) {
-      // Acesso total via tag
       if (hasFullAccessTag(p.tag)) {
-        result.push({ id: p.id, name: p.name, email: p.email, tag: p.tag });
+        result.push({ id: p.id, name: p.name, tag: p.tag });
         continue;
       }
-      // Senão, precisa ter Day Pass ou Weekly Pass válido HOJE
       const regs = (p.registrations as Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null }>) || [];
       const validToday = regs.some(
         (r) => isDayPassValidToday(r, today) || isWeeklyPassValidToday(r, today),
       );
       if (validToday) {
-        result.push({ id: p.id, name: p.name, email: p.email, tag: p.tag });
+        result.push({ id: p.id, name: p.name, tag: p.tag });
       }
       if (result.length >= 10) break;
     }
