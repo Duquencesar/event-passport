@@ -72,22 +72,30 @@ export const searchPeopleForEvent = createServerFn({ method: "POST" })
       }
     }
 
-    // 3. Fill remaining slots with other people (not registered)
+    // 3. Pessoas com Day Pass / Weekly válido HOJE (acesso global do dia)
     if (registered.length < 10) {
-      const { data: others } = await supabaseAdmin
+      const today = getCurrentBrasiliaDateKeySync();
+      const { data: dayWeek } = await supabaseAdmin
         .from("people")
-        .select("id, name, email, tag")
+        .select("id, name, email, tag, registrations(ticket_type, day_pass_date, week_pass_start_date)")
         .or(`name.ilike.${q},email.ilike.${q}`)
-        .limit(10 - registered.length);
+        .limit(50);
 
-      const additional = (others || [])
-        .filter((p) => !registeredIds.has(p.id))
-        .map((p) => ({ ...p, registered: false }));
-
-      return [...registered, ...additional];
+      for (const p of dayWeek || []) {
+        if (registeredIds.has(p.id)) continue;
+        const regs = (p.registrations as Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null }>) || [];
+        const validToday = regs.some(
+          (r) => isDayPassValidToday(r, today) || isWeeklyPassValidToday(r, today),
+        );
+        if (validToday) {
+          registered.push({ id: p.id, name: p.name, email: p.email, tag: p.tag, registered: true });
+          registeredIds.add(p.id);
+          if (registered.length >= 10) break;
+        }
+      }
     }
 
-    return registered;
+    return registered.slice(0, 10);
   });
 
 export const createCheckin = createServerFn({ method: "POST" })
