@@ -63,6 +63,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "checkins_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       events: {
@@ -171,6 +178,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "registrations_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       telegram_bot_state: {
@@ -217,7 +231,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      people_safe: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          name: string | null
+          tag: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          tag?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          name?: string | null
+          tag?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
