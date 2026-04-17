@@ -29,13 +29,14 @@ export const getPeopleWithRegistrations = createServerFn({ method: "GET" })
         source: string;
         imported_at: string;
         day_pass_date: string | null;
+        week_pass_start_date: string | null;
       }>;
     };
     return fetchAllRows<Row>((from, to) =>
       db
         .from("people")
         .select(
-          "id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at, day_pass_date)",
+          "id, name, email, tag, created_at, registrations(id, event_name, ticket_type, source, imported_at, day_pass_date, week_pass_start_date)",
         )
         .order("name", { ascending: true })
         .range(from, to) as unknown as PromiseLike<{ data: Row[] | null; error: { message: string } | null }>,
@@ -48,6 +49,17 @@ export const setDayPassDate = createServerFn({ method: "POST" })
     const { error } = await db
       .from("registrations")
       .update({ day_pass_date: data.date })
+      .eq("id", data.registrationId);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });
+
+export const setWeekPassStartDate = createServerFn({ method: "POST" })
+  .inputValidator((input: { registrationId: string; date: string }) => input)
+  .handler(async ({ data }) => {
+    const { error } = await db
+      .from("registrations")
+      .update({ week_pass_start_date: data.date })
       .eq("id", data.registrationId);
     if (error) throw new Error(error.message);
     return { success: true };
