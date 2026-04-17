@@ -49,7 +49,7 @@ export const Route = createFileRoute("/")({
   component: CheckinPage,
 });
 
-type Person = { id: string; name: string; email: string; tag: string | null; registered?: boolean };
+type Person = { id: string; name: string; tag: string | null; registered?: boolean };
 type EventBase = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
 type EventWithStats = EventBase & { registration_count: number; checkin_count: number };
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null };
@@ -754,7 +754,7 @@ function CheckinPage() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou email..."
+              placeholder="Buscar por nome..."
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
               className="pl-12 h-14 text-lg rounded-2xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
@@ -774,7 +774,9 @@ function CheckinPage() {
                   <div className="flex items-center gap-3">
                     <div>
                       <span className="font-semibold text-foreground">{p.name}</span>
-                      <span className="text-muted-foreground text-sm ml-3">{p.email}</span>
+                      {p.tag && (
+                        <span className="text-muted-foreground text-xs ml-3">{p.tag}</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -801,7 +803,6 @@ function CheckinPage() {
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-lg">{selected.name}</p>
-                  <p className="text-sm text-muted-foreground">{selected.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {selected.registered && (
