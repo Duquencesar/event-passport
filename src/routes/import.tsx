@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { importPeople } from "@/server/import.functions";
 import { getUpcomingEvents } from "@/server/event.functions";
-import { lumaListEvents, lumaSyncEvent } from "@/server/luma.functions";
+import { lumaListEvents, lumaSyncEvent, lumaSyncAll } from "@/server/luma.functions";
 
 export const Route = createFileRoute("/import")({
   head: () => ({
@@ -308,6 +308,28 @@ function LumaSyncTab() {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [lumaEvents, setLumaEvents] = useState<LumaEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync completo (usa secrets do servidor)
+  const [autoSyncing, setAutoSyncing] = useState(false);
+  const [autoResult, setAutoResult] = useState<{
+    events_processed: number;
+    totals: { guests: number; created: number; updated: number; registrations: number; checkins: number };
+  } | null>(null);
+  const [autoError, setAutoError] = useState<string | null>(null);
+
+  const handleAutoSync = async () => {
+    setAutoSyncing(true);
+    setAutoError(null);
+    setAutoResult(null);
+    try {
+      const res = await lumaSyncAll({ data: {} });
+      setAutoResult({ events_processed: (res as any).events_processed, totals: (res as any).totals });
+    } catch (err: any) {
+      setAutoError(err?.message || "Erro ao sincronizar com o Luma.");
+    } finally {
+      setAutoSyncing(false);
+    }
+  };
 
   const [selectedEvents, setSelectedEvents] = useState<Set<string>>(new Set());
   const [defaultTag, setDefaultTag] = useState("");
