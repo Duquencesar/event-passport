@@ -35,6 +35,8 @@ import {
   checkDuplicateCheckin,
 } from "@/server/checkin.functions";
 import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents } from "@/server/event.functions";
+import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
+import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
