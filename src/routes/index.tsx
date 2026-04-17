@@ -211,7 +211,7 @@ function CheckinPage() {
       const result = await triggerLumaSync();
       const t = result.totals;
       toast.success("Sincronização concluída", {
-        description: `${t.events} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
+        description: `${result.events_processed} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
       });
       await Promise.all([loadToday(), refreshLastSync()]);
     } catch (err) {
