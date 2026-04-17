@@ -45,16 +45,6 @@ export const Route = createFileRoute("/import")({
 });
 
 type Event = { id: string; name: string; date: string; time: string | null };
-type LumaEvent = {
-  api_id: string;
-  name: string;
-  date: string;
-  time: string;
-  location: string | null;
-  organizer: string | null;
-  url: string | null;
-  start_at: string;
-};
 
 // ─── CSV Import tab ───────────────────────────────────────────────────────────
 
