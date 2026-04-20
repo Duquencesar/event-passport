@@ -1,0 +1,42 @@
+Contexto do repo:
+
+- Branch atual: feat/controlid-house-integration
+- O projeto integra Luma, dashboard, sistema da casa e porta
+- Ja existe um broker no dashboard com:
+  - GET /api/house/v1/feed
+  - POST /api/house/v1/access-events/batch
+  - GET /api/house/v1/health
+  - POST /api/house/v1/heartbeat
+  - GET /api/house/v1/luma-guest
+- Ja existe migration house_* em supabase/migrations/20260419103000_house_integration_foundation.sql
+- Ja existe demo local com:
+  - scripts/founder_haus_system.py
+  - scripts/mock_door.py
+  - scripts/simulate_house_door.py
+  - scripts/fixtures/founder_haus_demo_grants.json
+
+Estado atual:
+
+- Demo local funciona
+- Broker real ainda nao, porque falta aplicar migration house_* e configurar SUPABASE_SERVICE_ROLE_KEY
+- O Luma foi atualizado para a API publica atual
+- Existe endpoint auxiliar para lookup de guest do Luma por id/pk/QR
+- O feed ainda mistura convidados do Luma com residentes
+- O alvo correto e:
+  - feed exporta apenas convidados do Luma
+  - residentes ficam apenas no sistema da casa / Control iD
+  - a casa devolve todos os eventos de acesso
+  - o dashboard registra presenca de convidados e residentes
+  - o dashboard tenta atribuir cada acesso ao evento ativo
+
+Arquivos para ler primeiro:
+
+- docs/context/house-integration-current-state.md
+- docs/context/house-integration-refactor-plan.md
+- src/server/house.server.ts
+- src/server/luma.server.ts
+- docs/house-broker-integration.md
+
+Pedido atual:
+
+Refatorar a integracao para que o dashboard envie para a casa somente convidados do Luma, receba de volta os eventos de acesso da casa, e consiga registrar tambem os residentes como presentes no evento correto.

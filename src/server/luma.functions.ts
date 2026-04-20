@@ -6,6 +6,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
   listCalendarEvents,
+  lookupLumaGuest,
   syncLumaEvent,
   syncEntireCalendar,
 } from "./luma.server";
@@ -21,14 +22,9 @@ function resolveApiKey(provided?: string): string {
   return key;
 }
 
-function resolveCalendarId(provided?: string): string {
+function resolveCalendarId(provided?: string): string | undefined {
   const id = provided?.trim() || process.env.LUMA_CALENDAR_API_ID;
-  if (!id) {
-    throw new Error(
-      "Luma Calendar API ID não configurado. Defina LUMA_CALENDAR_API_ID nos secrets ou informe na UI.",
-    );
-  }
-  return id;
+  return id || undefined;
 }
 
 /** Lista os eventos do calendário Luma. */
@@ -38,6 +34,18 @@ export const lumaListEvents = createServerFn({ method: "POST" })
     const apiKey = resolveApiKey(data.api_key);
     const calendarId = resolveCalendarId(data.calendar_api_id);
     return listCalendarEvents(apiKey, calendarId);
+  });
+
+/** Faz lookup de um guest por guest id / email / guest key / ticket key (pk do QR). */
+export const lumaLookupGuest = createServerFn({ method: "POST" })
+  .inputValidator((input: { api_key?: string; id: string; event_id?: string }) => input)
+  .handler(async ({ data }) => {
+    const apiKey = resolveApiKey(data.api_key);
+    return lookupLumaGuest({
+      apiKey,
+      id: data.id,
+      eventId: data.event_id,
+    });
   });
 
 /** Sincroniza inscritos + check-ins de UM evento. */
