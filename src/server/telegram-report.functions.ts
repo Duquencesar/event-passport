@@ -90,12 +90,12 @@ async function buildPeriodReport(period: "morning" | "afternoon"): Promise<strin
   // ── Passes Semanais ativos hoje ───────────────────────────────────────────
   const { data: weeklyRegs } = await supabaseAdmin
     .from("registrations")
-    .select("person_id, weekly_start_date")
-    .not("weekly_start_date", "is", null);
+    .select("person_id, week_pass_start_date")
+    .not("week_pass_start_date", "is", null);
 
   const weeklyActiveIds = new Set(
     (weeklyRegs || [])
-      .filter((r) => r.weekly_start_date && isWeeklyActive(r.weekly_start_date, today))
+      .filter((r) => r.week_pass_start_date && isWeeklyActive(r.week_pass_start_date, today))
       .map((r) => r.person_id)
   );
 
