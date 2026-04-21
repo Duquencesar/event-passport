@@ -22,6 +22,8 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 
+HOUSE_DEMO_MARKER = "house-door-demo-v1"
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -97,6 +99,16 @@ def command_load_fixture(client: FounderHausClient, args: argparse.Namespace) ->
     return client.request("POST", "/sync/load-fixture", payload)
 
 
+def command_prepare_demo(client: FounderHausClient, _args: argparse.Namespace) -> Any:
+    return client.request("POST", "/sync/prepare-demo", {})
+
+
+def resolve_demo_occurred_at(payload: dict[str, Any]) -> str:
+    demo = payload.get("demo") or {}
+    event = demo.get("event") or {}
+    return event.get("occurred_at") or now_iso()
+
+
 def command_scan_qr(client: FounderHausClient, args: argparse.Namespace) -> Any:
     payload = {
         "door_id": args.door_id,
@@ -104,7 +116,7 @@ def command_scan_qr(client: FounderHausClient, args: argparse.Namespace) -> Any:
         "credential_type": "qrcode",
         "credential_value": args.qr,
         "occurred_at": args.occurred_at or now_iso(),
-        "raw_payload": {"scanner": "mock-door", "demo": True},
+        "raw_payload": {"scanner": "mock-door", "demo": True, "demo_marker": HOUSE_DEMO_MARKER},
     }
     return client.request("POST", "/door/validate", payload)
 
@@ -116,15 +128,17 @@ def command_scan_face(client: FounderHausClient, args: argparse.Namespace) -> An
         "credential_type": "face",
         "house_user_id": args.house_user_id,
         "occurred_at": args.occurred_at or now_iso(),
-        "raw_payload": {"scanner": "mock-door", "demo": True},
+        "raw_payload": {"scanner": "mock-door", "demo": True, "demo_marker": HOUSE_DEMO_MARKER},
     }
     return client.request("POST", "/door/validate", payload)
 
 
 def command_demo(client: FounderHausClient, args: argparse.Namespace) -> Any:
     outputs: dict[str, Any] = {}
+    outputs["prepare_demo"] = command_prepare_demo(client, args)
     outputs["health"] = command_health(client, args)
     outputs["grants_map"] = command_pull_map(client, args)
+    occurred_at = resolve_demo_occurred_at(outputs["prepare_demo"].get("result", {}))
 
     result = outputs["grants_map"].get("result", {})
     qr_map = result.get("qr_code_map", {})
@@ -140,8 +154,8 @@ def command_demo(client: FounderHausClient, args: argparse.Namespace) -> Any:
                 "device_id": args.device_id,
                 "credential_type": "qrcode",
                 "credential_value": qr_value,
-                "occurred_at": now_iso(),
-                "raw_payload": {"scanner": "mock-door", "demo": True},
+                "occurred_at": occurred_at,
+                "raw_payload": {"scanner": "mock-door", "demo": True, "demo_marker": HOUSE_DEMO_MARKER},
             },
         )
 
@@ -154,10 +168,23 @@ def command_demo(client: FounderHausClient, args: argparse.Namespace) -> Any:
                 "device_id": args.device_id,
                 "credential_type": "face",
                 "house_user_id": resident_face_ids[0],
-                "occurred_at": now_iso(),
-                "raw_payload": {"scanner": "mock-door", "demo": True},
+                "occurred_at": occurred_at,
+                "raw_payload": {"scanner": "mock-door", "demo": True, "demo_marker": HOUSE_DEMO_MARKER},
             },
         )
+
+    outputs["scan_invalid_qr"] = client.request(
+        "POST",
+        "/door/validate",
+        {
+            "door_id": args.door_id,
+            "device_id": args.device_id,
+            "credential_type": "qrcode",
+            "credential_value": "demo-invalid-qr",
+            "occurred_at": occurred_at,
+            "raw_payload": {"scanner": "mock-door", "demo": True, "demo_marker": HOUSE_DEMO_MARKER},
+        },
+    )
 
     outputs["entries"] = command_entries(client, args)
     return outputs
@@ -173,6 +200,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("entries")
     subparsers.add_parser("sync-bootstrap")
     subparsers.add_parser("sync-changes")
+    subparsers.add_parser("prepare-demo")
 
     load_fixture = subparsers.add_parser("load-fixture")
     load_fixture.add_argument("--path")
@@ -207,6 +235,7 @@ def main() -> int:
         "entries": command_entries,
         "sync-bootstrap": command_sync_bootstrap,
         "sync-changes": command_sync_changes,
+        "prepare-demo": command_prepare_demo,
         "load-fixture": command_load_fixture,
         "scan-qr": command_scan_qr,
         "scan-face": command_scan_face,

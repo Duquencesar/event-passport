@@ -32,6 +32,7 @@ DEFAULT_TOKEN = os.getenv("HOUSE_API_TOKEN", "")
 DEFAULT_STATE_FILE = Path(
     os.getenv("HOUSE_SIM_STATE_FILE", ".house-sim-state.json")
 ).resolve()
+HOUSE_DEMO_MARKER = "house-door-demo-v1"
 
 
 class ApiError(RuntimeError):
@@ -93,11 +94,12 @@ def parse_json_file(path: str | None) -> Any:
 
 def load_state(path: Path) -> dict[str, Any]:
     if not path.exists():
-        return {"next_cursor": None, "grants": {}}
+        return {"next_cursor": None, "grants": {}, "demo": None}
     with open(path, "r", encoding="utf-8") as fh:
         data = json.load(fh)
     if "grants" not in data or not isinstance(data["grants"], dict):
         data["grants"] = {}
+    data.setdefault("demo", None)
     return data
 
 
@@ -163,7 +165,7 @@ def command_heartbeat(client: HouseClient, args: argparse.Namespace) -> Any:
 
 
 def command_bootstrap(client: HouseClient, args: argparse.Namespace) -> Any:
-    data = client.request("GET", "/api/house/v1/bootstrap")
+    data = client.request("GET", "/api/house/v1/feed")
     state = load_state(args.state_file)
     merge_grants(state, data.get("grants", []), data.get("next_cursor"))
     state["last_bootstrap"] = data.get("generated_at")
@@ -175,8 +177,15 @@ def command_changes(client: HouseClient, args: argparse.Namespace) -> Any:
     state = load_state(args.state_file)
     cursor = args.cursor or state.get("next_cursor")
     suffix = f"?cursor={urllib.parse.quote(cursor)}" if cursor else ""
-    data = client.request("GET", f"/api/house/v1/access-grants/changes{suffix}")
+    data = client.request("GET", f"/api/house/v1/feed{suffix}")
     merge_grants(state, data.get("grants", []), data.get("next_cursor"))
+    save_state(args.state_file, state)
+    return data
+
+
+def command_prepare_demo(client: HouseClient, args: argparse.Namespace) -> Any:
+    data = client.request("POST", "/api/house/v1/demo/prepare", {})
+    state = {"next_cursor": None, "grants": {}, "demo": data}
     save_state(args.state_file, state)
     return data
 
@@ -208,6 +217,9 @@ def build_event_from_args(state: dict[str, Any], args: argparse.Namespace) -> di
             "house_user_id ausente. Informe --house-user-id ou selecione um grant pelo state file."
         )
 
+    demo = state.get("demo") or {}
+    demo_event = demo.get("event") or {}
+
     return {
         "house_event_id": args.house_event_id or f"sim-{uuid.uuid4()}",
         "device_id": args.device_id,
@@ -217,8 +229,10 @@ def build_event_from_args(state: dict[str, Any], args: argparse.Namespace) -> di
         "credential_value": credential_value,
         "decision": args.decision,
         "reason": args.reason,
-        "occurred_at": args.occurred_at or utc_now_iso(),
-        "raw_payload": parse_json_file(args.raw_json),
+        "occurred_at": args.occurred_at or demo_event.get("occurred_at") or utc_now_iso(),
+        "event_id": demo_event.get("id"),
+        "event_name": demo_event.get("name"),
+        "raw_payload": parse_json_file(args.raw_json) or {"demo_marker": HOUSE_DEMO_MARKER},
     }
 
 
@@ -230,6 +244,7 @@ def command_emit_event(client: HouseClient, args: argparse.Namespace) -> Any:
 
 def command_demo_cycle(client: HouseClient, args: argparse.Namespace) -> Any:
     outputs: dict[str, Any] = {}
+    outputs["prepare_demo"] = command_prepare_demo(client, args)
     outputs["health"] = command_health(client, args)
     outputs["heartbeat"] = command_heartbeat(client, args)
 
@@ -284,6 +299,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser(
         "bootstrap", help="Busca o snapshot completo de grants ativos"
+    )
+
+    subparsers.add_parser(
+        "prepare-demo", help="Reseta e recria a demo integrada no dashboard"
     )
 
     changes = subparsers.add_parser(
@@ -362,6 +381,7 @@ def main() -> int:
         "heartbeat": command_heartbeat,
         "bootstrap": command_bootstrap,
         "changes": command_changes,
+        "prepare-demo": command_prepare_demo,
         "emit-event": command_emit_event,
         "demo-cycle": command_demo_cycle,
     }

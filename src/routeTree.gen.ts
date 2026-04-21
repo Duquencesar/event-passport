@@ -23,6 +23,7 @@ import { Route as ApiHouseV1HeartbeatRouteImport } from './routes/api/house/v1/h
 import { Route as ApiHouseV1HealthRouteImport } from './routes/api/house/v1/health'
 import { Route as ApiHouseV1FeedRouteImport } from './routes/api/house/v1/feed'
 import { Route as ApiHouseV1BootstrapRouteImport } from './routes/api/house/v1/bootstrap'
+import { Route as ApiHouseV1DemoPrepareRouteImport } from './routes/api/house/v1/demo/prepare'
 import { Route as ApiHouseV1AccessGrantsChangesRouteImport } from './routes/api/house/v1/access-grants/changes'
 import { Route as ApiHouseV1AccessEventsBatchRouteImport } from './routes/api/house/v1/access-events/batch'
 
@@ -97,6 +98,11 @@ const ApiHouseV1BootstrapRoute = ApiHouseV1BootstrapRouteImport.update({
   path: '/api/house/v1/bootstrap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHouseV1DemoPrepareRoute = ApiHouseV1DemoPrepareRouteImport.update({
+  id: '/api/house/v1/demo/prepare',
+  path: '/api/house/v1/demo/prepare',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHouseV1AccessGrantsChangesRoute =
   ApiHouseV1AccessGrantsChangesRouteImport.update({
     id: '/api/house/v1/access-grants/changes',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/api/house/v1/luma-guest': typeof ApiHouseV1LumaGuestRoute
   '/api/house/v1/access-events/batch': typeof ApiHouseV1AccessEventsBatchRoute
   '/api/house/v1/access-grants/changes': typeof ApiHouseV1AccessGrantsChangesRoute
+  '/api/house/v1/demo/prepare': typeof ApiHouseV1DemoPrepareRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/api/house/v1/luma-guest': typeof ApiHouseV1LumaGuestRoute
   '/api/house/v1/access-events/batch': typeof ApiHouseV1AccessEventsBatchRoute
   '/api/house/v1/access-grants/changes': typeof ApiHouseV1AccessGrantsChangesRoute
+  '/api/house/v1/demo/prepare': typeof ApiHouseV1DemoPrepareRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/api/house/v1/luma-guest': typeof ApiHouseV1LumaGuestRoute
   '/api/house/v1/access-events/batch': typeof ApiHouseV1AccessEventsBatchRoute
   '/api/house/v1/access-grants/changes': typeof ApiHouseV1AccessGrantsChangesRoute
+  '/api/house/v1/demo/prepare': typeof ApiHouseV1DemoPrepareRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/api/house/v1/luma-guest'
     | '/api/house/v1/access-events/batch'
     | '/api/house/v1/access-grants/changes'
+    | '/api/house/v1/demo/prepare'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/api/house/v1/luma-guest'
     | '/api/house/v1/access-events/batch'
     | '/api/house/v1/access-grants/changes'
+    | '/api/house/v1/demo/prepare'
   id:
     | '__root__'
     | '/'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/api/house/v1/luma-guest'
     | '/api/house/v1/access-events/batch'
     | '/api/house/v1/access-grants/changes'
+    | '/api/house/v1/demo/prepare'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   ApiHouseV1LumaGuestRoute: typeof ApiHouseV1LumaGuestRoute
   ApiHouseV1AccessEventsBatchRoute: typeof ApiHouseV1AccessEventsBatchRoute
   ApiHouseV1AccessGrantsChangesRoute: typeof ApiHouseV1AccessGrantsChangesRoute
+  ApiHouseV1DemoPrepareRoute: typeof ApiHouseV1DemoPrepareRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -341,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHouseV1BootstrapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/house/v1/demo/prepare': {
+      id: '/api/house/v1/demo/prepare'
+      path: '/api/house/v1/demo/prepare'
+      fullPath: '/api/house/v1/demo/prepare'
+      preLoaderRoute: typeof ApiHouseV1DemoPrepareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/house/v1/access-grants/changes': {
       id: '/api/house/v1/access-grants/changes'
       path: '/api/house/v1/access-grants/changes'
@@ -375,6 +395,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHouseV1LumaGuestRoute: ApiHouseV1LumaGuestRoute,
   ApiHouseV1AccessEventsBatchRoute: ApiHouseV1AccessEventsBatchRoute,
   ApiHouseV1AccessGrantsChangesRoute: ApiHouseV1AccessGrantsChangesRoute,
+  ApiHouseV1DemoPrepareRoute: ApiHouseV1DemoPrepareRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

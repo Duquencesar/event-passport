@@ -43,6 +43,20 @@ DEFAULT_FIXTURE = Path(
         "scripts/fixtures/founder_haus_demo_grants.json",
     )
 ).resolve()
+HOUSE_DEMO_MARKER = "house-door-demo-v1"
+
+
+def default_state() -> dict[str, Any]:
+    return {
+        "next_cursor": None,
+        "grants": {},
+        "residents": {},
+        "entries": [],
+        "last_sync_at": None,
+        "loaded_from_fixture": None,
+        "last_fixture_load_at": None,
+        "demo": None,
+    }
 
 
 def now_iso() -> str:
@@ -57,29 +71,15 @@ def load_json_file(path: Path) -> Any:
 def ensure_state_file(path: Path) -> None:
     if path.exists():
         return
-    save_state(
-        path,
-        {
-            "next_cursor": None,
-            "grants": {},
-            "residents": {},
-            "entries": [],
-            "last_sync_at": None,
-            "loaded_from_fixture": None,
-        },
-    )
+    save_state(path, default_state())
 
 
 def load_state(path: Path) -> dict[str, Any]:
     ensure_state_file(path)
     with open(path, "r", encoding="utf-8") as fh:
         data = json.load(fh)
-    data.setdefault("next_cursor", None)
-    data.setdefault("grants", {})
-    data.setdefault("residents", {})
-    data.setdefault("entries", [])
-    data.setdefault("last_sync_at", None)
-    data.setdefault("loaded_from_fixture", None)
+    for key, value in default_state().items():
+        data.setdefault(key, value)
     return data
 
 
@@ -127,6 +127,14 @@ def merge_residents(state: dict[str, Any], residents: list[dict[str, Any]]) -> d
         if not house_user_id:
             continue
         resident_map[house_user_id] = resident
+    return state
+
+
+def reset_state_for_demo(state: dict[str, Any], demo: dict[str, Any] | None = None) -> dict[str, Any]:
+    fresh = default_state()
+    fresh["demo"] = demo
+    state.clear()
+    state.update(fresh)
     return state
 
 
@@ -212,6 +220,9 @@ class BrokerClient:
     def access_events(self, events: list[dict[str, Any]]) -> Any:
         return self.request("POST", "/api/house/v1/access-events/batch", {"events": events})
 
+    def prepare_demo(self) -> Any:
+        return self.request("POST", "/api/house/v1/demo/prepare", {})
+
 
 @dataclass
 class AppContext:
@@ -247,7 +258,14 @@ def build_grants_map(state: dict[str, Any]) -> dict[str, Any]:
         ),
         "qr_code_map": qr_code_map,
         "resident_face_ids": residents_face_ids,
+        "demo": state.get("demo"),
     }
+
+
+def build_house_event_id(raw_payload: dict[str, Any]) -> str:
+    if raw_payload.get("demo_marker") == HOUSE_DEMO_MARKER or raw_payload.get("demo") is True:
+        return f"demo-{uuid.uuid4()}"
+    return f"fhs-{uuid.uuid4()}"
 
 
 def find_grant_for_scan(
@@ -329,6 +347,8 @@ def validate_scan(context: AppContext, body: dict[str, Any]) -> dict[str, Any]:
     credential_type = body.get("credential_type") or "unknown"
     credential_value = body.get("credential_value")
     house_user_id = body.get("house_user_id")
+    raw_payload = body.get("raw_payload") or {}
+    demo = state.get("demo") if isinstance(state.get("demo"), dict) else None
 
     grant = find_grant_for_scan(
         state=state,
@@ -338,11 +358,13 @@ def validate_scan(context: AppContext, body: dict[str, Any]) -> dict[str, Any]:
         occurred_at=occurred_at,
     )
     resident = None if grant else find_resident_for_scan(state=state, house_user_id=house_user_id)
+    event_id = grant.get("event_id") if grant else demo.get("event", {}).get("id") if resident and demo else None
+    event_name = grant.get("event_name") if grant else demo.get("event", {}).get("name") if resident and demo else None
 
     decision = "granted" if grant or resident else "denied"
     reason = body.get("reason") or (None if grant or resident else "Credential not mapped or not active")
     event = {
-        "house_event_id": f"fhs-{uuid.uuid4()}",
+        "house_event_id": build_house_event_id(raw_payload),
         "device_id": body.get("device_id") or "door-main",
         "door_id": body.get("door_id") or "front-door",
         "house_user_id": grant["house_user_id"] if grant else resident.get("house_user_id") if resident else house_user_id,
@@ -352,11 +374,11 @@ def validate_scan(context: AppContext, body: dict[str, Any]) -> dict[str, Any]:
         "reason": reason,
         "occurred_at": occurred_at,
         "grant_id": grant["grant_id"] if grant else None,
-        "event_id": grant.get("event_id") if grant else None,
+        "event_id": event_id,
         "person_name": grant.get("person_name") if grant else resident.get("person_name") if resident else None,
-        "event_name": grant.get("event_name") if grant else None,
+        "event_name": event_name,
         "access_subject": "guest" if grant else "resident" if resident else "unknown",
-        "raw_payload": body.get("raw_payload") or {},
+        "raw_payload": raw_payload,
         "broker_synced": False,
         "broker_response": None,
         "created_at": now_iso(),
@@ -426,6 +448,7 @@ def heartbeat_to_broker(context: AppContext) -> Any:
 
 def load_fixture(context: AppContext, path: Path) -> dict[str, Any]:
     state = load_state(context.state_file)
+    reset_state_for_demo(state)
     load_fixture_into_state(state, path)
     save_state(context.state_file, state)
     return {
@@ -433,6 +456,24 @@ def load_fixture(context: AppContext, path: Path) -> dict[str, Any]:
         "fixture": str(path),
         "grants_loaded": len(state.get("grants", {})),
         "residents_loaded": len(state.get("residents", {})),
+    }
+
+
+def prepare_demo_from_broker(context: AppContext) -> dict[str, Any]:
+    payload = context.broker.prepare_demo()
+    state = load_state(context.state_file)
+    reset_state_for_demo(state, payload)
+    merge_residents(state, payload.get("residents", []))
+    state["last_sync_at"] = now_iso()
+    save_state(context.state_file, state)
+
+    bootstrap_payload = bootstrap_from_broker(context)
+    refreshed = load_state(context.state_file)
+    return {
+        "demo": payload,
+        "bootstrap": bootstrap_payload,
+        "grants_loaded": len(refreshed.get("grants", {})),
+        "residents_loaded": len(refreshed.get("residents", {})),
     }
 
 
@@ -537,6 +578,11 @@ class FounderHausHandler(BaseHTTPRequestHandler):
             if parsed.path == "/sync/load-fixture":
                 fixture_path = Path(body.get("path") or self.server.default_fixture).resolve()
                 result = load_fixture(context, fixture_path)
+                self._json_response(200, {"ok": True, "result": result})
+                return
+
+            if parsed.path == "/sync/prepare-demo":
+                result = prepare_demo_from_broker(context)
                 self._json_response(200, {"ok": True, "result": result})
                 return
 

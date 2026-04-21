@@ -1,8 +1,88 @@
 import { db as supabaseAdmin } from "./db";
 import { fetchAllRows } from "./pagination";
 import type { Json, Tables, TablesInsert } from "@/integrations/supabase/types";
+import { getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 
 const BRASILIA_OFFSET = "-03:00";
+const HOUSE_DEMO_MARKER = "house-door-demo-v1";
+const HOUSE_DEMO_EVENT_ID = "11111111-1111-4111-8111-111111111111";
+const HOUSE_DEMO_EVENT_NAME = "Demo Test";
+const HOUSE_DEMO_EVENT_TIME = "19:00";
+const HOUSE_DEMO_EVENT_ORGANIZER = "Event Passport Demo";
+const HOUSE_DEMO_EVENT_LOCATION = "Founder Haus Demo Floor";
+const HOUSE_DEMO_EVENT_URL = "https://demo.event-passport.invalid/demo-test";
+const HOUSE_DEMO_LUMA_EVENT_ID = "demo-luma-event";
+
+type DemoSeedPerson = {
+  person_id: string;
+  registration_id?: string;
+  map_id: string;
+  house_user_id: string;
+  name: string;
+  email: string;
+  tag: string | null;
+  credential_type: "qrcode" | "face";
+  is_resident: boolean;
+  notes: string;
+  ticket_type?: string;
+  luma_guest_id?: string;
+};
+
+const HOUSE_DEMO_PEOPLE: DemoSeedPerson[] = [
+  {
+    person_id: "22222222-2222-4222-8222-222222222222",
+    registration_id: "33333333-3333-4333-8333-333333333333",
+    map_id: "44444444-4444-4444-8444-444444444444",
+    house_user_id: "demo-guest-ana",
+    name: "[DEMO] Ana Guest",
+    email: "demo.ana@event-passport.invalid",
+    tag: null,
+    credential_type: "qrcode",
+    is_resident: false,
+    notes: "DEMO_HOUSE guest mapped from fake Luma seed",
+    ticket_type: "Demo Guest",
+    luma_guest_id: "demo-luma-ana",
+  },
+  {
+    person_id: "55555555-5555-4555-8555-555555555555",
+    registration_id: "66666666-6666-4666-8666-666666666666",
+    map_id: "77777777-7777-4777-8777-777777777777",
+    house_user_id: "demo-guest-bruno",
+    name: "[DEMO] Bruno Guest",
+    email: "demo.bruno@event-passport.invalid",
+    tag: null,
+    credential_type: "qrcode",
+    is_resident: false,
+    notes: "DEMO_HOUSE guest mapped from fake Luma seed",
+    ticket_type: "Demo Guest",
+    luma_guest_id: "demo-luma-bruno",
+  },
+  {
+    person_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    registration_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    map_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    house_user_id: "demo-guest-carla",
+    name: "[DEMO] Carla Guest",
+    email: "demo.carla@event-passport.invalid",
+    tag: null,
+    credential_type: "qrcode",
+    is_resident: false,
+    notes: "DEMO_HOUSE guest mapped from fake Luma seed",
+    ticket_type: "Demo Guest",
+    luma_guest_id: "demo-luma-carla",
+  },
+  {
+    person_id: "88888888-8888-4888-8888-888888888888",
+    map_id: "99999999-9999-4999-8999-999999999999",
+    house_user_id: "demo-resident-arthur",
+    name: "[DEMO] Arthur Resident",
+    email: "demo.resident.arthur@event-passport.invalid",
+    tag: "Resident",
+    credential_type: "face",
+    is_resident: true,
+    notes: "DEMO_HOUSE resident kept only on local house side",
+  },
+];
 
 type RegistrationGrantRow = {
   id: string;
@@ -13,7 +93,7 @@ type RegistrationGrantRow = {
   day_pass_date: string | null;
   week_pass_start_date: string | null;
   luma_guest_id: string | null;
-  people: { id: string; name: string; tag: string | null } | null;
+  people: { id: string; name: string; email: string; tag: string | null } | null;
   events: { id: string; name: string; date: string } | null;
 };
 
@@ -26,6 +106,23 @@ type ProcessHouseAccessEventsResult = {
   inserted: number;
   duplicated: number;
   granted_checkins_created: number;
+};
+
+type PreparedHouseDemoResident = {
+  person_id: string;
+  person_name: string;
+  house_user_id: string;
+  credential_type: "face";
+  status: "active";
+  notes: string;
+};
+
+type PreparedHouseDemoGuest = {
+  person_id: string;
+  person_name: string;
+  house_user_id: string;
+  luma_guest_id: string;
+  ticket_type: string;
 };
 
 export type HouseGrantSnapshot = {
@@ -62,6 +159,24 @@ export type HouseAccessEventInput = {
   raw_payload?: Json;
 };
 
+export type PreparedHouseDemo = {
+  marker: string;
+  event: {
+    id: string;
+    name: string;
+    date: string;
+    time: string;
+    occurred_at: string;
+  };
+  guests: PreparedHouseDemoGuest[];
+  residents: PreparedHouseDemoResident[];
+  grants_projection: {
+    generated_at: string;
+    total_generated: number;
+    stale_revoked: number;
+  };
+};
+
 type ParsedCursor = {
   timestamp: string | null;
 };
@@ -90,6 +205,22 @@ type ExistingDerivedGrantRow = Pick<
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function getHouseDemoOccurredAt(dateKey: string): string {
+  return `${dateKey}T19:30:00${BRASILIA_OFFSET}`;
+}
+
+function isDemoEmail(email: string | null | undefined): boolean {
+  return typeof email === "string" && email.endsWith("@event-passport.invalid");
+}
+
+function getHouseDemoGuests(): DemoSeedPerson[] {
+  return HOUSE_DEMO_PEOPLE.filter((person) => !person.is_resident);
+}
+
+function getHouseDemoResidents(): DemoSeedPerson[] {
+  return HOUSE_DEMO_PEOPLE.filter((person) => person.is_resident);
 }
 
 function addDays(dateKey: string, days: number): string {
@@ -148,7 +279,7 @@ async function fetchRegistrationGrantRows(): Promise<RegistrationGrantRow[]> {
       supabaseAdmin
         .from("registrations")
         .select(
-          "id, event_id, event_name, ticket_type, source, day_pass_date, week_pass_start_date, luma_guest_id, people!inner(id, name, tag), events(id, name, date)",
+          "id, event_id, event_name, ticket_type, source, day_pass_date, week_pass_start_date, luma_guest_id, people!inner(id, name, email, tag), events(id, name, date)",
         )
         .eq("source", "luma")
         .range(from, to) as unknown as PromiseLike<{
@@ -222,6 +353,12 @@ function buildLumaGrant(
     ticket_type: row.ticket_type,
     luma_guest_id: row.luma_guest_id,
     original_source: row.source,
+    ...(isDemoEmail(row.people.email)
+      ? {
+          demo_marker: HOUSE_DEMO_MARKER,
+          demo_house_user_id: mapped?.house_user_id ?? row.people.id,
+        }
+      : {}),
   };
 
   return {
@@ -513,4 +650,127 @@ export async function getHouseHealth(): Promise<{
   checked_at: string;
 }> {
   return { ok: true, checked_at: nowIso() };
+}
+
+async function deleteByIds(table: string, column: string, values: string[]): Promise<void> {
+  if (values.length === 0) return;
+  const { error } = await supabaseAdmin.from(table).delete().in(column, values);
+  if (error) throw new Error(error.message);
+}
+
+async function deleteByValue(table: string, column: string, value: string): Promise<void> {
+  const { error } = await supabaseAdmin.from(table).delete().eq(column, value);
+  if (error) throw new Error(error.message);
+}
+
+async function deleteByLike(table: string, column: string, pattern: string): Promise<void> {
+  const { error } = await supabaseAdmin.from(table).delete().like(column, pattern);
+  if (error) throw new Error(error.message);
+}
+
+export async function prepareHouseDemo(): Promise<PreparedHouseDemo> {
+  const demoDate = getCurrentBrasiliaDateKeySync();
+  const occurredAt = getHouseDemoOccurredAt(demoDate);
+  const demoPeople = HOUSE_DEMO_PEOPLE;
+  const demoGuests = getHouseDemoGuests();
+  const demoResidents = getHouseDemoResidents();
+
+  await deleteByLike("house_access_logs_raw", "house_event_id", "demo-%");
+  await deleteByIds("house_access_logs_raw", "house_user_id", demoPeople.map((person) => person.house_user_id));
+  await deleteByValue("house_access_logs_raw", "provided_event_id", HOUSE_DEMO_EVENT_ID);
+  await deleteByIds("house_access_logs_raw", "resolved_event_id", [HOUSE_DEMO_EVENT_ID]);
+
+  await deleteByIds("checkins", "person_id", demoPeople.map((person) => person.person_id));
+  await deleteByIds("checkins", "event_id", [HOUSE_DEMO_EVENT_ID]);
+  await deleteByIds(
+    "house_access_grants",
+    "source_ref",
+    demoGuests.map((person) => person.registration_id).filter((value): value is string => Boolean(value)),
+  );
+  await deleteByIds("house_access_grants", "person_id", demoPeople.map((person) => person.person_id));
+  await deleteByIds("registrations", "id", demoGuests.map((person) => person.registration_id!).filter(Boolean));
+  await deleteByIds("registrations", "luma_guest_id", demoGuests.map((person) => person.luma_guest_id!).filter(Boolean));
+  await deleteByIds("house_user_map", "house_user_id", demoPeople.map((person) => person.house_user_id));
+  await deleteByIds("house_user_map", "id", demoPeople.map((person) => person.map_id));
+  await deleteByIds("people", "email", demoPeople.map((person) => person.email));
+  await deleteByIds("people", "id", demoPeople.map((person) => person.person_id));
+  await deleteByValue("events", "name", HOUSE_DEMO_EVENT_NAME);
+  await deleteByIds("events", "id", [HOUSE_DEMO_EVENT_ID]);
+
+  const { error: eventError } = await supabaseAdmin.from("events").insert({
+    id: HOUSE_DEMO_EVENT_ID,
+    name: HOUSE_DEMO_EVENT_NAME,
+    date: demoDate,
+    time: HOUSE_DEMO_EVENT_TIME,
+    organizer: HOUSE_DEMO_EVENT_ORGANIZER,
+    location: HOUSE_DEMO_EVENT_LOCATION,
+    url: HOUSE_DEMO_EVENT_URL,
+    luma_event_id: HOUSE_DEMO_LUMA_EVENT_ID,
+  });
+  if (eventError) throw new Error(eventError.message);
+
+  const { error: peopleError } = await supabaseAdmin.from("people").insert(
+    demoPeople.map((person) => ({
+      id: person.person_id,
+      name: person.name,
+      email: person.email,
+      tag: person.tag,
+    })),
+  );
+  if (peopleError) throw new Error(peopleError.message);
+
+  const { error: registrationError } = await supabaseAdmin.from("registrations").insert(
+    demoGuests.map((person) => ({
+      id: person.registration_id!,
+      person_id: person.person_id,
+      event_id: HOUSE_DEMO_EVENT_ID,
+      event_name: HOUSE_DEMO_EVENT_NAME,
+      ticket_type: person.ticket_type!,
+      source: "luma",
+      luma_guest_id: person.luma_guest_id!,
+    })),
+  );
+  if (registrationError) throw new Error(registrationError.message);
+
+  const { error: mapError } = await supabaseAdmin.from("house_user_map").insert(
+    demoPeople.map((person) => ({
+      id: person.map_id,
+      person_id: person.person_id,
+      house_user_id: person.house_user_id,
+      is_resident: person.is_resident,
+      is_active: true,
+      credential_type: person.credential_type,
+      notes: `${person.notes} [${HOUSE_DEMO_MARKER}]`,
+    })),
+  );
+  if (mapError) throw new Error(mapError.message);
+
+  const projection = await rebuildHouseAccessGrants();
+
+  return {
+    marker: HOUSE_DEMO_MARKER,
+    event: {
+      id: HOUSE_DEMO_EVENT_ID,
+      name: HOUSE_DEMO_EVENT_NAME,
+      date: demoDate,
+      time: HOUSE_DEMO_EVENT_TIME,
+      occurred_at: occurredAt,
+    },
+    guests: demoGuests.map((person) => ({
+      person_id: person.person_id,
+      person_name: person.name,
+      house_user_id: person.house_user_id,
+      luma_guest_id: person.luma_guest_id!,
+      ticket_type: person.ticket_type!,
+    })),
+    residents: demoResidents.map((person) => ({
+      person_id: person.person_id,
+      person_name: person.name,
+      house_user_id: person.house_user_id,
+      credential_type: "face",
+      status: "active",
+      notes: `${person.notes} [${HOUSE_DEMO_MARKER}]`,
+    })),
+    grants_projection: projection,
+  };
 }
