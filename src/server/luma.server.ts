@@ -12,13 +12,14 @@ import { db as supabaseAdmin } from "./db";
 const LUMA_BASE = "https://api.lu.ma/public/v1";
 
 export type LumaEventEntry = {
-  api_id: string;
+  api_id?: string;
+  id?: string;
   name: string;
   start_at: string;
-  end_at: string;
-  url: string;
-  geo_address_json: { address?: string; city?: string; country?: string } | null;
-  hosts: Array<{ name: string; api_id: string }>;
+  end_at?: string;
+  url?: string;
+  geo_address_json?: { address?: string; city?: string; country?: string } | null;
+  hosts?: Array<{ name: string; api_id?: string }>;
 };
 
 // API do Luma usa formatos diferentes em alguns endpoints.
