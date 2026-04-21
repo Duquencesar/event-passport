@@ -12,13 +12,14 @@ import { db as supabaseAdmin } from "./db";
 const LUMA_BASE = "https://api.lu.ma/public/v1";
 
 export type LumaEventEntry = {
-  api_id: string;
+  api_id?: string;
+  id?: string;
   name: string;
   start_at: string;
-  end_at: string;
-  url: string;
-  geo_address_json: { address?: string; city?: string; country?: string } | null;
-  hosts: Array<{ name: string; api_id: string }>;
+  end_at?: string;
+  url?: string;
+  geo_address_json?: { address?: string; city?: string; country?: string } | null;
+  hosts?: Array<{ name: string; api_id?: string }>;
 };
 
 // API do Luma usa formatos diferentes em alguns endpoints.
@@ -139,7 +140,9 @@ export async function listCalendarEvents(
 ): Promise<NormalizedLumaEvent[]> {
   // A API retorna eventos do mais antigo para o mais recente, paginados.
   // Para garantir que pegamos os futuros, paginamos até o fim (ou cap de segurança).
-  const allEntries: Array<{ event: LumaEventEntry }> = [];
+  // A API às vezes retorna entries como objetos diretos com `id`,
+  // outras vezes wrapped em { event: { api_id, ... } }. Aceitamos ambos.
+  const allEntries: Array<{ event?: LumaEventEntry } & Partial<LumaEventEntry>> = [];
   let cursor: string | undefined;
   let pages = 0;
   const MAX_PAGES = 30; // 30 × 50 = 1500 eventos (mais que suficiente)
@@ -152,7 +155,7 @@ export async function listCalendarEvents(
     if (cursor) params.pagination_cursor = cursor;
 
     const page = await lumaFetch<{
-      entries: Array<{ event: LumaEventEntry }>;
+      entries: Array<{ event?: LumaEventEntry } & Partial<LumaEventEntry>>;
       has_more: boolean;
       next_cursor: string | null;
     }>(apiKey, "/calendar/list-events", params);
@@ -163,17 +166,24 @@ export async function listCalendarEvents(
     pages++;
   }
 
-  return allEntries.map((e) => ({
-    api_id: e.event.api_id,
-    name: e.event.name,
-    date: toDateKey(e.event.start_at),
-    time: toTimeKey(e.event.start_at),
-    location:
-      e.event.geo_address_json?.city || e.event.geo_address_json?.address || null,
-    organizer: e.event.hosts?.[0]?.name || null,
-    url: e.event.url || null,
-    start_at: e.event.start_at,
-  }));
+  return allEntries
+    .map((entry): NormalizedLumaEvent | null => {
+      const ev: LumaEventEntry = entry.event ?? (entry as LumaEventEntry);
+      const apiId = ev.api_id || ev.id;
+      if (!apiId || !ev.start_at) return null;
+      return {
+        api_id: apiId,
+        name: ev.name,
+        date: toDateKey(ev.start_at),
+        time: toTimeKey(ev.start_at),
+        location:
+          ev.geo_address_json?.city || ev.geo_address_json?.address || null,
+        organizer: ev.hosts?.[0]?.name || null,
+        url: ev.url || null,
+        start_at: ev.start_at,
+      };
+    })
+    .filter((e): e is NormalizedLumaEvent => e !== null);
 }
 
 // ─── Sync de um evento (inscritos + check-ins) ───────────────────────────────

@@ -374,19 +374,17 @@ function DashboardPage() {
                 <TableRow>
                   <TableHead className="w-10">#</TableHead>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Tag</TableHead>
                   <TableHead className="text-right">Check-ins</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.topPeople.map((p: { name: string; email: string; tag: string | null; count: number }, i: number) => (
-                  <TableRow key={p.email}>
+                {current.topPeople.map((p: { name: string; tag: string | null; count: number }, i: number) => (
+                  <TableRow key={`${p.name}-${i}`}>
                     <TableCell className="font-mono text-muted-foreground">
                       {i + 1}
                     </TableCell>
                     <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{p.email}</TableCell>
                     <TableCell>
                       {p.tag && (
                         <Badge className="text-xs rounded-lg bg-primary/10 text-primary border-0 font-medium">
