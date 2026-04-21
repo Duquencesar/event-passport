@@ -3,13 +3,14 @@
  * Usados tanto por server functions (UI) quanto pela rota /hooks/luma-sync (cron).
  *
  * Endpoints usados:
- *   GET /public/v1/calendar/list-events  — lista eventos do calendário
- *   GET /public/v1/event/get-guests      — lista participantes (com checked_in_at)
+ *   GET /v1/calendar/list-events  — lista eventos do calendário
+ *   GET /v1/event/get-guests      — lista participantes (com checked_in_at)
+ *   GET /v1/event/get-guest       — lookup de guest por id/email/guest key/ticket key
  */
 
 import { db as supabaseAdmin } from "./db";
 
-const LUMA_BASE = "https://api.lu.ma/public/v1";
+const LUMA_BASE = "https://public-api.luma.com/v1";
 
 export type LumaEventEntry = {
   api_id: string;
@@ -35,6 +36,21 @@ export type LumaGuest = {
   checked_in_at: string | null;
   registered_at: string;
 };
+
+export function normalizeLumaLookupId(input: string): string {
+  const value = input.trim();
+  if (!value) return value;
+
+  try {
+    const url = new URL(value);
+    const pk = url.searchParams.get("pk");
+    if (pk) return pk;
+  } catch {
+    // Not a URL, use the raw identifier.
+  }
+
+  return value;
+}
 
 type LumaGuestEntry = {
   api_id: string;
@@ -135,7 +151,7 @@ export type NormalizedLumaEvent = {
 
 export async function listCalendarEvents(
   apiKey: string,
-  calendarApiId: string,
+  _calendarApiId?: string,
 ): Promise<NormalizedLumaEvent[]> {
   // A API retorna eventos do mais antigo para o mais recente, paginados.
   // Para garantir que pegamos os futuros, paginamos até o fim (ou cap de segurança).
@@ -146,8 +162,8 @@ export async function listCalendarEvents(
 
   while (pages < MAX_PAGES) {
     const params: Record<string, string> = {
-      calendar_api_id: calendarApiId,
       pagination_limit: "50",
+      status: "approved",
     };
     if (cursor) params.pagination_cursor = cursor;
 
@@ -168,12 +184,24 @@ export async function listCalendarEvents(
     name: e.event.name,
     date: toDateKey(e.event.start_at),
     time: toTimeKey(e.event.start_at),
-    location:
-      e.event.geo_address_json?.city || e.event.geo_address_json?.address || null,
+    location: e.event.geo_address_json?.city || e.event.geo_address_json?.address || null,
     organizer: e.event.hosts?.[0]?.name || null,
     url: e.event.url || null,
     start_at: e.event.start_at,
   }));
+}
+
+export async function lookupLumaGuest(input: {
+  apiKey: string;
+  id: string;
+  eventId?: string;
+}): Promise<Record<string, unknown>> {
+  const params: Record<string, string> = {
+    id: normalizeLumaLookupId(input.id),
+  };
+  if (input.eventId) params.event_id = input.eventId;
+
+  return lumaFetch<Record<string, unknown>>(input.apiKey, "/event/get-guest", params);
 }
 
 // ─── Sync de um evento (inscritos + check-ins) ───────────────────────────────
@@ -255,18 +283,16 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
 
   while (pageCount < 50) {
     const params: Record<string, string> = {
-      event_api_id: input.lumaEventId,
+      event_id: input.lumaEventId,
       pagination_limit: "100",
     };
     if (cursor) params.pagination_cursor = cursor;
 
-    const page = await lumaFetch<LumaGuestPage>(
-      input.apiKey,
-      "/event/get-guests",
-      params,
-    );
+    const page = await lumaFetch<LumaGuestPage>(input.apiKey, "/event/get-guests", params);
     // Aceita ambos formatos: { entries: [{ guest: {...} }] } ou { entries: [{...}] }
-    const guests: LumaGuest[] = (page.entries || []).map((e) => (e.guest ?? (e as unknown as LumaGuest)));
+    const guests: LumaGuest[] = (page.entries || []).map(
+      (e) => e.guest ?? (e as unknown as LumaGuest),
+    );
     allGuests = allGuests.concat(guests);
 
     if (!page.has_more || !page.next_cursor) break;

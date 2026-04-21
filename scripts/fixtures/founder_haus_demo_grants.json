@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-04-19T12:00:00Z",
+  "next_cursor": "2026-04-19T12:00:00Z",
+  "grants": [
+    {
+      "grant_id": "grant_demo_guest_ana",
+      "person_id": "person_demo_ana",
+      "person_name": "Ana Silva",
+      "house_user_id": "guest-ana-001",
+      "source": "luma",
+      "source_ref": "registration_demo_ana",
+      "grant_scope": "event",
+      "credential_type": "qrcode",
+      "credential_value": "qr-ana-2026-04-19",
+      "valid_from": "2026-04-19T00:00:00-03:00",
+      "valid_until": "2026-04-19T23:59:59-03:00",
+      "status": "active",
+      "event_id": "event_demo_founder_friday",
+      "event_name": "Founder Friday",
+      "updated_at": "2026-04-19T12:00:00Z",
+      "payload": {
+        "ticket_type": "Day Pass",
+        "luma_guest_id": "g-demo-ana",
+        "original_source": "luma"
+      }
+    },
+    {
+      "grant_id": "grant_demo_guest_expired",
+      "person_id": "person_demo_expired",
+      "person_name": "Expired Guest",
+      "house_user_id": "guest-expired-001",
+      "source": "luma",
+      "source_ref": "registration_demo_expired",
+      "grant_scope": "event",
+      "credential_type": "qrcode",
+      "credential_value": "qr-expired-2026-04-18",
+      "valid_from": "2026-04-18T00:00:00-03:00",
+      "valid_until": "2026-04-18T23:59:59-03:00",
+      "status": "expired",
+      "event_id": "event_demo_past",
+      "event_name": "Past Demo Event",
+      "updated_at": "2026-04-19T12:00:00Z",
+      "payload": {
+        "ticket_type": "Day Pass",
+        "luma_guest_id": "g-demo-expired",
+        "original_source": "luma"
+      }
+    }
+  ],
+  "residents": [
+    {
+      "house_user_id": "resident-arthur-001",
+      "person_name": "Arthur Resident",
+      "credential_type": "face",
+      "status": "active",
+      "notes": "Resident face template enrolled in the house system"
+    }
+  ]
+}

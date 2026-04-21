@@ -1,5 +1,5 @@
 /**
- * Hook chamado pelo cron horário (pg_cron + pg_net) para sincronizar
+ * Hook chamado pelo cron horário para sincronizar
  * eventos, inscritos e check-ins do Luma com o banco local.
  *
  * Pode também ser chamado manualmente com Bearer token (anon key).
@@ -29,11 +29,10 @@ export const Route = createFileRoute("/hooks/luma-sync")({
         const apiKey = process.env.LUMA_API_KEY;
         const calendarId = process.env.LUMA_CALENDAR_API_ID;
 
-        if (!apiKey || !calendarId) {
+        if (!apiKey) {
           return new Response(
             JSON.stringify({
-              error:
-                "LUMA_API_KEY ou LUMA_CALENDAR_API_ID não configurados nos secrets.",
+              error: "LUMA_API_KEY não configurada nos secrets.",
             }),
             { status: 500, headers: { "Content-Type": "application/json" } },
           );
@@ -50,10 +49,10 @@ export const Route = createFileRoute("/hooks/luma-sync")({
           });
         } catch (err) {
           console.error("Luma sync error:", err);
-          return new Response(
-            JSON.stringify({ error: "Internal server error" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ error: "Internal server error" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       },
     },
