@@ -111,3 +111,25 @@ export const updatePersonTag = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { success: true };
   });
+
+export const getTelegramConfig = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { data, error } = await db
+      .from("telegram_config" as any)
+      .select("app_url, cron_secret, updated_at")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data || { app_url: "", cron_secret: "", updated_at: null };
+  });
+
+export const saveTelegramConfig = createServerFn({ method: "POST" })
+  .inputValidator((input: { app_url: string; cron_secret: string }) => input)
+  .handler(async ({ data }) => {
+    const { error } = await db
+      .from("telegram_config" as any)
+      .update({ app_url: data.app_url, cron_secret: data.cron_secret, updated_at: new Date().toISOString() })
+      .eq("id", 1);
+    if (error) throw new Error(error.message);
+    return { success: true };
+  });

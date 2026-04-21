@@ -118,8 +118,8 @@ export function ticketToTag(ticketName: string): string | null {
   const lower = ticketName.toLowerCase();
   if (lower.includes("architect") || lower.includes("arquiteto")) return "Arquiteto";
   if (lower.includes("explorer")) return "Explorer";
-  if (lower.includes("week pass") || lower.includes("weekly") || lower.includes("week-pass"))
-    return "Weekly";
+<<<<<<< HEAD
+  if (lower.includes("week pass") || lower.includes("weekly") || lower.includes("week-pass") || lower.includes("semanal")) return "Weekly";
   if (lower.includes("day pass") || lower.includes("day-pass")) return "Day Pass";
   return null;
 }
@@ -374,6 +374,8 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         source: "luma_api",
         event_id: internalEventId,
         luma_guest_id: guest.api_id,
+        // Para Passe Semanal, usa a data do evento como início da semana (ajustável depois pelo admin)
+        week_pass_start_date: tag === "Weekly" ? input.eventDate : null,
       });
       registrations++;
     } else if (!existingByGuest) {
