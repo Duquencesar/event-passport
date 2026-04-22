@@ -30,6 +30,15 @@ export const Route = createFileRoute("/configuracoes")({
   component: ConfiguracoesPage,
 });
 
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg bg-background/40 px-3 py-2">
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+    </div>
+  );
+}
+
 function ConfiguracoesPage() {
   const [appUrl, setAppUrl]     = useState("");
   const [secret, setSecret]     = useState("");
