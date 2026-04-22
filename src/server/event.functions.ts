@@ -23,11 +23,6 @@ export const getAllEventsWithStats = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!events || events.length === 0) return [];
 
-    const { count: fullAccessCount } = await supabaseAdmin
-      .from("registrations")
-      .select("person_id", { count: "exact", head: true })
-      .or("ticket_type.ilike.%architect%,ticket_type.ilike.%explorer%");
-
     const results = await Promise.all(
       events.map(async (event) => {
         const [regResult, checkinResult] = await Promise.all([
@@ -42,7 +37,7 @@ export const getAllEventsWithStats = createServerFn({ method: "GET" })
         ]);
         return {
           ...event,
-          registration_count: (regResult.count || 0) + (fullAccessCount || 0),
+          registration_count: regResult.count || 0,
           checkin_count: checkinResult.count || 0,
         };
       }),
@@ -73,11 +68,6 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     if (!events || events.length === 0) return [];
 
-    const { count: fullAccessCount } = await supabaseAdmin
-      .from("people")
-      .select("id", { count: "exact", head: true })
-      .or("tag.eq.Arquiteto,tag.eq.Explorer");
-
     const results = await Promise.all(
       events.map(async (event) => {
         const [regResult, checkinResult] = await Promise.all([
@@ -91,10 +81,9 @@ export const getTodayEventsWithStats = createServerFn({ method: "GET" })
             .eq("event_id", event.id),
         ]);
 
-        const eventSpecific = regResult.count || 0;
         return {
           ...event,
-          registration_count: eventSpecific + (fullAccessCount || 0),
+          registration_count: regResult.count || 0,
           checkin_count: checkinResult.count || 0,
         };
       }),
@@ -130,11 +119,6 @@ export const getNextUpcomingEvents = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!events || events.length === 0) return [];
 
-    const { count: fullAccessCount } = await supabaseAdmin
-      .from("people")
-      .select("id", { count: "exact", head: true })
-      .or("tag.eq.Arquiteto,tag.eq.Explorer");
-
     const results = await Promise.all(
       events.map(async (event) => {
         const [regResult, checkinResult] = await Promise.all([
@@ -149,7 +133,7 @@ export const getNextUpcomingEvents = createServerFn({ method: "POST" })
         ]);
         return {
           ...event,
-          registration_count: (regResult.count || 0) + (fullAccessCount || 0),
+          registration_count: regResult.count || 0,
           checkin_count: checkinResult.count || 0,
         };
       }),
@@ -171,17 +155,12 @@ export const getEventCheckinCount = createServerFn({ method: "POST" })
 export const getEventRegistrationCount = createServerFn({ method: "POST" })
   .inputValidator((input: { event_id: string }) => input)
   .handler(async ({ data }) => {
-    const [eventSpecific, fullAccess] = await Promise.all([
-      supabaseAdmin
-        .from("registrations")
-        .select("id", { count: "exact", head: true })
-        .eq("event_id", data.event_id),
-      supabaseAdmin
-        .from("people")
-        .select("id", { count: "exact", head: true })
-        .or("tag.eq.Arquiteto,tag.eq.Explorer"),
-    ]);
-    return (eventSpecific.count || 0) + (fullAccess.count || 0);
+    const { count, error } = await supabaseAdmin
+      .from("registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", data.event_id);
+    if (error) throw new Error(error.message);
+    return count || 0;
   });
 
 export const createEvent = createServerFn({ method: "POST" })

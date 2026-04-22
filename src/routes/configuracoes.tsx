@@ -13,9 +13,11 @@ import {
   Info,
   Clock,
   CalendarDays,
+  Webhook,
 } from "lucide-react";
 import { getTelegramConfig, saveTelegramConfig } from "@/server/people.functions";
 import { sendDailyReport } from "@/server/telegram-report.functions";
+import { getLastLumaSync, getRecentLumaWebhookEvents } from "@/server/luma-status.functions";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -39,6 +41,24 @@ function ConfiguracoesPage() {
   const [testPeriod, setTestPeriod] = useState<"morning" | "afternoon">("morning");
   const [testing, setTesting]   = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; sent?: number; error?: string } | null>(null);
+  const [lumaLoading, setLumaLoading] = useState(true);
+  const [lumaStatus, setLumaStatus] = useState<{
+    last_sync: string | null;
+    status: "idle" | "running" | "success" | "error";
+    error_message: string | null;
+    events_processed: number;
+    totals: { registrations: number; revoked: number; checkins: number };
+  } | null>(null);
+  const [lumaWebhooks, setLumaWebhooks] = useState<Array<{
+    id: string;
+    event_type: string | null;
+    luma_event_id: string | null;
+    delivery_status: string;
+    sync_mode: string;
+    error_message: string | null;
+    received_at: string;
+    processed_at: string | null;
+  }>>([]);
 
   useEffect(() => {
     getTelegramConfig().then((cfg: any) => {
@@ -47,7 +67,26 @@ function ConfiguracoesPage() {
       setUpdatedAt(cfg.updated_at || null);
       setLoading(false);
     }).catch(() => setLoading(false));
+
+    Promise.all([getLastLumaSync(), getRecentLumaWebhookEvents()])
+      .then(([status, events]) => {
+        setLumaStatus(status as typeof lumaStatus);
+        setLumaWebhooks(events as typeof lumaWebhooks);
+        setLumaLoading(false);
+      })
+      .catch(() => setLumaLoading(false));
   }, []);
+
+  const refreshLumaPanel = async () => {
+    setLumaLoading(true);
+    try {
+      const [status, events] = await Promise.all([getLastLumaSync(), getRecentLumaWebhookEvents()]);
+      setLumaStatus(status as typeof lumaStatus);
+      setLumaWebhooks(events as typeof lumaWebhooks);
+    } finally {
+      setLumaLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -184,6 +223,96 @@ function ConfiguracoesPage() {
                 </p>
               )}
             </div>
+          )}
+        </div>
+
+        <div className="glass rounded-3xl p-6 space-y-5 border border-border/30">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-500/15 flex items-center justify-center shrink-0">
+                <Webhook className="w-5 h-5 text-sky-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">Luma: sync e webhook</h3>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Troubleshooting da integração real com o Luma: último sync, revogações e entregas recentes de webhook.
+                </p>
+              </div>
+            </div>
+            <Button onClick={refreshLumaPanel} variant="outline" className="rounded-xl" disabled={lumaLoading}>
+              <RefreshCw className={`w-4 h-4 mr-2 ${lumaLoading ? "animate-spin" : ""}`} />
+              Atualizar painel
+            </Button>
+          </div>
+
+          {lumaLoading ? (
+            <div className="space-y-3">
+              <div className="h-16 rounded-xl bg-muted/20 animate-pulse" />
+              <div className="h-28 rounded-xl bg-muted/20 animate-pulse" />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="glass-subtle rounded-2xl px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <p className="text-sm font-semibold mt-1">{lumaStatus?.status || "idle"}</p>
+                </div>
+                <div className="glass-subtle rounded-2xl px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Eventos</p>
+                  <p className="text-sm font-semibold mt-1">{lumaStatus?.events_processed || 0}</p>
+                </div>
+                <div className="glass-subtle rounded-2xl px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Inscrições / revogados</p>
+                  <p className="text-sm font-semibold mt-1">
+                    {lumaStatus?.totals.registrations || 0} / {lumaStatus?.totals.revoked || 0}
+                  </p>
+                </div>
+                <div className="glass-subtle rounded-2xl px-4 py-3">
+                  <p className="text-xs text-muted-foreground">Check-ins</p>
+                  <p className="text-sm font-semibold mt-1">{lumaStatus?.totals.checkins || 0}</p>
+                </div>
+              </div>
+
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>
+                  Último sucesso: {lumaStatus?.last_sync ? new Date(lumaStatus.last_sync).toLocaleString("pt-BR") : "nunca"}
+                </p>
+                {lumaStatus?.error_message && <p className="text-red-400">Erro mais recente: {lumaStatus.error_message}</p>}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">Webhooks recentes</h4>
+                  <Badge variant="secondary" className="rounded-lg">{lumaWebhooks.length}</Badge>
+                </div>
+                {lumaWebhooks.length === 0 ? (
+                  <div className="px-4 py-3 rounded-xl bg-muted/10 text-sm text-muted-foreground">
+                    Nenhum webhook recebido ainda.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {lumaWebhooks.map((event) => (
+                      <div key={event.id} className="px-4 py-3 rounded-xl bg-muted/10 space-y-1">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge variant="secondary" className="rounded-lg">{event.delivery_status}</Badge>
+                            <Badge variant="secondary" className="rounded-lg">{event.sync_mode}</Badge>
+                            <span className="text-sm font-medium">{event.event_type || "evento desconhecido"}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(event.received_at).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          event_id: {event.luma_event_id || "-"}
+                        </div>
+                        {event.error_message && <div className="text-xs text-red-400">{event.error_message}</div>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 

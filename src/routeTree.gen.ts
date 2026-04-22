@@ -18,6 +18,7 @@ import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksTelegramPollRouteImport } from './routes/hooks/telegram-poll'
 import { Route as HooksTelegramDailyReportRouteImport } from './routes/hooks/telegram-daily-report'
+import { Route as HooksLumaWebhookRouteImport } from './routes/hooks/luma-webhook'
 import { Route as HooksLumaSyncRouteImport } from './routes/hooks/luma-sync'
 import { Route as ApiHouseV1LumaGuestRouteImport } from './routes/api/house/v1/luma-guest'
 import { Route as ApiHouseV1HeartbeatRouteImport } from './routes/api/house/v1/heartbeat'
@@ -74,6 +75,11 @@ const HooksTelegramDailyReportRoute =
     path: '/hooks/telegram-daily-report',
     getParentRoute: () => rootRouteImport,
   } as any)
+const HooksLumaWebhookRoute = HooksLumaWebhookRouteImport.update({
+  id: '/hooks/luma-webhook',
+  path: '/hooks/luma-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HooksLumaSyncRoute = HooksLumaSyncRouteImport.update({
   id: '/hooks/luma-sync',
   path: '/hooks/luma-sync',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
   '/hooks/luma-sync': typeof HooksLumaSyncRoute
+  '/hooks/luma-webhook': typeof HooksLumaWebhookRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
   '/api/house/v1/bootstrap': typeof ApiHouseV1BootstrapRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
   '/hooks/luma-sync': typeof HooksLumaSyncRoute
+  '/hooks/luma-webhook': typeof HooksLumaWebhookRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
   '/api/house/v1/bootstrap': typeof ApiHouseV1BootstrapRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pessoas': typeof PessoasRoute
   '/hooks/luma-sync': typeof HooksLumaSyncRoute
+  '/hooks/luma-webhook': typeof HooksLumaWebhookRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
   '/api/house/v1/bootstrap': typeof ApiHouseV1BootstrapRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pessoas'
     | '/hooks/luma-sync'
+    | '/hooks/luma-webhook'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
     | '/api/house/v1/bootstrap'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pessoas'
     | '/hooks/luma-sync'
+    | '/hooks/luma-webhook'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
     | '/api/house/v1/bootstrap'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/pessoas'
     | '/hooks/luma-sync'
+    | '/hooks/luma-webhook'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
     | '/api/house/v1/bootstrap'
@@ -255,6 +267,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PessoasRoute: typeof PessoasRoute
   HooksLumaSyncRoute: typeof HooksLumaSyncRoute
+  HooksLumaWebhookRoute: typeof HooksLumaWebhookRoute
   HooksTelegramDailyReportRoute: typeof HooksTelegramDailyReportRoute
   HooksTelegramPollRoute: typeof HooksTelegramPollRoute
   ApiHouseV1BootstrapRoute: typeof ApiHouseV1BootstrapRoute
@@ -332,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HooksTelegramDailyReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hooks/luma-webhook': {
+      id: '/hooks/luma-webhook'
+      path: '/hooks/luma-webhook'
+      fullPath: '/hooks/luma-webhook'
+      preLoaderRoute: typeof HooksLumaWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hooks/luma-sync': {
       id: '/hooks/luma-sync'
       path: '/hooks/luma-sync'
@@ -407,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PessoasRoute: PessoasRoute,
   HooksLumaSyncRoute: HooksLumaSyncRoute,
+  HooksLumaWebhookRoute: HooksLumaWebhookRoute,
   HooksTelegramDailyReportRoute: HooksTelegramDailyReportRoute,
   HooksTelegramPollRoute: HooksTelegramPollRoute,
   ApiHouseV1BootstrapRoute: ApiHouseV1BootstrapRoute,

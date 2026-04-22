@@ -196,6 +196,14 @@ function CheckinPage() {
 
   // Luma sync status
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [lastSyncStatus, setLastSyncStatus] = useState<"idle" | "running" | "success" | "error">("idle");
+  const [lastSyncError, setLastSyncError] = useState<string | null>(null);
+  const [lastSyncTotals, setLastSyncTotals] = useState<{
+    registrations: number;
+    revoked: number;
+    checkins: number;
+  }>({ registrations: 0, revoked: 0, checkins: 0 });
+  const [lastSyncEventsProcessed, setLastSyncEventsProcessed] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [, forceTick] = useState(0);
 
@@ -203,6 +211,14 @@ function CheckinPage() {
     try {
       const r = await getLastLumaSync();
       setLastSync(r.last_sync);
+      setLastSyncStatus(r.status);
+      setLastSyncError(r.error_message || null);
+      setLastSyncEventsProcessed(r.events_processed || 0);
+      setLastSyncTotals({
+        registrations: r.totals?.registrations || 0,
+        revoked: r.totals?.revoked || 0,
+        checkins: r.totals?.checkins || 0,
+      });
     } catch (err) {
       console.error("getLastLumaSync failed:", err);
     }
@@ -241,6 +257,7 @@ function CheckinPage() {
 
   const handleManualSync = async () => {
     setSyncing(true);
+    setLastSyncStatus("running");
     try {
       const result = await triggerLumaSync();
       const t = result.totals;
@@ -461,10 +478,39 @@ function CheckinPage() {
 
           {/* Luma sync banner */}
           <div className="glass-subtle rounded-2xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm flex-wrap">
               <RefreshCw className={`w-4 h-4 text-primary ${syncing ? "animate-spin" : ""}`} />
               <span className="text-muted-foreground">Última sincronização do Luma:</span>
               <span className="font-medium text-foreground">{formatRelativeTime(lastSync)}</span>
+              <Badge
+                variant="secondary"
+                className={
+                  lastSyncStatus === "error"
+                    ? "rounded-lg text-red-400"
+                    : lastSyncStatus === "running"
+                      ? "rounded-lg text-amber-400"
+                      : lastSyncStatus === "success"
+                        ? "rounded-lg text-emerald-400"
+                        : "rounded-lg"
+                }
+              >
+                {lastSyncStatus === "running"
+                  ? "sincronizando"
+                  : lastSyncStatus === "success"
+                    ? "ok"
+                    : lastSyncStatus === "error"
+                      ? "erro"
+                      : "idle"}
+              </Badge>
+              <span className="text-muted-foreground">{lastSyncEventsProcessed} eventos</span>
+              <span className="text-muted-foreground">{lastSyncTotals.registrations} inscrições</span>
+              <span className="text-muted-foreground">{lastSyncTotals.checkins} check-ins</span>
+              {lastSyncTotals.revoked > 0 && (
+                <span className="text-muted-foreground">{lastSyncTotals.revoked} revogados</span>
+              )}
+              {lastSyncError && (
+                <span className="text-red-400">Erro: {lastSyncError}</span>
+              )}
             </div>
             <Button
               size="sm"

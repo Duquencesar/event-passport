@@ -358,8 +358,9 @@ def validate_scan(context: AppContext, body: dict[str, Any]) -> dict[str, Any]:
         occurred_at=occurred_at,
     )
     resident = None if grant else find_resident_for_scan(state=state, house_user_id=house_user_id)
-    event_id = grant.get("event_id") if grant else demo.get("event", {}).get("id") if resident and demo else None
-    event_name = grant.get("event_name") if grant else demo.get("event", {}).get("name") if resident and demo else None
+    demo_event = demo.get("event", {}) if demo else {}
+    event_id = grant.get("event_id") if grant else resident and demo_event.get("id") if resident else demo_event.get("id") if demo else None
+    event_name = grant.get("event_name") if grant else resident and demo_event.get("name") if resident else demo_event.get("name") if demo else None
 
     decision = "granted" if grant or resident else "denied"
     reason = body.get("reason") or (None if grant or resident else "Credential not mapped or not active")

@@ -9,8 +9,11 @@
  */
 
 import { db as supabaseAdmin } from "./db";
+import type { Json } from "@/integrations/supabase/types";
 
 const LUMA_BASE = "https://public-api.luma.com/v1";
+const LUMA_SYNC_STATE_KEY = "luma_sync";
+const LUMA_REGISTRATION_SOURCES = ["luma", "luma_api"];
 
 export type LumaEventEntry = {
   api_id: string;
@@ -151,8 +154,12 @@ export type NormalizedLumaEvent = {
 
 export async function listCalendarEvents(
   apiKey: string,
-  _calendarApiId?: string,
+  calendarApiId?: string,
 ): Promise<NormalizedLumaEvent[]> {
+  if (!calendarApiId?.trim()) {
+    throw new Error("LUMA_CALENDAR_API_ID é obrigatório para sincronizar eventos do Luma.");
+  }
+
   // A API retorna eventos do mais antigo para o mais recente, paginados.
   // Para garantir que pegamos os futuros, paginamos até o fim (ou cap de segurança).
   const allEntries: Array<{ event: LumaEventEntry }> = [];
@@ -162,6 +169,7 @@ export async function listCalendarEvents(
 
   while (pages < MAX_PAGES) {
     const params: Record<string, string> = {
+      calendar_api_id: calendarApiId,
       pagination_limit: "50",
       status: "approved",
     };
@@ -218,14 +226,208 @@ export type SyncEventInput = {
   defaultTag?: string;
 };
 
+export type SyncEventByExternalIdInput = {
+  apiKey: string;
+  calendarApiId: string;
+  lumaEventId: string;
+  defaultTag?: string;
+};
+
+export type LumaWebhookAuditInput = {
+  event_type: string | null;
+  luma_event_id: string | null;
+  delivery_status: "received" | "processed" | "fallback_full_sync" | "failed";
+  sync_mode: "unknown" | "event" | "full";
+  error_message?: string | null;
+  request_headers?: Json;
+  payload?: Json;
+  result?: Json;
+};
+
 export type SyncEventResult = {
   total_guests: number;
   created: number;
   updated: number;
   registrations: number;
+  revoked: number;
   checkins: number;
   event_id: string | null;
 };
+
+type SyncStateStatus = "idle" | "running" | "success" | "error";
+
+export type LumaSyncState = {
+  status: SyncStateStatus;
+  started_at: string | null;
+  finished_at: string | null;
+  last_success_at: string | null;
+  last_error_at: string | null;
+  error_message: string | null;
+  events_processed: number;
+  totals: {
+    guests: number;
+    created: number;
+    updated: number;
+    registrations: number;
+    revoked: number;
+    checkins: number;
+  };
+};
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+async function writeLumaSyncState(state: LumaSyncState): Promise<void> {
+  const { error } = await supabaseAdmin.from("house_sync_state").upsert(
+    {
+      key: LUMA_SYNC_STATE_KEY,
+      updated_at: nowIso(),
+      value: state,
+    },
+    { onConflict: "key" },
+  );
+  if (error) throw new Error(error.message);
+}
+
+export async function readLumaSyncState(): Promise<LumaSyncState | null> {
+  const { data, error } = await supabaseAdmin
+    .from("house_sync_state")
+    .select("value")
+    .eq("key", LUMA_SYNC_STATE_KEY)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.value || typeof data.value !== "object" || Array.isArray(data.value)) return null;
+
+  const value = data.value as Record<string, unknown>;
+  const totals =
+    value.totals && typeof value.totals === "object" && !Array.isArray(value.totals)
+      ? (value.totals as Record<string, unknown>)
+      : {};
+
+  return {
+    status:
+      value.status === "running" || value.status === "success" || value.status === "error"
+        ? value.status
+        : "idle",
+    started_at: typeof value.started_at === "string" ? value.started_at : null,
+    finished_at: typeof value.finished_at === "string" ? value.finished_at : null,
+    last_success_at: typeof value.last_success_at === "string" ? value.last_success_at : null,
+    last_error_at: typeof value.last_error_at === "string" ? value.last_error_at : null,
+    error_message: typeof value.error_message === "string" ? value.error_message : null,
+    events_processed: typeof value.events_processed === "number" ? value.events_processed : 0,
+    totals: {
+      guests: typeof totals.guests === "number" ? totals.guests : 0,
+      created: typeof totals.created === "number" ? totals.created : 0,
+      updated: typeof totals.updated === "number" ? totals.updated : 0,
+      registrations: typeof totals.registrations === "number" ? totals.registrations : 0,
+      revoked: typeof totals.revoked === "number" ? totals.revoked : 0,
+      checkins: typeof totals.checkins === "number" ? totals.checkins : 0,
+    },
+  };
+}
+
+async function markLumaSyncRunning(): Promise<void> {
+  const previous = await readLumaSyncState();
+  await writeLumaSyncState({
+    status: "running",
+    started_at: nowIso(),
+    finished_at: null,
+    last_success_at: previous?.last_success_at || null,
+    last_error_at: previous?.last_error_at || null,
+    error_message: null,
+    events_processed: 0,
+    totals: {
+      guests: 0,
+      created: 0,
+      updated: 0,
+      registrations: 0,
+      revoked: 0,
+      checkins: 0,
+    },
+  });
+}
+
+async function markLumaSyncFinished(
+  status: Exclude<SyncStateStatus, "idle" | "running">,
+  payload: Pick<LumaSyncState, "events_processed" | "totals">,
+  errorMessage?: string,
+): Promise<void> {
+  const previous = await readLumaSyncState();
+  const finishedAt = nowIso();
+  await writeLumaSyncState({
+    status,
+    started_at: previous?.started_at || null,
+    finished_at: finishedAt,
+    last_success_at: status === "success" ? finishedAt : previous?.last_success_at || null,
+    last_error_at: status === "error" ? finishedAt : previous?.last_error_at || null,
+    error_message: status === "error" ? errorMessage || "Unknown sync error" : null,
+    events_processed: payload.events_processed,
+    totals: payload.totals,
+  });
+}
+
+async function revokeStaleLumaRegistrations(input: {
+  eventId: string;
+  approvedGuestIds: Set<string>;
+}): Promise<number> {
+  const { data, error } = await supabaseAdmin
+    .from("registrations")
+    .select("id, luma_guest_id")
+    .eq("event_id", input.eventId)
+    .in("source", LUMA_REGISTRATION_SOURCES);
+  if (error) throw new Error(error.message);
+
+  const staleIds = (data || [])
+    .filter((row) => !row.luma_guest_id || !input.approvedGuestIds.has(row.luma_guest_id))
+    .map((row) => row.id);
+
+  if (staleIds.length === 0) return 0;
+
+  const { error: deleteError } = await supabaseAdmin.from("registrations").delete().in("id", staleIds);
+  if (deleteError) throw new Error(deleteError.message);
+  return staleIds.length;
+}
+
+export async function createLumaWebhookAudit(input: LumaWebhookAuditInput): Promise<string> {
+  const { data, error } = await supabaseAdmin
+    .from("luma_webhook_events")
+    .insert({
+      provider: "luma",
+      event_type: input.event_type,
+      luma_event_id: input.luma_event_id,
+      delivery_status: input.delivery_status,
+      sync_mode: input.sync_mode,
+      error_message: input.error_message || null,
+      request_headers: input.request_headers || {},
+      payload: input.payload || {},
+      result: input.result || {},
+      processed_at: input.delivery_status === "received" ? null : nowIso(),
+    })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(error?.message || "Falha ao registrar webhook do Luma.");
+  return data.id;
+}
+
+export async function updateLumaWebhookAudit(
+  id: string,
+  input: Pick<LumaWebhookAuditInput, "delivery_status" | "sync_mode" | "error_message" | "result" | "luma_event_id" | "event_type">,
+): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from("luma_webhook_events")
+    .update({
+      delivery_status: input.delivery_status,
+      sync_mode: input.sync_mode,
+      error_message: input.error_message || null,
+      result: input.result || {},
+      luma_event_id: input.luma_event_id,
+      event_type: input.event_type,
+      processed_at: nowIso(),
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+}
 
 export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventResult> {
   // 1. Garantir evento no banco (prioriza match por luma_event_id)
@@ -306,6 +508,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
   let created = 0;
   let updated = 0;
   let registrations = 0;
+  let revoked = 0;
   let checkins = 0;
 
   for (const guest of approved) {
@@ -370,18 +573,25 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         person_id: personId,
         event_name: input.eventName,
         ticket_type: ticketName,
-        source: "luma_api",
+        source: "luma",
         event_id: internalEventId,
         luma_guest_id: guest.api_id,
         // Para Passe Semanal, usa a data do evento como início da semana (ajustável depois pelo admin)
         week_pass_start_date: tag === "Weekly" ? input.eventDate : null,
       });
       registrations++;
-    } else if (!existingByGuest) {
-      // Atualiza registro antigo para incluir o luma_guest_id
+    } else {
       await supabaseAdmin
         .from("registrations")
-        .update({ luma_guest_id: guest.api_id })
+        .update({
+          person_id: personId,
+          event_name: input.eventName,
+          ticket_type: ticketName,
+          source: "luma",
+          event_id: internalEventId,
+          luma_guest_id: guest.api_id,
+          week_pass_start_date: tag === "Weekly" ? input.eventDate : null,
+        })
         .eq("id", existingReg.id);
     }
 
@@ -389,7 +599,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
     if (guest.checked_in_at) {
       const { data: existingCheckin } = await supabaseAdmin
         .from("checkins")
-        .select("id")
+        .select("id, source")
         .eq("person_id", personId)
         .eq("event_id", internalEventId)
         .maybeSingle();
@@ -408,12 +618,31 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         });
         checkins++;
       } else {
+        // Presença da casa é mais confiável no fluxo operacional final.
+        // Se já existir check-in de source=house, só enriquecemos com luma_guest_id.
         await supabaseAdmin
           .from("checkins")
-          .update({ luma_guest_id: guest.api_id })
+          .update(
+            existingCheckin.source === "house"
+              ? { luma_guest_id: guest.api_id }
+              : {
+                  event_name: input.eventName,
+                  access_type: ticketName,
+                  source: "luma",
+                  checked_in_at: guest.checked_in_at,
+                  luma_guest_id: guest.api_id,
+                },
+          )
           .eq("id", existingCheckin.id);
       }
     }
+  }
+
+  if (internalEventId) {
+    revoked = await revokeStaleLumaRegistrations({
+      eventId: internalEventId,
+      approvedGuestIds: new Set(approved.map((guest) => guest.api_id)),
+    });
   }
 
   return {
@@ -421,9 +650,32 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
     created,
     updated,
     registrations,
+    revoked,
     checkins,
     event_id: internalEventId,
   };
+}
+
+export async function syncLumaEventByExternalId(
+  input: SyncEventByExternalIdInput,
+): Promise<SyncEventResult> {
+  const events = await listCalendarEvents(input.apiKey, input.calendarApiId);
+  const event = events.find((item) => item.api_id === input.lumaEventId);
+  if (!event) {
+    throw new Error(`Evento Luma ${input.lumaEventId} não encontrado no calendário configurado.`);
+  }
+
+  return syncLumaEvent({
+    apiKey: input.apiKey,
+    lumaEventId: event.api_id,
+    eventName: event.name,
+    eventDate: event.date,
+    eventTime: event.time,
+    eventLocation: event.location,
+    eventOrganizer: event.organizer,
+    eventUrl: event.url,
+    defaultTag: input.defaultTag,
+  });
 }
 
 // ─── Sync completo (todos os eventos do calendário) ──────────────────────────
@@ -436,6 +688,7 @@ export type FullSyncResult = {
     created: number;
     updated: number;
     registrations: number;
+    revoked: number;
     checkins: number;
   };
   per_event: Array<{ name: string; date: string } & SyncEventResult>;
@@ -448,59 +701,83 @@ export async function syncEntireCalendar(opts: {
   /** Só sincroniza eventos a partir desta data (YYYY-MM-DD). Default: 7 dias atrás */
   sinceDate?: string;
 }): Promise<FullSyncResult> {
-  const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId);
+  await markLumaSyncRunning();
 
-  const cutoff =
-    opts.sinceDate ||
-    (() => {
-      const d = new Date();
-      d.setDate(d.getDate() - 7);
-      return toDateKey(d.toISOString());
-    })();
+  try {
+    const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId);
 
-  const upcoming = events.filter((e) => e.date >= cutoff);
+    const cutoff =
+      opts.sinceDate ||
+      (() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
+        return toDateKey(d.toISOString());
+      })();
 
-  const totals = { guests: 0, created: 0, updated: 0, registrations: 0, checkins: 0 };
-  const per_event: FullSyncResult["per_event"] = [];
+    const upcoming = events.filter((e) => e.date >= cutoff);
 
-  for (const event of upcoming) {
-    try {
-      const res = await syncLumaEvent({
-        apiKey: opts.apiKey,
-        lumaEventId: event.api_id,
-        eventName: event.name,
-        eventDate: event.date,
-        eventTime: event.time,
-        eventLocation: event.location,
-        eventOrganizer: event.organizer,
-        eventUrl: event.url,
-        defaultTag: opts.defaultTag,
-      });
-      totals.guests += res.total_guests;
-      totals.created += res.created;
-      totals.updated += res.updated;
-      totals.registrations += res.registrations;
-      totals.checkins += res.checkins;
-      per_event.push({ name: event.name, date: event.date, ...res });
-    } catch (err) {
-      console.error(`Failed to sync event ${event.name}:`, err);
-      per_event.push({
-        name: event.name,
-        date: event.date,
-        total_guests: -1,
-        created: 0,
-        updated: 0,
-        registrations: 0,
-        checkins: 0,
-        event_id: null,
-      });
+    const totals = { guests: 0, created: 0, updated: 0, registrations: 0, revoked: 0, checkins: 0 };
+    const per_event: FullSyncResult["per_event"] = [];
+
+    for (const event of upcoming) {
+      try {
+        const res = await syncLumaEvent({
+          apiKey: opts.apiKey,
+          lumaEventId: event.api_id,
+          eventName: event.name,
+          eventDate: event.date,
+          eventTime: event.time,
+          eventLocation: event.location,
+          eventOrganizer: event.organizer,
+          eventUrl: event.url,
+          defaultTag: opts.defaultTag,
+        });
+        totals.guests += res.total_guests;
+        totals.created += res.created;
+        totals.updated += res.updated;
+        totals.registrations += res.registrations;
+        totals.revoked += res.revoked;
+        totals.checkins += res.checkins;
+        per_event.push({ name: event.name, date: event.date, ...res });
+      } catch (err) {
+        console.error(`Failed to sync event ${event.name}:`, err);
+        per_event.push({
+          name: event.name,
+          date: event.date,
+          total_guests: -1,
+          created: 0,
+          updated: 0,
+          registrations: 0,
+          revoked: 0,
+          checkins: 0,
+          event_id: null,
+        });
+      }
     }
-  }
 
-  return {
-    ok: true,
-    events_processed: upcoming.length,
-    totals,
-    per_event,
-  };
+    const result = {
+      ok: true as const,
+      events_processed: upcoming.length,
+      totals,
+      per_event,
+    };
+
+    await markLumaSyncFinished("success", {
+      events_processed: result.events_processed,
+      totals: result.totals,
+    });
+
+    return result;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown sync error";
+    await markLumaSyncFinished(
+      "error",
+      {
+        events_processed: 0,
+        totals: { guests: 0, created: 0, updated: 0, registrations: 0, revoked: 0, checkins: 0 },
+      },
+      message,
+    );
+    throw err;
+  }
 }

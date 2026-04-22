@@ -14,11 +14,12 @@ export const Route = createFileRoute("/hooks/luma-sync")({
       POST: async ({ request }) => {
         const lovableContext = request.headers.get("lovable-context");
         const authHeader = request.headers.get("authorization");
+        const syncToken = process.env.LUMA_SYNC_TOKEN;
 
-        // Permite chamada do cron OU com bearer
+        // Permite chamada do cron interno OU com token dedicado de sync.
         if (lovableContext !== "cron") {
-          const token = authHeader?.replace("Bearer ", "");
-          if (!token) {
+          const token = authHeader?.replace("Bearer ", "") || request.headers.get("x-luma-sync-token");
+          if (!syncToken || !token || token !== syncToken) {
             return new Response(JSON.stringify({ error: "Unauthorized" }), {
               status: 401,
               headers: { "Content-Type": "application/json" },
@@ -33,6 +34,14 @@ export const Route = createFileRoute("/hooks/luma-sync")({
           return new Response(
             JSON.stringify({
               error: "LUMA_API_KEY não configurada nos secrets.",
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        if (!calendarId) {
+          return new Response(
+            JSON.stringify({
+              error: "LUMA_CALENDAR_API_ID não configurado nos secrets.",
             }),
             { status: 500, headers: { "Content-Type": "application/json" } },
           );

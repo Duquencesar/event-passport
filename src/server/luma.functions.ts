@@ -27,12 +27,20 @@ function resolveCalendarId(provided?: string): string | undefined {
   return id || undefined;
 }
 
+function resolveRequiredCalendarId(provided?: string): string {
+  const id = resolveCalendarId(provided);
+  if (!id) {
+    throw new Error("LUMA_CALENDAR_API_ID não configurado. Defina nos secrets ou informe na UI.");
+  }
+  return id;
+}
+
 /** Lista os eventos do calendário Luma. */
 export const lumaListEvents = createServerFn({ method: "POST" })
   .inputValidator((input: { api_key?: string; calendar_api_id?: string }) => input)
   .handler(async ({ data }) => {
     const apiKey = resolveApiKey(data.api_key);
-    const calendarId = resolveCalendarId(data.calendar_api_id);
+    const calendarId = resolveRequiredCalendarId(data.calendar_api_id);
     return listCalendarEvents(apiKey, calendarId);
   });
 
@@ -83,7 +91,7 @@ export const lumaSyncAll = createServerFn({ method: "POST" })
   .inputValidator((input: { default_tag?: string; since_date?: string } | undefined) => input ?? {})
   .handler(async ({ data }) => {
     const apiKey = resolveApiKey();
-    const calendarId = resolveCalendarId();
+    const calendarId = resolveRequiredCalendarId();
     return syncEntireCalendar({
       apiKey,
       calendarApiId: calendarId,

@@ -4,9 +4,9 @@ import type { Json, Tables, TablesInsert } from "@/integrations/supabase/types";
 import { getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 
 const BRASILIA_OFFSET = "-03:00";
-const HOUSE_DEMO_MARKER = "house-door-demo-v1";
-const HOUSE_DEMO_EVENT_ID = "11111111-1111-4111-8111-111111111111";
-const HOUSE_DEMO_EVENT_NAME = "Demo Test";
+export const HOUSE_DEMO_MARKER = "house-door-demo-v1";
+export const HOUSE_DEMO_EVENT_ID = "11111111-1111-4111-8111-111111111111";
+export const HOUSE_DEMO_EVENT_NAME = "Demo Test";
 const HOUSE_DEMO_EVENT_TIME = "19:00";
 const HOUSE_DEMO_EVENT_ORGANIZER = "Event Passport Demo";
 const HOUSE_DEMO_EVENT_LOCATION = "Founder Haus Demo Floor";
@@ -276,13 +276,13 @@ export function assertHouseApiRequest(request: Request): void {
 async function fetchRegistrationGrantRows(): Promise<RegistrationGrantRow[]> {
   return fetchAllRows<RegistrationGrantRow>(
     (from, to) =>
-      supabaseAdmin
-        .from("registrations")
-        .select(
-          "id, event_id, event_name, ticket_type, source, day_pass_date, week_pass_start_date, luma_guest_id, people!inner(id, name, email, tag), events(id, name, date)",
-        )
-        .eq("source", "luma")
-        .range(from, to) as unknown as PromiseLike<{
+        supabaseAdmin
+          .from("registrations")
+          .select(
+            "id, event_id, event_name, ticket_type, source, day_pass_date, week_pass_start_date, luma_guest_id, people!inner(id, name, email, tag), events(id, name, date)",
+          )
+          .in("source", ["luma", "luma_api"])
+          .range(from, to) as unknown as PromiseLike<{
         data: RegistrationGrantRow[] | null;
         error: { message: string } | null;
       }>,
@@ -694,7 +694,6 @@ export async function prepareHouseDemo(): Promise<PreparedHouseDemo> {
   await deleteByIds("house_user_map", "id", demoPeople.map((person) => person.map_id));
   await deleteByIds("people", "email", demoPeople.map((person) => person.email));
   await deleteByIds("people", "id", demoPeople.map((person) => person.person_id));
-  await deleteByValue("events", "name", HOUSE_DEMO_EVENT_NAME);
   await deleteByIds("events", "id", [HOUSE_DEMO_EVENT_ID]);
 
   const { error: eventError } = await supabaseAdmin.from("events").insert({

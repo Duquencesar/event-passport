@@ -29,9 +29,19 @@ Obrigatórias para o broker:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `HOUSE_API_TOKEN`
 
+Base recomendada:
+- copiar `.env.example` para um `.env` local não versionado
+- preencher com o projeto Supabase do time
+
 Obrigatórias para o sync do Luma:
 - `LUMA_API_KEY`
 - `LUMA_CALENDAR_API_ID`
+
+Obrigatória para disparo HTTP externo do sync do Luma:
+- `LUMA_SYNC_TOKEN`
+
+Obrigatória para ingestão do webhook do Luma:
+- `LUMA_WEBHOOK_TOKEN`
 
 Sem `SUPABASE_SERVICE_ROLE_KEY`, o servidor cai para a publishable key e não deve operar corretamente com as tabelas novas.
 
@@ -164,6 +174,48 @@ No contrato real, isso significa:
 - `sync-changes` -> `GET /api/house/v1/feed?cursor=...`
 
 Se o broker estiver indisponível, o Founder Haus System continua útil em modo fixture para demonstração local.
+
+## Runbook da demo resetável
+
+Fluxo recomendado para repetir a demo sem depender de `LUMA_API_KEY`:
+
+1. Abrir o dashboard e clicar em `Preparar Demo Test`.
+2. Confirmar que o evento `Demo Test` apareceu no filtro de eventos do dashboard.
+3. Sincronizar a casa:
+
+```bash
+python3 scripts/mock_door.py --base-url http://127.0.0.1:8100 prepare-demo
+python3 scripts/mock_door.py --base-url http://127.0.0.1:8100 pull-map
+```
+
+4. Executar a demo ponta a ponta:
+
+```bash
+python3 scripts/mock_door.py --base-url http://127.0.0.1:8100 demo
+```
+
+5. Validar no dashboard:
+- `Presentes` deve incluir ao menos um guest e um residente
+- `Ausentes / no-show` deve listar guests seeded que nao passaram pela porta
+- `Acessos negados` deve mostrar o QR invalido apenas em log bruto
+
+## Verificacao automatizada da demo
+
+Com a app rodando e as envs do Supabase configuradas localmente:
+
+```bash
+export HOUSE_API_TOKEN=house-test-token
+python3 scripts/verify_house_demo.py --base-url http://127.0.0.1:3000
+```
+
+O verificador cobre:
+- reset repetido do `Demo Test`
+- `feed` com guests apenas
+- residentes fora do `feed`
+- `granted` de guest e residente criando presenca
+- `denied` sem criar `checkin`
+- replay idempotente por `house_event_id`
+- resolucao dos eventos para o `Demo Test`
 
 ## Observações de implementação
 

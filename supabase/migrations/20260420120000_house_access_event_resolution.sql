@@ -107,15 +107,6 @@ BEGIN
       RAISE EXCEPTION 'house_event_id obrigatório em todos os eventos.';
     END IF;
 
-    IF EXISTS (
-      SELECT 1
-      FROM public.house_access_logs_raw
-      WHERE house_event_id = v_house_event_id
-    ) THEN
-      duplicated_count := duplicated_count + 1;
-      CONTINUE;
-    END IF;
-
     v_device_id := NULLIF(TRIM(event_item ->> 'device_id'), '');
     v_door_id := NULLIF(TRIM(event_item ->> 'door_id'), '');
     v_house_user_id := NULLIF(TRIM(event_item ->> 'house_user_id'), '');
@@ -223,6 +214,29 @@ BEGIN
 
       v_resolution_status := 'resolved';
       v_resolution_strategy := 'active_grant';
+    END IF;
+
+    IF v_resolved_event_id IS NULL AND v_provided_event_name IS NOT NULL THEN
+      SELECT COUNT(*)
+      INTO v_total_events
+      FROM public.events AS e
+      WHERE e.date = v_local_date
+        AND lower(e.name) = lower(v_provided_event_name);
+
+      IF v_total_events = 1 THEN
+        SELECT e.id, e.name
+        INTO v_resolved_event_id, v_resolved_event_name
+        FROM public.events AS e
+        WHERE e.date = v_local_date
+          AND lower(e.name) = lower(v_provided_event_name)
+        LIMIT 1;
+
+        v_resolution_status := 'resolved';
+        v_resolution_strategy := 'provided_event_name';
+      ELSIF v_total_events > 1 THEN
+        v_resolution_status := 'ambiguous';
+        v_resolution_strategy := 'multiple_events_same_name';
+      END IF;
     END IF;
 
     IF v_resolved_event_id IS NULL THEN
@@ -340,7 +354,13 @@ BEGIN
       v_resolution_strategy,
       NULL
     )
+    ON CONFLICT (house_event_id) DO NOTHING
     RETURNING id INTO v_log_id;
+
+    IF v_log_id IS NULL THEN
+      duplicated_count := duplicated_count + 1;
+      CONTINUE;
+    END IF;
 
     inserted_count := inserted_count + 1;
 

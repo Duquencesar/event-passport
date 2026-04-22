@@ -381,6 +381,51 @@ export type Database = {
           },
         ];
       };
+      luma_webhook_events: {
+        Row: {
+          delivery_status: string;
+          error_message: string | null;
+          event_type: string | null;
+          id: string;
+          luma_event_id: string | null;
+          payload: Json;
+          processed_at: string | null;
+          provider: string;
+          received_at: string;
+          request_headers: Json;
+          result: Json;
+          sync_mode: string;
+        };
+        Insert: {
+          delivery_status?: string;
+          error_message?: string | null;
+          event_type?: string | null;
+          id?: string;
+          luma_event_id?: string | null;
+          payload?: Json;
+          processed_at?: string | null;
+          provider?: string;
+          received_at?: string;
+          request_headers?: Json;
+          result?: Json;
+          sync_mode?: string;
+        };
+        Update: {
+          delivery_status?: string;
+          error_message?: string | null;
+          event_type?: string | null;
+          id?: string;
+          luma_event_id?: string | null;
+          payload?: Json;
+          processed_at?: string | null;
+          provider?: string;
+          received_at?: string;
+          request_headers?: Json;
+          result?: Json;
+          sync_mode?: string;
+        };
+        Relationships: [];
+      };
       people: {
         Row: {
           created_at: string;
