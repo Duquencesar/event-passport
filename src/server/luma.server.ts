@@ -137,21 +137,24 @@ export type NormalizedLumaEvent = {
 export async function listCalendarEvents(
   apiKey: string,
   calendarApiId: string,
+  afterIso?: string,
 ): Promise<NormalizedLumaEvent[]> {
   // A API retorna eventos do mais antigo para o mais recente, paginados.
-  // Para garantir que pegamos os futuros, paginamos até o fim (ou cap de segurança).
+  // Aceita parâmetro `after` (ISO) para filtrar direto na API e evitar paginar
+  // milhares de eventos antigos.
   // A API às vezes retorna entries como objetos diretos com `id`,
   // outras vezes wrapped em { event: { api_id, ... } }. Aceitamos ambos.
   const allEntries: Array<{ event?: LumaEventEntry } & Partial<LumaEventEntry>> = [];
   let cursor: string | undefined;
   let pages = 0;
-  const MAX_PAGES = 30; // 30 × 50 = 1500 eventos (mais que suficiente)
+  const MAX_PAGES = 50;
 
   while (pages < MAX_PAGES) {
     const params: Record<string, string> = {
       calendar_api_id: calendarApiId,
       pagination_limit: "50",
     };
+    if (afterIso) params.after = afterIso;
     if (cursor) params.pagination_cursor = cursor;
 
     const page = await lumaFetch<{
@@ -432,8 +435,6 @@ export async function syncEntireCalendar(opts: {
   /** Só sincroniza eventos a partir desta data (YYYY-MM-DD). Default: 7 dias atrás */
   sinceDate?: string;
 }): Promise<FullSyncResult> {
-  const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId);
-
   const cutoff =
     opts.sinceDate ||
     (() => {
@@ -441,6 +442,10 @@ export async function syncEntireCalendar(opts: {
       d.setDate(d.getDate() - 7);
       return toDateKey(d.toISOString());
     })();
+
+  // Passa filtro `after` direto pra API do Luma (evita paginar milhares de eventos antigos)
+  const afterIso = `${cutoff}T00:00:00.000Z`;
+  const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId, afterIso);
 
   const upcoming = events.filter((e) => e.date >= cutoff);
 
