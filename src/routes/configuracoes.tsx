@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { getTelegramConfig, saveTelegramConfig } from "@/server/people.functions";
 import { sendDailyReport } from "@/server/telegram-report.functions";
+import { lumaSyncAll } from "@/server/luma.functions";
+import { getLastLumaSync } from "@/server/luma-status.functions";
+import { RefreshCw as RefreshIcon } from "lucide-react";
 
 export const Route = createFileRoute("/configuracoes")({
   head: () => ({
@@ -39,6 +42,63 @@ function ConfiguracoesPage() {
   const [testPeriod, setTestPeriod] = useState<"morning" | "afternoon">("morning");
   const [testing, setTesting]   = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; sent?: number; error?: string } | null>(null);
+
+  // Luma sync
+  const todayKey = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const sevenDaysKey = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 7);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  })();
+  const yearStartKey = `${new Date().getFullYear()}-01-01`;
+
+  const [syncFrom, setSyncFrom] = useState(todayKey);
+  const [syncTo, setSyncTo] = useState(sevenDaysKey);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<
+    | { ok: true; eventsInRange: number; totals: { guests: number; created: number; registrations: number; checkins: number } }
+    | { ok: false; error: string }
+    | null
+  >(null);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
+  useEffect(() => {
+    getLastLumaSync().then((r: any) => setLastSync(r?.last_sync || null)).catch(() => {});
+  }, []);
+
+  const handleSyncLuma = async () => {
+    if (syncTo < syncFrom) {
+      setSyncResult({ ok: false, error: "Data final não pode ser anterior à inicial." });
+      return;
+    }
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const r = await lumaSyncAll({ data: { since_date: syncFrom } });
+      // Filtra os eventos efetivamente dentro do intervalo (lumaSyncAll inclui tudo a partir de since_date)
+      const inRange = (r as any).per_event.filter(
+        (e: { date: string }) => e.date >= syncFrom && e.date <= syncTo,
+      );
+      const totals = inRange.reduce(
+        (acc: any, e: any) => ({
+          guests: acc.guests + (e.total_guests > 0 ? e.total_guests : 0),
+          created: acc.created + e.created,
+          registrations: acc.registrations + e.registrations,
+          checkins: acc.checkins + e.checkins,
+        }),
+        { guests: 0, created: 0, registrations: 0, checkins: 0 },
+      );
+      setSyncResult({ ok: true, eventsInRange: inRange.length, totals });
+      setLastSync(new Date().toISOString());
+    } catch (err: any) {
+      setSyncResult({ ok: false, error: err?.message || "Erro ao sincronizar" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   useEffect(() => {
     getTelegramConfig().then((cfg: any) => {
@@ -87,6 +147,97 @@ function ConfiguracoesPage() {
           <p className="text-muted-foreground text-sm mt-1">
             Integrações e automações do sistema
           </p>
+        </div>
+
+        {/* Luma sync */}
+        <div className="glass rounded-3xl p-6 space-y-5 border border-border/30">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-500/15 flex items-center justify-center shrink-0">
+              <RefreshIcon className="w-5 h-5 text-sky-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-base">Sincronizar com Luma</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Importa eventos, inscritos e check-ins do calendário Luma para o intervalo de datas selecionado.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-muted-foreground">De</label>
+              <Input
+                type="date"
+                value={syncFrom}
+                onChange={(e) => setSyncFrom(e.target.value)}
+                className="rounded-xl bg-background/50 font-mono text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-muted-foreground">Até</label>
+              <Input
+                type="date"
+                value={syncTo}
+                onChange={(e) => setSyncTo(e.target.value)}
+                className="rounded-xl bg-background/50 font-mono text-sm"
+              />
+            </div>
+          </div>
+
+          {/* Quick presets */}
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { label: "Próximos 7 dias", from: todayKey, to: sevenDaysKey },
+              { label: "Hoje", from: todayKey, to: todayKey },
+              { label: "Ano todo", from: yearStartKey, to: `${new Date().getFullYear()}-12-31` },
+            ].map((preset) => (
+              <button
+                key={preset.label}
+                onClick={() => { setSyncFrom(preset.from); setSyncTo(preset.to); }}
+                className="text-xs px-3 py-1.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-muted-foreground"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button onClick={handleSyncLuma} disabled={syncing} className="rounded-xl">
+              {syncing
+                ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />Sincronizando…</>
+                : <><RefreshCw className="w-4 h-4 mr-2" />Sincronizar agora</>}
+            </Button>
+            {lastSync && (
+              <span className="text-xs text-muted-foreground/70">
+                Última sync: {new Date(lastSync).toLocaleString("pt-BR")}
+              </span>
+            )}
+          </div>
+
+          {syncResult && syncResult.ok && (
+            <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-4 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-emerald-400">
+                <CheckCircle className="w-4 h-4" />
+                Sincronização concluída
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <Stat label="Eventos no intervalo" value={syncResult.eventsInRange} />
+                <Stat label="Inscritos lidos" value={syncResult.totals.guests} />
+                <Stat label="Pessoas novas" value={syncResult.totals.created} />
+                <Stat label="Inscrições novas" value={syncResult.totals.registrations} />
+                <Stat label="Check-ins novos" value={syncResult.totals.checkins} />
+              </div>
+              <p className="text-xs text-muted-foreground/70">
+                Intervalo: {new Date(syncFrom + "T12:00:00").toLocaleDateString("pt-BR")} → {new Date(syncTo + "T12:00:00").toLocaleDateString("pt-BR")}
+              </p>
+            </div>
+          )}
+
+          {syncResult && !syncResult.ok && (
+            <div className="flex items-center gap-2 text-sm px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
+              <AlertTriangle className="w-4 h-4 shrink-0" /> {syncResult.error}
+            </div>
+          )}
         </div>
 
         {/* Telegram Cron */}
