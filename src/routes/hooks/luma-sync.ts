@@ -40,9 +40,22 @@ export const Route = createFileRoute("/hooks/luma-sync")({
         }
 
         try {
+          // Lê opcional sinceDate do body; default = 1º de janeiro do ano atual
+          let sinceDate: string | undefined;
+          try {
+            const body = (await request.clone().json()) as { sinceDate?: string };
+            sinceDate = body?.sinceDate;
+          } catch {
+            // body vazio é OK
+          }
+          if (!sinceDate) {
+            sinceDate = `${new Date().getUTCFullYear()}-01-01`;
+          }
+
           const result = await syncEntireCalendar({
             apiKey,
             calendarApiId: calendarId,
+            sinceDate,
           });
           console.log("Luma sync ok:", JSON.stringify(result.totals));
           return new Response(JSON.stringify(result), {
