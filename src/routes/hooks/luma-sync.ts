@@ -42,10 +42,11 @@ export const Route = createFileRoute("/hooks/luma-sync")({
         try {
           // Lê opcional sinceDate do body; default = 1º de janeiro do ano atual
           let sinceDate: string | undefined;
+          let untilDate: string | undefined;
           try {
             const body = (await request.clone().json()) as { sinceDate?: string; untilDate?: string };
             sinceDate = body?.sinceDate;
-            var untilDate = body?.untilDate;
+            untilDate = body?.untilDate;
           } catch {
             // body vazio é OK
           }
