@@ -40,6 +40,7 @@ import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCoun
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,6 +60,40 @@ type Registration = { id: string; event_name: string; ticket_type: string; day_p
 function csvCell(value: unknown) {
   const text = value == null ? "" : String(value);
   return `"${text.replace(/"/g, '""')}"`;
+}
+
+type ExportFormat = "csv" | "xlsx";
+type ExportRow = Record<string, unknown>;
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+}
+
+function downloadRows(rows: ExportRow[], header: string[], filename: string, format: ExportFormat) {
+  if (format === "csv") {
+    const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key])).join(","))].join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(rows, { header });
+  worksheet["!cols"] = header.map((key) => ({ wch: Math.max(14, key.length + 4) }));
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Check-ins");
+  const data = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 type AccessWarning = {
@@ -267,27 +302,21 @@ function CheckinPage() {
     }
   };
 
-  const handleExportEventCheckins = async (eventOverride?: EventBase) => {
+  const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
     const eventToExport = eventOverride || selectedEvent;
     if (!eventToExport) return;
     try {
       const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: eventToExport.id } });
       const header = ["nome", "categoria", "acesso", "periodo", "checkin_em", "origem"];
-      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
-      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${eventToExport.date}-${eventToExport.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadRows(rows as ExportRow[], header, `${eventToExport.date}-${slugify(eventToExport.name)}-checkins`, format);
+      toast.success(`${format.toUpperCase()} gerado`, { description: `${rows.length} check-ins exportados` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao exportar participantes";
       toast.error("Exportação não concluída", { description: msg });
     }
   };
 
-  const handleExportTodayCheckins = async () => {
+  const handleExportTodayCheckins = async (format: ExportFormat = "csv") => {
     try {
       const rows = await getTodayCheckinsForExport({
         data: {
@@ -296,15 +325,9 @@ function CheckinPage() {
         },
       });
       const header = ["nome", "categoria", "acesso", "periodo", "evento", "checkin_em", "origem"];
-      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
-      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${getCurrentBrasiliaDateKeySync()}-checkins${exportPeriod !== "Todos" ? `-${exportPeriod.toLowerCase()}` : ""}${exportAccessType !== "Todos" ? `-${exportAccessType.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}` : ""}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("CSV gerado", { description: `${rows.length} check-ins exportados` });
+      const filename = `${getCurrentBrasiliaDateKeySync()}-checkins${exportPeriod !== "Todos" ? `-${slugify(exportPeriod)}` : ""}${exportAccessType !== "Todos" ? `-${slugify(exportAccessType)}` : ""}`;
+      downloadRows(rows as ExportRow[], header, filename, format);
+      toast.success(`${format.toUpperCase()} gerado`, { description: `${rows.length} check-ins exportados` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao exportar check-ins";
       toast.error("Exportação não concluída", { description: msg });
@@ -537,12 +560,18 @@ function CheckinPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Exportação unificada do dia</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV ou XLSX</p>
               </div>
-              <Button size="sm" onClick={handleExportTodayCheckins} className="rounded-xl gap-2">
-                <Download className="w-3.5 h-3.5" />
-                Baixar CSV
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleExportTodayCheckins("csv")} className="rounded-xl gap-2">
+                  <Download className="w-3.5 h-3.5" />
+                  CSV
+                </Button>
+                <Button size="sm" onClick={() => handleExportTodayCheckins("xlsx")} className="rounded-xl gap-2">
+                  <Download className="w-3.5 h-3.5" />
+                  XLSX
+                </Button>
+              </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Período</span>
@@ -634,16 +663,27 @@ function CheckinPage() {
                         )}
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event); }}
-                        className="w-full rounded-xl gap-2"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Exportar check-ins
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          CSV
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          XLSX
+                        </Button>
+                      </div>
 
                       {/* Progress bar */}
                       {event.registration_count > 0 && (
@@ -733,16 +773,27 @@ function CheckinPage() {
                         )}
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event); }}
-                        className="w-full rounded-xl gap-2"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Exportar check-ins
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          CSV
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          XLSX
+                        </Button>
+                      </div>
 
                       {event.registration_count > 0 && (
                         <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
@@ -856,15 +907,25 @@ function CheckinPage() {
               </div>
             )}
             {isEventMode && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportEventCheckins()}
-                className="rounded-xl gap-2"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Baixar check-ins
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExportEventCheckins(undefined, "csv")}
+                  className="rounded-xl gap-2"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  CSV
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleExportEventCheckins(undefined, "xlsx")}
+                  className="rounded-xl gap-2"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  XLSX
+                </Button>
+              </div>
             )}
             <div className="glass-strong rounded-2xl px-4 py-2.5 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-primary" />
