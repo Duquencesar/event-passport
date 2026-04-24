@@ -765,6 +765,17 @@ function CheckinPage() {
                 <span className="text-xs text-muted-foreground">inscritos</span>
               </div>
             )}
+            {isEventMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportEventCheckins}
+                className="rounded-xl gap-2"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Baixar check-ins
+              </Button>
+            )}
             <div className="glass-strong rounded-2xl px-4 py-2.5 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-primary" />
               <span className="text-lg font-bold text-foreground">
