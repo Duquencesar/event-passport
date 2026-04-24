@@ -103,8 +103,6 @@ export function ticketToTag(ticketName: string): string | null {
   const lower = ticketName.toLowerCase();
   if (lower.includes("architect") || lower.includes("arquiteto")) return "Arquiteto";
   if (lower.includes("explorer")) return "Explorer";
-  if (lower.includes("week pass") || lower.includes("weekly") || lower.includes("week-pass") || lower.includes("semanal")) return "Weekly";
-  if (lower.includes("day pass") || lower.includes("day-pass")) return "Day Pass";
   return null;
 }
 
@@ -306,6 +304,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
     const name = rawName.trim();
     const ticketName = guest.event_ticket?.name || guest.ticket?.name || "Geral";
     const tag = ticketToTag(ticketName) || input.defaultTag || null;
+    const ticketLower = ticketName.toLowerCase();
 
     // Upsert person
     const { data: existing } = await supabaseAdmin
@@ -363,7 +362,8 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         event_id: internalEventId,
         luma_guest_id: guest.api_id,
         // Para Passe Semanal, usa a data do evento como início da semana (ajustável depois pelo admin)
-        week_pass_start_date: tag === "Weekly" ? input.eventDate : null,
+        week_pass_start_date: ticketLower.includes("week") || ticketLower.includes("semanal") ? input.eventDate : null,
+        day_pass_date: ticketLower.includes("day pass") || ticketLower.includes("day-pass") ? input.eventDate : null,
       });
       registrations++;
     } else if (!existingByGuest) {
