@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   CalendarDays,
+  Calendar,
   Clock,
   MapPin,
   ExternalLink,
@@ -14,9 +16,13 @@ import {
   CalendarClock,
   History,
   Download,
+  RefreshCw,
 } from "lucide-react";
 import { getAllEventsWithStats, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
+import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
+import { SectionBadge } from "@/components/SectionBadge";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/eventos")({
   head: () => ({
@@ -227,24 +233,77 @@ function DateGroup({
 
 function EmptyState({ label }: { label: string }) {
   return (
-    <div className="glass rounded-3xl py-16 text-center">
-      <CalendarDays className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-      <p className="text-muted-foreground text-sm">{label}</p>
+    <div className="rounded-xl border border-border bg-card p-12 text-center">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] mx-auto mb-4 shadow-[0_4px_14px_rgba(0,82,255,0.3)]">
+        <Calendar className="h-7 w-7 text-white" />
+      </div>
+      <p className="text-sm font-medium text-foreground">Nenhum evento encontrado</p>
+      <p className="text-xs text-muted-foreground mt-1">{label}</p>
     </div>
   );
+}
+
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return "nunca";
+  const diffMs = Date.now() - new Date(iso).getTime();
+  if (diffMs < 0) return "agora";
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return "há instantes";
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  return `há ${d} dia${d !== 1 ? "s" : ""}`;
 }
 
 function EventosPage() {
   const [allEvents, setAllEvents] = useState<EventWithStats[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [, forceTick] = useState(0);
   const today = getCurrentBrasiliaDateKeySync();
 
-  useEffect(() => {
-    getAllEventsWithStats()
-      .then((e) => { setAllEvents(e as EventWithStats[]); setLoaded(true); })
-      .catch((err) => { setError(err?.message || "Erro ao carregar eventos"); setLoaded(true); });
+  const loadEvents = useCallback(async () => {
+    try {
+      const e = await getAllEventsWithStats();
+      setAllEvents(e as EventWithStats[]);
+      setLoaded(true);
+    } catch (err: any) {
+      setError(err?.message || "Erro ao carregar eventos");
+      setLoaded(true);
+    }
   }, []);
+
+  useEffect(() => {
+    loadEvents();
+    getLastLumaSync().then((r) => setLastSync(r.last_sync)).catch(() => {});
+  }, [loadEvents]);
+
+  // Keep relative times fresh
+  useEffect(() => {
+    const t = setInterval(() => forceTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const result = await triggerLumaSync();
+      const t = result.totals;
+      toast.success("Sincronização concluída", {
+        description: `${result.events_processed} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
+      });
+      await Promise.all([loadEvents(), getLastLumaSync().then((r) => setLastSync(r.last_sync))]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao sincronizar";
+      toast.error("Erro na sincronização", { description: msg });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const todayEvents = allEvents.filter((e) => e.date === today);
   const upcomingEvents = allEvents.filter((e) => e.date > today);
@@ -280,29 +339,76 @@ function EventosPage() {
     URL.revokeObjectURL(url);
   };
 
+  const syncStale = !lastSync || (Date.now() - new Date(lastSync).getTime()) > 4 * 3600 * 1000;
+
   return (
     <Layout>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Eventos</h2>
-            <p className="text-muted-foreground text-sm mt-1">Calendário Ipê Village {new Date().getFullYear()}</p>
+            <SectionBadge label="EVENTOS LUMA" pulse={false} className="mb-3" />
+            <h1 className="mb-2" style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', lineHeight: '1.1' }}>
+              <span className="gradient-text">Eventos</span>
+            </h1>
+            <p className="text-muted-foreground text-sm">Calendário Ipê Village {new Date().getFullYear()}</p>
           </div>
           {loaded && allEvents.length > 0 && (
             <div className="flex items-center gap-3">
-              <div className="glass-subtle rounded-2xl px-4 py-2.5 flex items-center gap-2">
+              <div className="rounded-xl border border-border bg-card px-4 py-2.5 flex items-center gap-2">
                 <CalendarDays className="w-4 h-4 text-muted-foreground" />
                 <span className="text-lg font-bold">{allEvents.length}</span>
                 <span className="text-xs text-muted-foreground">eventos</span>
               </div>
-              <div className="glass-subtle rounded-2xl px-4 py-2.5 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                <span className="text-lg font-bold text-primary">{totalCheckins}</span>
+              <div className="rounded-xl border border-border bg-card px-4 py-2.5 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-[#0052FF]" />
+                <span className="text-lg font-bold text-[#0052FF]">{totalCheckins}</span>
                 <span className="text-xs text-muted-foreground">check-ins</span>
               </div>
             </div>
           )}
+        </div>
+
+        {/* Luma sync status bar */}
+        <div
+          className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-4 flex-wrap"
+          role="status"
+          aria-label={`Status de sincronização com Luma: ${lastSync ? `sincronizado ${formatRelativeTime(lastSync)}` : "nunca sincronizado"}`}
+        >
+          <div className="flex items-center gap-2.5">
+            <span
+              className={`h-2 w-2 rounded-full shrink-0 ${
+                syncing
+                  ? "bg-[#0052FF] animate-pulse"
+                  : syncStale
+                    ? "bg-amber-400 animate-pulse"
+                    : "bg-emerald-400"
+              }`}
+            />
+            <div>
+              <span className="text-sm text-muted-foreground">
+                {syncing
+                  ? "Sincronizando..."
+                  : lastSync
+                    ? `Sincronizado ${formatRelativeTime(lastSync)}`
+                    : "Nunca sincronizado"}
+              </span>
+              {lastSync && !syncing && (
+                <span className="text-xs text-muted-foreground/60 ml-2 font-mono">
+                  {new Date(lastSync).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="h-9 px-4 rounded-xl gap-2"
+            onClick={handleSync}
+            disabled={syncing}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Sincronizando..." : "Sincronizar agora"}
+          </Button>
         </div>
 
         {!loaded && (
@@ -323,22 +429,22 @@ function EventosPage() {
 
         {loaded && allEvents.length > 0 && (
           <Tabs defaultValue={todayEvents.length > 0 ? "hoje" : upcomingEvents.length > 0 ? "proximos" : "passados"}>
-            <TabsList className="rounded-2xl bg-muted/40 p-1 h-auto gap-1 flex-wrap">
+            <TabsList className="glass rounded-xl p-1 h-auto gap-1 flex-wrap">
               {todayEvents.length > 0 && (
-                <TabsTrigger value="hoje" className="rounded-xl px-4 py-2 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                <TabsTrigger value="hoje" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10 gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#0052FF] inline-block" />
                   Hoje ({todayEvents.length})
                 </TabsTrigger>
               )}
-              <TabsTrigger value="proximos" className="rounded-xl px-4 py-2 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+              <TabsTrigger value="proximos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10 gap-2">
                 <CalendarClock className="w-3.5 h-3.5" />
                 Próximos ({upcomingEvents.length})
               </TabsTrigger>
-              <TabsTrigger value="passados" className="rounded-xl px-4 py-2 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm gap-2">
+              <TabsTrigger value="passados" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10 gap-2">
                 <History className="w-3.5 h-3.5" />
                 Passados ({pastEvents.length})
               </TabsTrigger>
-              <TabsTrigger value="todos" className="rounded-xl px-4 py-2 text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <TabsTrigger value="todos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10">
                 Todos ({allEvents.length})
               </TabsTrigger>
             </TabsList>

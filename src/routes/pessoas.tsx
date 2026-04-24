@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { Layout } from "@/components/Layout";
+import { SectionBadge } from "@/components/SectionBadge";
+import { StatCard } from "@/components/StatCard";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,8 @@ import {
   Compass,
   CreditCard,
   Tag,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import {
   getPeopleWithRegistrations,
@@ -221,10 +225,13 @@ function PessoasPage() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Inscritos</h2>
-            <p className="text-muted-foreground text-sm mt-1">Pessoas cadastradas no sistema</p>
+            <SectionBadge label="MEMBROS E VISITANTES" pulse={false} className="mb-3" />
+            <h1 className="mb-0" style={{fontFamily: 'var(--font-display)', fontSize: '2rem', lineHeight: '1.1'}}>
+              <span className="gradient-text">Pessoas</span>
+            </h1>
+            <p className="text-muted-foreground text-sm mt-2">Pessoas cadastradas no sistema</p>
           </div>
           <div className="flex items-center gap-4">
             {totalCount.checkedIn > 0 && (
@@ -241,6 +248,52 @@ function PessoasPage() {
             </div>
           </div>
         </div>
+
+        {/* Stats overview — saas StatCards */}
+        {!loading && people.length > 0 && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard icon={Users} label="TOTAL" value={people.length} />
+            <StatCard icon={UserCheck} label="COM TAG" value={people.length - (tagStats["__none__"] || 0)} />
+            {/* Sem tag — amber icon override */}
+            <div
+              className="relative overflow-hidden rounded-xl border border-border p-5"
+              style={{
+                backgroundColor: "oklch(0.10 0.02 265)",
+                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+                backgroundSize: "32px 32px",
+              }}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                  <Clock className="h-5 w-5 text-amber-400" />
+                </div>
+              </div>
+              <p className="text-3xl text-white tabular-nums" style={{fontFamily: 'var(--font-display)'}}>
+                {tagStats["__none__"] ?? 0}
+              </p>
+              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-[#94A3B8]">SEM TAG</p>
+            </div>
+            {/* Passaram — red-ish fallback / uses checkedIn */}
+            <div
+              className="relative overflow-hidden rounded-xl border border-border p-5"
+              style={{
+                backgroundColor: "oklch(0.10 0.02 265)",
+                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
+                backgroundSize: "32px 32px",
+              }}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
+                  <UserX className="h-5 w-5 text-red-400" />
+                </div>
+              </div>
+              <p className="text-3xl text-white tabular-nums" style={{fontFamily: 'var(--font-display)'}}>
+                {totalCount.checkedIn ?? 0}
+              </p>
+              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-[#94A3B8]">CHECK-INS</p>
+            </div>
+          </div>
+        )}
 
         {/* Stats bar */}
         {!loading && people.length > 0 && (
@@ -282,7 +335,7 @@ function PessoasPage() {
               placeholder="Buscar por nome..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="pl-12 h-12 rounded-2xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
+              className="pl-12 h-12 rounded-xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
             />
           </div>
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
@@ -370,14 +423,13 @@ function PessoasPage() {
                 <button
                   key={p.id}
                   onClick={() => openProfile(p)}
-                  className="glass-subtle rounded-2xl p-4 flex flex-col gap-3 hover:bg-white/[0.06] hover:shadow-md transition-all text-left cursor-pointer group w-full"
+                  className="rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group flex flex-col gap-3 text-left w-full"
                 >
-                  <div className="flex items-center gap-3">
-                    {/* Avatar with initials */}
-                    <div
-                      className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${cfg.bg} font-bold text-sm group-hover:scale-105 transition-transform`}
-                    >
-                      <span className={cfg.text}>{initials}</span>
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#0052FF]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                  <div className="flex items-center gap-3 relative">
+                    {/* Avatar with initials — gradient saas */}
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                      {initials}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold truncate leading-tight group-hover:text-primary transition-colors">{p.name}</p>
@@ -441,9 +493,9 @@ function PessoasPage() {
             return (
               <>
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${cfg.bg} font-bold text-base`}>
-                      <span className={cfg.text}>{initials}</span>
+                  <DialogTitle className="flex items-center gap-4">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-lg font-semibold flex-shrink-0 shadow-[0_4px_14px_rgba(0,82,255,0.3)]">
+                      {initials}
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-lg leading-tight truncate">{selectedPerson.name}</p>
@@ -463,7 +515,7 @@ function PessoasPage() {
                         value={editTag || "__none__"}
                         onValueChange={(v) => setEditTag(v === "__none__" ? "" : v)}
                       >
-                        <SelectTrigger className="rounded-xl bg-background/50 flex-1">
+                        <SelectTrigger aria-label="Tipo de acesso" className="rounded-xl bg-background/50 flex-1">
                           <SelectValue placeholder="Sem tag" />
                         </SelectTrigger>
                         <SelectContent>

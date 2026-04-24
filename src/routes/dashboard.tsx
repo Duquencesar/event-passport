@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCurrentBrasiliaDateKeySync, shiftBrasiliaDateKeyByDays } from "@/lib/brasilia-time";
-import { Users, HardHat, TrendingUp, RefreshCw, Download, CalendarDays } from "lucide-react";
+import { Users, HardHat, TrendingUp, RefreshCw, Download, CalendarDays, Activity } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -41,6 +41,8 @@ import {
   getCheckinsForExport,
   getEventsForDashboard,
 } from "@/server/dashboard.functions";
+import { SectionBadge } from "@/components/SectionBadge";
+import { StatCard } from "@/components/StatCard";
 
 const loadDashboard = async (from: string, to: string, event_id?: string) => {
   const [stats, daily, breakdown, topPeople, events] = await Promise.all([
@@ -79,6 +81,8 @@ const PIE_COLORS = [
   "oklch(0.65 0.14 180)",
   "oklch(0.74 0.16 85)",
 ];
+
+const CHART_TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)", fontFamily: "monospace" };
 
 function DashboardPage() {
   const data = Route.useLoaderData();
@@ -181,38 +185,16 @@ function DashboardPage() {
     }
   };
 
-  const kpis = [
-    {
-      label: "Total Check-ins",
-      value: current.stats.totalCheckins,
-      icon: TrendingUp,
-      color: "text-primary",
-      bg: "bg-primary/10",
-    },
-    {
-      label: "Pessoas Únicas",
-      value: current.stats.uniquePeople,
-      icon: Users,
-      color: "text-secondary",
-      bg: "bg-secondary/10",
-    },
-    {
-      label: "Arquitetos Ativos",
-      value: current.stats.architects,
-      icon: HardHat,
-      color: "text-chart-3",
-      bg: "bg-chart-3/10",
-    },
-  ];
-
   return (
     <Layout>
       <div className="space-y-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-            <p className="text-muted-foreground text-sm mt-1">Visão geral do evento</p>
+            <SectionBadge label="ANÁLISE" pulse={false} className="mb-3" />
+            <h1 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}>
+              <span className="gradient-text">Dashboard</span>
+            </h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Input
@@ -276,37 +258,43 @@ function DashboardPage() {
           </div>
         )}
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-3 gap-5">
-          {kpis.map((kpi) => (
-            <div key={kpi.label} className="glass rounded-3xl p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground font-medium">{kpi.label}</p>
-                  <p className={`text-4xl font-bold mt-2 ${kpi.color}`}>{kpi.value}</p>
-                </div>
-                <div className={`w-12 h-12 rounded-2xl ${kpi.bg} flex items-center justify-center`}>
-                  <kpi.icon className={`w-6 h-6 ${kpi.color}`} />
-                </div>
-              </div>
-            </div>
-          ))}
+        {/* Stat Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8 stagger">
+          <StatCard
+            icon={Activity}
+            label="TOTAL CHECK-INS"
+            value={current.stats.totalCheckins ?? "—"}
+            className="fade-up"
+          />
+          <StatCard
+            icon={Users}
+            label="PESSOAS ÚNICAS"
+            value={current.stats.uniquePeople ?? "—"}
+            className="fade-up"
+          />
+          <StatCard
+            icon={HardHat}
+            label="ARQUITETOS ATIVOS"
+            value={current.stats.architects ?? "—"}
+            className="fade-up"
+          />
         </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-3 gap-5">
-          <div className="col-span-2 glass rounded-3xl p-6">
-            <h3 className="text-base font-semibold mb-4">Presença Diária</h3>
+        {/* Charts — Presença Diária + Tipo de Acesso */}
+        <div className="grid grid-cols-[3fr_2fr] gap-6">
+          {/* Presença Diária */}
+          <div className="rounded-xl border border-border bg-card p-6">
+            <SectionBadge label="PRESENÇA DIÁRIA" pulse={false} className="mb-4" />
             {current.daily.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={current.daily}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.01 245)" />
+                  <CartesianGrid stroke="var(--color-border)" strokeDasharray="3 3" opacity={0.5} />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 11, fill: "oklch(0.50 0.02 250)" }}
+                    tick={CHART_TICK_STYLE}
                     tickFormatter={(v) => v.slice(5)}
                   />
-                  <YAxis tick={{ fontSize: 11, fill: "oklch(0.50 0.02 250)" }} />
+                  <YAxis tick={CHART_TICK_STYLE} />
                   <Tooltip
                     contentStyle={{
                       background: "oklch(0.99 0.003 240)",
@@ -316,7 +304,7 @@ function DashboardPage() {
                       boxShadow: "0 4px 16px oklch(0.5 0.02 250 / 8%)",
                     }}
                   />
-                  <Bar dataKey="count" fill="oklch(0.72 0.19 135)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="count" fill="#0052FF" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -326,8 +314,9 @@ function DashboardPage() {
             )}
           </div>
 
-          <div className="glass rounded-3xl p-6">
-            <h3 className="text-base font-semibold mb-4">Tipo de Acesso</h3>
+          {/* Tipo de Acesso */}
+          <div className="rounded-xl border border-border bg-card p-6">
+            <SectionBadge label="TIPO DE ACESSO" pulse={false} className="mb-4" />
             {current.breakdown.length > 0 ? (
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
@@ -366,8 +355,8 @@ function DashboardPage() {
         </div>
 
         {/* Top attendees */}
-        <div className="glass rounded-3xl p-6">
-          <h3 className="text-base font-semibold mb-4">Ranking de Frequência</h3>
+        <div className="rounded-xl border border-border bg-card p-6">
+          <SectionBadge label="MAIS PRESENTES" pulse={false} className="mb-4" />
           {current.topPeople.length > 0 ? (
             <Table>
               <TableHeader>
@@ -379,12 +368,25 @@ function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.topPeople.map((p: { name: string; tag: string | null; count: number }, i: number) => (
-                  <TableRow key={`${p.name}-${i}`}>
+                {current.topPeople.map((p: { name: string; email: string; tag: string | null; count: number }, i: number) => (
+                  <TableRow
+                    key={p.email || `${p.name}-${i}`}
+                    className="hover:bg-[#0052FF]/5 transition-colors duration-150"
+                  >
                     <TableCell className="font-mono text-muted-foreground">
                       {i + 1}
                     </TableCell>
-                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <span className="font-medium">{p.name}</span>
+                          {p.email && <p className="text-xs text-muted-foreground">{p.email}</p>}
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       {p.tag && (
                         <Badge className="text-xs rounded-lg bg-primary/10 text-primary border-0 font-medium">

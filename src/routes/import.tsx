@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import Papa from "papaparse";
 import { Layout } from "@/components/Layout";
+import { SectionBadge } from "@/components/SectionBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -157,8 +158,8 @@ function CsvImportTab() {
           onClick={() => fileRef.current?.click()}
           className="border-2 border-dashed border-border/40 rounded-2xl p-14 text-center cursor-pointer hover:border-primary/40 hover:bg-primary/3 transition-all duration-300"
         >
-          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <Upload className="w-7 h-7 text-primary" />
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center mx-auto mb-4 shadow-[0_4px_14px_rgba(0,82,255,0.3)]">
+            <Upload className="w-7 h-7 text-white" />
           </div>
           <p className="text-muted-foreground font-medium">Clique ou arraste um arquivo CSV</p>
           <p className="text-muted-foreground/60 text-sm mt-1">Exportado do Luma ou similar</p>
@@ -365,21 +366,32 @@ function LumaSyncTab() {
 function ImportPage() {
   return (
     <Layout>
-      <div className="space-y-8">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Importar Inscritos</h2>
-          <p className="text-muted-foreground text-sm mt-1">
+      <div className="space-y-8 max-w-2xl">
+        <div className="fade-up">
+          <SectionBadge label="IMPORTAÇÃO" pulse={false} className="mb-3" />
+          <h1
+            style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}
+          >
+            Importar <span className="gradient-text">Pessoas</span>
+          </h1>
+          <p className="text-muted-foreground text-sm mt-2">
             Importe via CSV ou sincronize diretamente com o Luma
           </p>
         </div>
 
         <Tabs defaultValue="luma" className="space-y-6">
-          <TabsList className="rounded-2xl bg-muted/40 p-1 h-auto gap-1">
-            <TabsTrigger value="luma" className="rounded-xl px-5 py-2 flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsList className="glass rounded-xl p-1 h-auto gap-1">
+            <TabsTrigger
+              value="luma"
+              className="rounded-lg px-5 py-2 text-sm flex items-center gap-2 data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10"
+            >
               <Zap className="w-4 h-4" />
               Luma API
             </TabsTrigger>
-            <TabsTrigger value="csv" className="rounded-xl px-5 py-2 flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <TabsTrigger
+              value="csv"
+              className="rounded-lg px-5 py-2 text-sm flex items-center gap-2 data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10"
+            >
               <Upload className="w-4 h-4" />
               CSV manual
             </TabsTrigger>

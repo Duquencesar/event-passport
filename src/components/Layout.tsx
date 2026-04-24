@@ -53,8 +53,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Logo — always visible */}
           <div className="flex items-center gap-8">
             <h1 className="text-lg font-semibold tracking-tight shrink-0">
-              <span className="text-primary font-bold">Ipê</span>{" "}
-              <span className="text-foreground/80">Village</span>
+              <span className="text-primary" style={{ fontFamily: "var(--font-display)" }}>Ipê</span>{" "}
+              <span className="text-foreground/80 tracking-tight">Village</span>
               <span className="text-muted-foreground text-sm font-normal ml-2 hidden sm:inline">
                 Check-In
               </span>
@@ -70,7 +70,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     to={to}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                       active
-                        ? "bg-primary/12 text-primary shadow-sm"
+                        ? "bg-primary/10 text-primary relative after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-[#0052FF]"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                     }`}
                   >
@@ -109,8 +109,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Drawer header */}
                 <div className="px-6 py-5 border-b border-border/30 flex items-center justify-between">
                   <h2 className="font-semibold">
-                    <span className="text-primary font-bold">Ipê</span>{" "}
-                    <span className="text-foreground/80">Village</span>
+                    <span className="text-primary" style={{ fontFamily: "var(--font-display)" }}>Ipê</span>{" "}
+                    <span className="text-foreground/80 tracking-tight">Village</span>
                   </h2>
                   <span className="text-xs text-muted-foreground capitalize">{today}</span>
                 </div>
@@ -125,7 +125,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         to={to}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                           active
-                            ? "bg-primary/12 text-primary shadow-sm"
+                            ? "bg-primary/10 text-primary relative after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-[#0052FF]"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                         }`}
                       >

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { SectionBadge } from "@/components/SectionBadge";
 import { formatBrasiliaTime, getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 import {
   Search,
@@ -250,6 +251,21 @@ function CheckinPage() {
   const [bulkCheckingIn, setBulkCheckingIn] = useState(false);
   const [, forceTick] = useState(0);
 
+  // Search input ref for keyboard shortcut
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcut: Ctrl+K / Cmd+K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const refreshLastSync = useCallback(async () => {
     try {
       const r = await getLastLumaSync();
@@ -289,6 +305,15 @@ function CheckinPage() {
     const t = setInterval(() => forceTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
+
+  // Restore last selected event from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("ipe-last-event-id");
+    if (saved && events.find(e => e.id === saved)) {
+      const found = events.find(e => e.id === saved);
+      if (found) setSelectedEvent(found);
+    }
+  }, [events]);
 
   const handleManualSync = async () => {
     setSyncing(true);
@@ -389,6 +414,7 @@ function CheckinPage() {
 
   const selectEvent = async (event: EventBase) => {
     setSelectedEvent(event);
+    localStorage.setItem("ipe-last-event-id", event.id);
     setQuery("");
     setResults([]);
     setSelected(null);
@@ -603,9 +629,13 @@ function CheckinPage() {
     return (
       <Layout>
         <div className="space-y-8">
+          {/* Page header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground">Check-in</h2>
+              <SectionBadge label="EVENTOS ATIVOS" pulse={true} className="mb-3" />
+              <h1 className="mb-1" style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}>
+                Check-<span className="gradient-text">In</span>
+              </h1>
               <p className="text-muted-foreground text-sm mt-1">Selecione o evento para iniciar</p>
             </div>
             <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
@@ -648,13 +678,19 @@ function CheckinPage() {
                   <button
                     key={event.id}
                     onClick={() => selectEvent(event)}
-                    className="w-full glass rounded-2xl p-5 text-left hover:bg-primary/5 transition-all duration-200 group"
+                    className="w-full rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group text-left"
                   >
-                    <div className="space-y-3">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0052FF]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                    <div className="space-y-3 relative">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">
-                          {event.name}
-                        </h4>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <SectionBadge label="ATIVO" pulse={true} className="text-[10px] px-2 py-0.5" />
+                          </div>
+                          <h4 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                            {event.name}
+                          </h4>
+                        </div>
                         <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5" />
                       </div>
 
@@ -730,9 +766,10 @@ function CheckinPage() {
                   <button
                     key={event.id}
                     onClick={() => selectEvent(event)}
-                    className="w-full glass rounded-2xl p-5 text-left hover:bg-primary/5 transition-all duration-200 group opacity-80 hover:opacity-100"
+                    className="w-full rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group text-left opacity-80 hover:opacity-100"
                   >
-                    <div className="space-y-3">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#0052FF]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                    <div className="space-y-3 relative">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
@@ -808,34 +845,39 @@ function CheckinPage() {
 
           {todayCheckins.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-widest">
-                Últimos check-ins
-              </h3>
-              <div className="space-y-2">
-                {todayCheckins.slice(0, 10).map((c: any) => (
-                  <div
-                    key={c.id}
-                    className="glass-subtle rounded-2xl flex items-center justify-between px-5 py-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-sm">{c.people?.name}</span>
-                      {c.people?.tag && (
-                        <Badge variant="secondary" className="text-xs rounded-lg">{c.people.tag}</Badge>
-                      )}
+              <SectionBadge label="ATIVIDADE RECENTE" pulse={true} className="mb-3" />
+              <div className="inverted-section rounded-2xl mt-4">
+                <div className="space-y-0 divide-y divide-white/5">
+                  {todayCheckins.slice(0, 10).map((c: any) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between px-5 py-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                          {c.people?.name ? c.people.name.charAt(0).toUpperCase() : "?"}
+                        </div>
+                        <div>
+                          <span className="font-medium text-sm">{c.people?.name}</span>
+                          {c.people?.tag && (
+                            <Badge variant="secondary" className="text-xs rounded-lg ml-2">{c.people.tag}</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        {c.event_name && (
+                          <Badge variant="outline" className="text-xs rounded-lg border-border/40 max-w-[150px] truncate">
+                            {c.event_name}
+                          </Badge>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {new Date(c.checked_in_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      {c.event_name && (
-                        <Badge variant="outline" className="text-xs rounded-lg border-border/40 max-w-[150px] truncate">
-                          {c.event_name}
-                        </Badge>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {new Date(c.checked_in_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -928,10 +970,11 @@ function CheckinPage() {
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome..."
+              ref={searchInputRef}
+              placeholder="Buscar por nome... (Ctrl+K)"
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-12 h-14 text-lg rounded-2xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
+              className="pl-12 h-12 rounded-xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
               autoFocus
             />
           </div>
@@ -991,12 +1034,12 @@ function CheckinPage() {
               {/* Access Warning */}
               {accessWarning && (
                 <div
-                  className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm font-medium ${
+                  className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-card border text-sm font-medium ${
                     accessWarning.type === "ok"
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      ? "text-emerald-400 border-emerald-500/20"
                       : accessWarning.type === "warning"
-                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        : "bg-red-500/10 text-red-400 border border-red-500/20"
+                        ? "text-amber-400 border-amber-500/20"
+                        : "text-red-400 border-red-500/20"
                   }`}
                 >
                   {accessWarning.type === "ok" ? (
@@ -1208,138 +1251,143 @@ function CheckinPage() {
 
         {/* Check-ins feed with edit/delete */}
         <div>
-          <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest">
-            {isEventMode ? "Check-ins deste evento" : "Check-ins de hoje"}
-          </h3>
-          <div className="space-y-2">
+          <SectionBadge label="ATIVIDADE RECENTE" pulse={true} className="mb-3" />
+          <div className="inverted-section rounded-2xl mt-4">
             {currentCheckins.length === 0 && (
-              <div className="glass-subtle rounded-2xl py-8 text-center">
+              <div className="py-8 text-center">
                 <p className="text-muted-foreground text-sm">Nenhum check-in registrado</p>
               </div>
             )}
-            {currentCheckins.map((c: any) => (
-              <div
-                key={c.id}
-                className="glass-subtle rounded-2xl px-5 py-3.5"
-              >
-                {editingId === c.id ? (
-                  // Edit mode
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-sm">{c.people?.name}</span>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-xs text-muted-foreground w-16">Período</span>
-                      {(["Manhã", "Tarde"] as const).map((p) => (
+            <div className="divide-y divide-white/5">
+              {currentCheckins.map((c: any) => (
+                <div
+                  key={c.id}
+                  className="px-5 py-3.5"
+                >
+                  {editingId === c.id ? (
+                    // Edit mode
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium text-sm">{c.people?.name}</span>
+                      </div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-xs text-muted-foreground w-16">Período</span>
+                        {(["Manhã", "Tarde"] as const).map((p) => (
+                          <Button
+                            key={p}
+                            variant={editPeriod === p ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setEditPeriod(p)}
+                            className="rounded-lg text-xs h-7 px-3"
+                          >
+                            {p}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-xs text-muted-foreground w-16">Acesso</span>
+                        {accessTypes.map((t) => (
+                          <Button
+                            key={t}
+                            variant={editAccessType === t ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setEditAccessType(t)}
+                            className="rounded-lg text-xs h-7 px-3"
+                          >
+                            {t}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="flex justify-end gap-2">
                         <Button
-                          key={p}
-                          variant={editPeriod === p ? "default" : "outline"}
+                          variant="ghost"
                           size="sm"
-                          onClick={() => setEditPeriod(p)}
-                          className="rounded-lg text-xs h-7 px-3"
+                          onClick={() => setEditingId(null)}
+                          className="rounded-lg h-8"
                         >
-                          {p}
+                          <X className="w-3.5 h-3.5 mr-1" />
+                          Cancelar
                         </Button>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="text-xs text-muted-foreground w-16">Acesso</span>
-                      {accessTypes.map((t) => (
                         <Button
-                          key={t}
-                          variant={editAccessType === t ? "default" : "outline"}
                           size="sm"
-                          onClick={() => setEditAccessType(t)}
-                          className="rounded-lg text-xs h-7 px-3"
+                          onClick={() => handleUpdate(c.id)}
+                          className="rounded-lg h-8"
                         >
-                          {t}
+                          <Check className="w-3.5 h-3.5 mr-1" />
+                          Salvar
                         </Button>
-                      ))}
+                      </div>
                     </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setEditingId(null)}
-                        className="rounded-lg h-8"
-                      >
-                        <X className="w-3.5 h-3.5 mr-1" />
-                        Cancelar
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleUpdate(c.id)}
-                        className="rounded-lg h-8"
-                      >
-                        <Check className="w-3.5 h-3.5 mr-1" />
-                        Salvar
-                      </Button>
-                    </div>
-                  </div>
-                ) : deletingId === c.id ? (
-                  // Delete confirmation
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-destructive font-medium">
-                      Desfazer check-in de {c.people?.name}?
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeletingId(null)}
-                        className="rounded-lg h-8"
-                      >
-                        Não
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(c.id)}
-                        className="rounded-lg h-8"
-                      >
-                        Sim, desfazer
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  // Normal view
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium text-sm">{c.people?.name}</span>
-                      {c.people?.tag && (
-                        <Badge variant="secondary" className="text-xs rounded-lg">{c.people.tag}</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <Badge variant="outline" className="text-xs rounded-lg border-border/40">{c.access_type}</Badge>
-                      <span>{c.period}</span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        {new Date(c.checked_in_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  ) : deletingId === c.id ? (
+                    // Delete confirmation
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-destructive font-medium">
+                        Desfazer check-in de {c.people?.name}?
                       </span>
-                      <button
-                        onClick={() => {
-                          setEditingId(c.id);
-                          setEditPeriod(c.period);
-                          setEditAccessType(c.access_type);
-                        }}
-                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
-                        title="Editar"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setDeletingId(c.id)}
-                        className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
-                        title="Desfazer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingId(null)}
+                          className="rounded-lg h-8"
+                        >
+                          Não
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(c.id)}
+                          className="rounded-lg h-8"
+                        >
+                          Sim, desfazer
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  ) : (
+                    // Normal view
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                          {c.people?.name ? c.people.name.charAt(0).toUpperCase() : "?"}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{c.people?.name}</span>
+                          {c.people?.tag && (
+                            <Badge variant="secondary" className="text-xs rounded-lg">{c.people.tag}</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <Badge variant="outline" className="text-xs rounded-lg border-border/40">{c.access_type}</Badge>
+                        <span>{c.period}</span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" />
+                          {new Date(c.checked_in_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                        <button
+                          onClick={() => {
+                            setEditingId(c.id);
+                            setEditPeriod(c.period);
+                            setEditAccessType(c.access_type);
+                          }}
+                          className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+                          title="Editar"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeletingId(c.id)}
+                          className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+                          title="Desfazer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
