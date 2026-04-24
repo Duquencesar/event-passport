@@ -1066,6 +1066,51 @@ function CheckinPage() {
           )}
         </div>
 
+        {isEventMode && (
+          <div>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                Inscritos e acessos válidos
+              </h3>
+              <Badge variant="outline" className="rounded-lg border-border/40">
+                {eventParticipants.length} pessoas
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {eventParticipants.length === 0 && (
+                <div className="glass-subtle rounded-2xl py-8 text-center">
+                  <p className="text-muted-foreground text-sm">Nenhum inscrito encontrado para este evento</p>
+                </div>
+              )}
+              {eventParticipants.map((participant) => {
+                const alreadyCheckedIn = checkedInPersonIds.has(participant.id);
+                return (
+                  <div key={participant.id} className="glass-subtle rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-foreground truncate">{participant.name}</span>
+                        {participant.tag && <Badge variant="secondary" className="text-xs rounded-lg">{participant.tag}</Badge>}
+                        {alreadyCheckedIn && <Badge className="bg-primary/12 text-primary border-0 rounded-lg text-xs">Check-in feito</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">{participant.ticket_type}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={alreadyCheckedIn ? "outline" : "default"}
+                      disabled={alreadyCheckedIn || checkingInFromListId === participant.id}
+                      onClick={() => handleParticipantCheckin(participant)}
+                      className="rounded-xl gap-2 shrink-0"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      {checkingInFromListId === participant.id ? "Registrando..." : alreadyCheckedIn ? "Feito" : "Check-in"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Check-ins feed with edit/delete */}
         <div>
           <h3 className="text-xs font-semibold text-muted-foreground mb-4 uppercase tracking-widest">
