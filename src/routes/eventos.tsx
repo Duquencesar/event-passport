@@ -13,8 +13,9 @@ import {
   TrendingUp,
   CalendarClock,
   History,
+  Download,
 } from "lucide-react";
-import { getAllEventsWithStats } from "@/server/event.functions";
+import { getAllEventsWithStats, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
 import { getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 
 export const Route = createFileRoute("/eventos")({
@@ -38,6 +39,11 @@ type EventWithStats = {
   registration_count: number;
   checkin_count: number;
 };
+
+function csvCell(value: unknown) {
+  const text = value == null ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
 
 const APP_TIME_ZONE = "America/Sao_Paulo";
 
@@ -77,10 +83,12 @@ function EventCard({
   event,
   today,
   showStats = true,
+  onExport,
 }: {
   event: EventWithStats;
   today: string;
   showStats?: boolean;
+  onExport: (event: EventWithStats) => void;
 }) {
   const isToday = event.date === today;
   const isPast = event.date < today;
@@ -113,17 +121,26 @@ function EventCard({
           </div>
           <h4 className="font-bold text-foreground leading-tight">{event.name}</h4>
         </div>
-        {event.url && (
-          <a
-            href={event.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-muted-foreground hover:text-primary transition-colors shrink-0 p-1"
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onExport(event)}
+            className="text-muted-foreground hover:text-primary transition-colors p-1"
+            title="Baixar check-ins"
           >
-            <ExternalLink className="w-4 h-4" />
-          </a>
-        )}
+            <Download className="w-4 h-4" />
+          </button>
+          {event.url && (
+            <a
+              href={event.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-muted-foreground hover:text-primary transition-colors p-1"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Meta row */}
@@ -186,10 +203,12 @@ function DateGroup({
   date,
   events,
   today,
+  onExport,
 }: {
   date: string;
   events: EventWithStats[];
   today: string;
+  onExport: (event: EventWithStats) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -199,7 +218,7 @@ function DateGroup({
       </h3>
       <div className="space-y-3">
         {events.map((event) => (
-          <EventCard key={event.id} event={event} today={today} />
+          <EventCard key={event.id} event={event} today={today} onExport={onExport} />
         ))}
       </div>
     </div>
@@ -247,6 +266,19 @@ function EventosPage() {
   // Summary stats
   const totalCheckins = allEvents.reduce((s, e) => s + e.checkin_count, 0);
   const totalRegistrations = allEvents.reduce((s, e) => s + (e.registration_count || 0), 0);
+
+  const handleExportEventCheckins = async (event: EventWithStats) => {
+    const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: event.id } });
+    const header = ["nome", "categoria", "acesso", "periodo", "checkin_em", "origem"];
+    const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${event.date}-${event.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <Layout>
@@ -321,7 +353,7 @@ function EventosPage() {
                   </span>
                 </div>
                 {todayEvents.map((event) => (
-                  <EventCard key={event.id} event={event} today={today} />
+                  <EventCard key={event.id} event={event} today={today} onExport={handleExportEventCheckins} />
                 ))}
               </TabsContent>
             )}
@@ -332,7 +364,7 @@ function EventosPage() {
                 <EmptyState label="Nenhum evento futuro agendado" />
               ) : (
                 Object.entries(upcomingByDate).map(([date, events]) => (
-                  <DateGroup key={date} date={date} events={events} today={today} />
+                  <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
                 ))
               )}
             </TabsContent>
@@ -370,7 +402,7 @@ function EventosPage() {
                     </div>
                   </div>
                   {Object.entries(pastByDate).map(([date, events]) => (
-                    <DateGroup key={date} date={date} events={events} today={today} />
+                    <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
                   ))}
                 </>
               )}
@@ -379,7 +411,7 @@ function EventosPage() {
             {/* Todos */}
             <TabsContent value="todos" className="mt-6 space-y-8">
               {Object.entries(groupByDate(allEvents)).map(([date, events]) => (
-                <DateGroup key={date} date={date} events={events} today={today} />
+                <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
               ))}
             </TabsContent>
           </Tabs>

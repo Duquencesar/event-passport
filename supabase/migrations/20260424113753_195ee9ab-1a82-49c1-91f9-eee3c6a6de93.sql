@@ -1,0 +1,11 @@
+CREATE INDEX IF NOT EXISTS idx_events_date_time ON public.events (date, time);
+CREATE INDEX IF NOT EXISTS idx_events_luma_event_id ON public.events (luma_event_id) WHERE luma_event_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON public.registrations (event_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_person_event ON public.registrations (person_id, event_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_luma_guest_id ON public.registrations (luma_guest_id) WHERE luma_guest_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_checkins_event_id_checked_at ON public.checkins (event_id, checked_in_at DESC);
+CREATE INDEX IF NOT EXISTS idx_checkins_date_checked_at ON public.checkins (date, checked_in_at DESC);
+CREATE INDEX IF NOT EXISTS idx_checkins_person_date_event ON public.checkins (person_id, date, event_id);
+CREATE INDEX IF NOT EXISTS idx_people_tag ON public.people (tag) WHERE tag IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_people_name_lower ON public.people (lower(name));
+CREATE INDEX IF NOT EXISTS idx_people_email_lower ON public.people (lower(email));

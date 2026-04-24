@@ -103,8 +103,6 @@ export function ticketToTag(ticketName: string): string | null {
   const lower = ticketName.toLowerCase();
   if (lower.includes("architect") || lower.includes("arquiteto")) return "Arquiteto";
   if (lower.includes("explorer")) return "Explorer";
-  if (lower.includes("week pass") || lower.includes("weekly") || lower.includes("week-pass") || lower.includes("semanal")) return "Weekly";
-  if (lower.includes("day pass") || lower.includes("day-pass")) return "Day Pass";
   return null;
 }
 
@@ -138,6 +136,7 @@ export async function listCalendarEvents(
   apiKey: string,
   calendarApiId: string,
   afterIso?: string,
+  beforeIso?: string,
 ): Promise<NormalizedLumaEvent[]> {
   // A API retorna eventos do mais antigo para o mais recente, paginados.
   // Aceita parâmetro `after` (ISO) para filtrar direto na API e evitar paginar
@@ -155,6 +154,7 @@ export async function listCalendarEvents(
       pagination_limit: "50",
     };
     if (afterIso) params.after = afterIso;
+    if (beforeIso) params.before = beforeIso;
     if (cursor) params.pagination_cursor = cursor;
 
     const page = await lumaFetch<{
@@ -304,6 +304,7 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
     const name = rawName.trim();
     const ticketName = guest.event_ticket?.name || guest.ticket?.name || "Geral";
     const tag = ticketToTag(ticketName) || input.defaultTag || null;
+    const ticketLower = ticketName.toLowerCase();
 
     // Upsert person
     const { data: existing } = await supabaseAdmin
@@ -361,7 +362,8 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
         event_id: internalEventId,
         luma_guest_id: guest.api_id,
         // Para Passe Semanal, usa a data do evento como início da semana (ajustável depois pelo admin)
-        week_pass_start_date: tag === "Weekly" ? input.eventDate : null,
+        week_pass_start_date: ticketLower.includes("week") || ticketLower.includes("semanal") ? input.eventDate : null,
+        day_pass_date: ticketLower.includes("day pass") || ticketLower.includes("day-pass") ? input.eventDate : null,
       });
       registrations++;
     } else if (!existingByGuest) {
@@ -434,6 +436,8 @@ export async function syncEntireCalendar(opts: {
   defaultTag?: string;
   /** Só sincroniza eventos a partir desta data (YYYY-MM-DD). Default: 7 dias atrás */
   sinceDate?: string;
+  /** Só sincroniza eventos até esta data (YYYY-MM-DD). */
+  untilDate?: string;
 }): Promise<FullSyncResult> {
   const cutoff =
     opts.sinceDate ||
@@ -443,11 +447,12 @@ export async function syncEntireCalendar(opts: {
       return toDateKey(d.toISOString());
     })();
 
-  // Passa filtro `after` direto pra API do Luma (evita paginar milhares de eventos antigos)
+  // Passa filtros direto pra API do Luma (evita paginar milhares de eventos antigos)
   const afterIso = `${cutoff}T00:00:00.000Z`;
-  const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId, afterIso);
+  const beforeIso = opts.untilDate ? `${opts.untilDate}T23:59:59.999Z` : undefined;
+  const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId, afterIso, beforeIso);
 
-  const upcoming = events.filter((e) => e.date >= cutoff);
+  const upcoming = events.filter((e) => e.date >= cutoff && (!opts.untilDate || e.date <= opts.untilDate));
 
   const totals = { guests: 0, created: 0, updated: 0, registrations: 0, checkins: 0 };
   const per_event: FullSyncResult["per_event"] = [];

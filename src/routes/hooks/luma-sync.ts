@@ -42,9 +42,11 @@ export const Route = createFileRoute("/hooks/luma-sync")({
         try {
           // Lê opcional sinceDate do body; default = 1º de janeiro do ano atual
           let sinceDate: string | undefined;
+          let untilDate: string | undefined;
           try {
-            const body = (await request.clone().json()) as { sinceDate?: string };
+            const body = (await request.clone().json()) as { sinceDate?: string; untilDate?: string };
             sinceDate = body?.sinceDate;
+            untilDate = body?.untilDate;
           } catch {
             // body vazio é OK
           }
@@ -56,6 +58,7 @@ export const Route = createFileRoute("/hooks/luma-sync")({
             apiKey,
             calendarApiId: calendarId,
             sinceDate,
+            untilDate,
           });
           console.log("Luma sync ok:", JSON.stringify(result.totals));
           return new Response(JSON.stringify(result), {

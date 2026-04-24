@@ -72,7 +72,7 @@ export const lumaSyncEvent = createServerFn({ method: "POST" })
 
 /** Sincroniza TUDO (eventos do calendário + inscritos + check-ins). Usado pelo botão manual. */
 export const lumaSyncAll = createServerFn({ method: "POST" })
-  .inputValidator((input: { default_tag?: string; since_date?: string } | undefined) => input ?? {})
+  .inputValidator((input: { default_tag?: string; since_date?: string; until_date?: string } | undefined) => input ?? {})
   .handler(async ({ data }) => {
     const apiKey = resolveApiKey();
     const calendarId = resolveCalendarId();
@@ -81,5 +81,6 @@ export const lumaSyncAll = createServerFn({ method: "POST" })
       calendarApiId: calendarId,
       defaultTag: data.default_tag,
       sinceDate: data.since_date,
+      untilDate: data.until_date,
     });
   });

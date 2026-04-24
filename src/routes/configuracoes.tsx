@@ -86,7 +86,7 @@ function ConfiguracoesPage() {
     setSyncing(true);
     setSyncResult(null);
     try {
-      const r = await lumaSyncAll({ data: { since_date: syncFrom } });
+      const r = await lumaSyncAll({ data: { since_date: syncFrom, until_date: syncTo } });
       // Filtra os eventos efetivamente dentro do intervalo (lumaSyncAll inclui tudo a partir de since_date)
       const inRange = (r as any).per_event.filter(
         (e: { date: string }) => e.date >= syncFrom && e.date <= syncTo,

@@ -21,6 +21,7 @@ import {
   Pencil,
   X,
   Check,
+  Download,
 } from "lucide-react";
 import {
   searchPeople,
@@ -34,7 +35,7 @@ import {
   getPersonRegistrations,
   checkDuplicateCheckin,
 } from "@/server/checkin.functions";
-import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents } from "@/server/event.functions";
+import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -53,6 +54,11 @@ type Person = { id: string; name: string; tag: string | null; registered?: boole
 type EventBase = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
 type EventWithStats = EventBase & { registration_count: number; checkin_count: number };
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null };
+
+function csvCell(value: unknown) {
+  const text = value == null ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
 
 type AccessWarning = {
   type: "ok" | "warning" | "danger";
@@ -242,7 +248,8 @@ function CheckinPage() {
   const handleManualSync = async () => {
     setSyncing(true);
     try {
-      const result = await triggerLumaSync();
+      const today = getCurrentBrasiliaDateKeySync();
+      const result = await triggerLumaSync({ data: { since_date: today, until_date: today } });
       const t = result.totals;
       toast.success("Sincronização concluída", {
         description: `${result.events_processed} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
@@ -254,6 +261,25 @@ function CheckinPage() {
       toast.error("Erro na sincronização", { description: msg });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleExportEventCheckins = async () => {
+    if (!selectedEvent) return;
+    try {
+      const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: selectedEvent.id } });
+      const header = ["nome", "categoria", "acesso", "periodo", "checkin_em", "origem"];
+      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
+      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selectedEvent.date}-${selectedEvent.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao exportar participantes";
+      toast.error("Exportação não concluída", { description: msg });
     }
   };
 
@@ -738,6 +764,17 @@ function CheckinPage() {
                 <span className="text-lg font-bold text-foreground">{eventRegCount}</span>
                 <span className="text-xs text-muted-foreground">inscritos</span>
               </div>
+            )}
+            {isEventMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportEventCheckins}
+                className="rounded-xl gap-2"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Baixar check-ins
+              </Button>
             )}
             <div className="glass-strong rounded-2xl px-4 py-2.5 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-primary" />
