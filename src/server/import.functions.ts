@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { classifyLumaTicket, isPrimaryAccessTag } from "@/lib/luma-ticket-classification";
 import { db as supabaseAdmin } from "./db";
 
 export const importPeople = createServerFn({ method: "POST" })
@@ -26,17 +27,14 @@ export const importPeople = createServerFn({ method: "POST" })
       const email = row.email.toLowerCase().trim();
       const name = row.name.trim();
 
-      const ticketLower = row.ticket_type?.toLowerCase() || "";
-      const derivedTag = row.tag ||
-        (ticketLower.includes("architect") ? "Arquiteto"
-        : ticketLower.includes("explorer") ? "Explorer"
-        : ticketLower.includes("weekly") || ticketLower.includes("semanal") ? "Weekly"
-        : null);
-      const tag = derivedTag || data.default_tag || null;
+      const ticketClassification = classifyLumaTicket(row.ticket_type || "");
+      const explicitTag = isPrimaryAccessTag(row.tag) ? row.tag : null;
+      const defaultTag = isPrimaryAccessTag(data.default_tag) ? data.default_tag : null;
+      const tag = explicitTag || ticketClassification.tag || defaultTag;
 
       const { data: existing } = await supabaseAdmin
         .from("people")
-        .select("id")
+        .select("id, tag")
         .eq("email", email)
         .maybeSingle();
 
@@ -44,9 +42,21 @@ export const importPeople = createServerFn({ method: "POST" })
 
       if (existing) {
         personId = existing.id;
+        const shouldPreservePrimaryTag = isPrimaryAccessTag(existing.tag) && ticketClassification.accessClass !== "primary" && !explicitTag;
+        const nextTag = shouldPreservePrimaryTag ? existing.tag : tag || existing.tag || null;
+        if (shouldPreservePrimaryTag) {
+          console.log("Importação Luma: mantendo tag principal da planilha", {
+            person_id: personId,
+            existing_tag: existing.tag,
+            incoming_ticket: row.ticket_type,
+            incoming_ticket_class: ticketClassification.accessClass,
+            incoming_tag: tag,
+            reason: "Pessoa já possui acesso principal indicado pela planilha; ticket recebido não é de acesso principal.",
+          });
+        }
         await supabaseAdmin
           .from("people")
-          .update({ name, tag: tag || null })
+          .update({ name, tag: nextTag })
           .eq("id", personId);
         updated++;
       } else {
