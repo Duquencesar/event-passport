@@ -4,6 +4,12 @@ import { hasFullAccessTag, isDayPassValidToday, isWeeklyPassValidToday } from "@
 import { db as supabaseAdmin } from "./db";
 import { fetchAllRows } from "./pagination";
 
+function addDaysToDateKey(dateKey: string, days: number): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days, 12));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
 export const getEvents = createServerFn({ method: "GET" })
   .handler(async () => {
     const { data, error } = await supabaseAdmin
@@ -175,13 +181,10 @@ export const getEventParticipants = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     type Participant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
     type RegisteredRow = { ticket_type: string; people: { id: string; name: string; tag: string | null } | null };
-    type AccessPersonRow = {
-      id: string;
-      name: string;
-      tag: string | null;
-      registrations: Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null }> | null;
-    };
+    type AccessPersonRow = { id: string; name: string; tag: string | null };
+    type TimedRegistrationRow = RegisteredRow & { day_pass_date: string | null; week_pass_start_date: string | null };
     const participants = new Map<string, Participant>();
+    const earliestWeeklyStart = addDaysToDateKey(data.event_date, -6);
 
     const registered = await fetchAllRows<RegisteredRow>((from, to) =>
       supabaseAdmin
@@ -206,22 +209,41 @@ export const getEventParticipants = createServerFn({ method: "POST" })
     const accessPeople = await fetchAllRows<AccessPersonRow>((from, to) =>
       supabaseAdmin
         .from("people")
-        .select("id, name, tag, registrations(ticket_type, day_pass_date, week_pass_start_date)")
+        .select("id, name, tag")
+        .or("tag.eq.Arquiteto,tag.eq.Explorer")
         .range(from, to),
     );
 
     for (const person of accessPeople) {
       if (participants.has(person.id)) continue;
-      const regs = person.registrations || [];
-      const hasTimedAccess = regs.some((r) => isDayPassValidToday(r, data.event_date) || isWeeklyPassValidToday(r, data.event_date));
-      if (!hasFullAccessTag(person.tag) && !hasTimedAccess) continue;
-      const dayPass = regs.find((r) => isDayPassValidToday(r, data.event_date));
       participants.set(person.id, {
         id: person.id,
         name: person.name,
         tag: person.tag,
-        ticket_type: person.tag || dayPass?.ticket_type || "Acesso válido",
-        access_type: person.tag === "Explorer" ? "Explorers" : dayPass ? "Day Pass" : "IP Village",
+        ticket_type: person.tag || "Acesso válido",
+        access_type: person.tag === "Explorer" ? "Explorers" : "IP Village",
+      });
+    }
+
+    const timedRegistrations = await fetchAllRows<TimedRegistrationRow>((from, to) =>
+      supabaseAdmin
+        .from("registrations")
+        .select("ticket_type, day_pass_date, week_pass_start_date, people!inner(id, name, tag)")
+        .or(`day_pass_date.eq.${data.event_date},and(week_pass_start_date.gte.${earliestWeeklyStart},week_pass_start_date.lte.${data.event_date})`)
+        .range(from, to),
+    );
+
+    for (const row of timedRegistrations) {
+      const person = row.people;
+      if (!person || participants.has(person.id)) continue;
+      const hasValidTimedAccess = isDayPassValidToday(row, data.event_date) || isWeeklyPassValidToday(row, data.event_date);
+      if (!hasValidTimedAccess) continue;
+      participants.set(person.id, {
+        id: person.id,
+        name: person.name,
+        tag: person.tag,
+        ticket_type: row.ticket_type,
+        access_type: isDayPassValidToday(row, data.event_date) ? "Day Pass" : "IP Village",
       });
     }
 
