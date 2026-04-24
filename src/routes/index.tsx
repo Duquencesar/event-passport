@@ -1092,7 +1092,12 @@ function CheckinPage() {
                         {participant.tag && <Badge variant="secondary" className="text-xs rounded-lg">{participant.tag}</Badge>}
                         {alreadyCheckedIn && <Badge className="bg-primary/12 text-primary border-0 rounded-lg text-xs">Check-in feito</Badge>}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 truncate">{participant.ticket_type}</p>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-muted-foreground truncate max-w-full">{participant.ticket_type}</span>
+                        <Badge variant="outline" className="rounded-lg border-primary/35 bg-primary/10 text-primary text-xs font-semibold">
+                          Tipo de acesso: {participant.access_type}
+                        </Badge>
+                      </div>
                     </div>
                     <Button
                       size="sm"
