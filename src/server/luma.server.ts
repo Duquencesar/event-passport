@@ -7,6 +7,7 @@
  *   GET /public/v1/event/get-guests      — lista participantes (com checked_in_at)
  */
 
+import { hasFullAccessTag } from "@/lib/access-validation";
 import { db as supabaseAdmin } from "./db";
 
 const LUMA_BASE = "https://api.lu.ma/public/v1";
@@ -317,7 +318,17 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
 
     if (existing) {
       personId = existing.id;
-      const nextTag = tag || existing.tag || null;
+      const shouldPreservePrimaryTag = hasFullAccessTag(existing.tag) && tag !== existing.tag;
+      const nextTag = shouldPreservePrimaryTag ? existing.tag : tag || existing.tag || null;
+      if (shouldPreservePrimaryTag) {
+        console.log("Luma import: mantendo tag principal da planilha", {
+          person_id: personId,
+          existing_tag: existing.tag,
+          incoming_ticket: ticketName,
+          incoming_tag: tag,
+          reason: "Pessoa já possui acesso principal; ticket do evento não deve sobrescrever a referência da planilha.",
+        });
+      }
       await supabaseAdmin
         .from("people")
         .update({ name, tag: nextTag })
