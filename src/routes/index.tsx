@@ -663,16 +663,27 @@ function CheckinPage() {
                         )}
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event); }}
-                        className="w-full rounded-xl gap-2"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Exportar check-ins
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          CSV
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          XLSX
+                        </Button>
+                      </div>
 
                       {/* Progress bar */}
                       {event.registration_count > 0 && (
@@ -762,16 +773,27 @@ function CheckinPage() {
                         )}
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event); }}
-                        className="w-full rounded-xl gap-2"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Exportar check-ins
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          CSV
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
+                          className="w-full rounded-xl gap-2"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          XLSX
+                        </Button>
+                      </div>
 
                       {event.registration_count > 0 && (
                         <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
