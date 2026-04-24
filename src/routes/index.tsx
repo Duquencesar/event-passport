@@ -29,6 +29,7 @@ import {
   createCheckin,
   getEventCheckins,
   getTodayCheckins,
+  getTodayCheckinsForExport,
   getTodayCount,
   deleteCheckin,
   updateCheckin,
@@ -203,6 +204,8 @@ function CheckinPage() {
   // Luma sync status
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [exportPeriod, setExportPeriod] = useState("Todos");
+  const [exportAccessType, setExportAccessType] = useState("Todos");
   const [, forceTick] = useState(0);
 
   const refreshLastSync = useCallback(async () => {
@@ -280,6 +283,30 @@ function CheckinPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao exportar participantes";
+      toast.error("Exportação não concluída", { description: msg });
+    }
+  };
+
+  const handleExportTodayCheckins = async () => {
+    try {
+      const rows = await getTodayCheckinsForExport({
+        data: {
+          period: exportPeriod === "Todos" ? undefined : exportPeriod,
+          access_type: exportAccessType === "Todos" ? undefined : exportAccessType,
+        },
+      });
+      const header = ["nome", "categoria", "acesso", "periodo", "evento", "checkin_em", "origem"];
+      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
+      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${getCurrentBrasiliaDateKeySync()}-checkins${exportPeriod !== "Todos" ? `-${exportPeriod.toLowerCase()}` : ""}${exportAccessType !== "Todos" ? `-${exportAccessType.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}` : ""}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV gerado", { description: `${rows.length} check-ins exportados` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao exportar check-ins";
       toast.error("Exportação não concluída", { description: msg });
     }
   };
@@ -468,6 +495,7 @@ function CheckinPage() {
   };
 
   const accessTypes = ["IP Village", "Day Pass", "Explorers", "Workshop/Café"];
+  const exportAccessTypes = ["Todos", ...accessTypes];
 
   // Event selection screen
   if (!selectedEvent && eventsLoaded) {
