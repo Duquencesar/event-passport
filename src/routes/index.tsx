@@ -533,6 +533,45 @@ function CheckinPage() {
             </Button>
           </div>
 
+          <div className="glass-subtle rounded-2xl px-5 py-4 space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Exportação unificada do dia</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV</p>
+              </div>
+              <Button size="sm" onClick={handleExportTodayCheckins} className="rounded-xl gap-2">
+                <Download className="w-3.5 h-3.5" />
+                Baixar CSV
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Período</span>
+              {(["Todos", "Manhã", "Tarde"] as const).map((p) => (
+                <Button
+                  key={p}
+                  variant={exportPeriod === p ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportPeriod(p)}
+                  className="rounded-xl h-8 px-3 text-xs"
+                >
+                  {p}
+                </Button>
+              ))}
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest sm:ml-3">Acesso</span>
+              {exportAccessTypes.map((t) => (
+                <Button
+                  key={t}
+                  variant={exportAccessType === t ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportAccessType(t)}
+                  className="rounded-xl h-8 px-3 text-xs"
+                >
+                  {t}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           {events.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
