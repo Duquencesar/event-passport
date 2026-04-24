@@ -364,7 +364,7 @@ function EventosPage() {
                 <EmptyState label="Nenhum evento futuro agendado" />
               ) : (
                 Object.entries(upcomingByDate).map(([date, events]) => (
-                  <DateGroup key={date} date={date} events={events} today={today} />
+                  <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
                 ))
               )}
             </TabsContent>
@@ -402,7 +402,7 @@ function EventosPage() {
                     </div>
                   </div>
                   {Object.entries(pastByDate).map(([date, events]) => (
-                    <DateGroup key={date} date={date} events={events} today={today} />
+                    <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
                   ))}
                 </>
               )}
@@ -411,7 +411,7 @@ function EventosPage() {
             {/* Todos */}
             <TabsContent value="todos" className="mt-6 space-y-8">
               {Object.entries(groupByDate(allEvents)).map(([date, events]) => (
-                <DateGroup key={date} date={date} events={events} today={today} />
+                <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
               ))}
             </TabsContent>
           </Tabs>
