@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
+import { hasFullAccessTag, isDayPassValidToday, isWeeklyPassValidToday } from "@/lib/access-validation";
 import { db as supabaseAdmin } from "./db";
 
 export const getEvents = createServerFn({ method: "GET" })
@@ -166,6 +167,54 @@ export const getEventCheckinCount = createServerFn({ method: "POST" })
       .eq("event_id", data.event_id);
     if (error) throw new Error(error.message);
     return count || 0;
+  });
+
+export const getEventParticipants = createServerFn({ method: "POST" })
+  .inputValidator((input: { event_id: string; event_date: string }) => input)
+  .handler(async ({ data }) => {
+    type Participant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
+    const participants = new Map<string, Participant>();
+
+    const { data: registered, error: registeredError } = await supabaseAdmin
+      .from("registrations")
+      .select("ticket_type, people!inner(id, name, tag)")
+      .eq("event_id", data.event_id)
+      .limit(1000);
+    if (registeredError) throw new Error(registeredError.message);
+
+    for (const row of registered || []) {
+      const person = row.people as unknown as { id: string; name: string; tag: string | null };
+      participants.set(person.id, {
+        id: person.id,
+        name: person.name,
+        tag: person.tag,
+        ticket_type: row.ticket_type,
+        access_type: hasFullAccessTag(person.tag) ? (person.tag === "Explorer" ? "Explorers" : "IP Village") : "Workshop/Café",
+      });
+    }
+
+    const { data: accessPeople, error: accessError } = await supabaseAdmin
+      .from("people")
+      .select("id, name, tag, registrations(ticket_type, day_pass_date, week_pass_start_date)")
+      .limit(1000);
+    if (accessError) throw new Error(accessError.message);
+
+    for (const person of accessPeople || []) {
+      if (participants.has(person.id)) continue;
+      const regs = (person.registrations as Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null }>) || [];
+      const hasTimedAccess = regs.some((r) => isDayPassValidToday(r, data.event_date) || isWeeklyPassValidToday(r, data.event_date));
+      if (!hasFullAccessTag(person.tag) && !hasTimedAccess) continue;
+      const dayPass = regs.find((r) => isDayPassValidToday(r, data.event_date));
+      participants.set(person.id, {
+        id: person.id,
+        name: person.name,
+        tag: person.tag,
+        ticket_type: person.tag || dayPass?.ticket_type || "Acesso válido",
+        access_type: person.tag === "Explorer" ? "Explorers" : dayPass ? "Day Pass" : "IP Village",
+      });
+    }
+
+    return Array.from(participants.values()).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   });
 
 export const getEventCheckedInParticipantsForExport = createServerFn({ method: "POST" })
