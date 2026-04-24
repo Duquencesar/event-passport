@@ -20,8 +20,9 @@ export const getLastLumaSync = createServerFn({ method: "GET" }).handler(
 );
 
 /** Dispara sync completo (eventos + inscritos + check-ins). */
-export const triggerLumaSync = createServerFn({ method: "POST" }).handler(
-  async () => {
+export const triggerLumaSync = createServerFn({ method: "POST" })
+  .inputValidator((input: { since_date?: string; until_date?: string } | undefined) => input ?? {})
+  .handler(async ({ data }) => {
     const apiKey = process.env.LUMA_API_KEY;
     const calendarId = process.env.LUMA_CALENDAR_API_ID;
     if (!apiKey || !calendarId) {
@@ -29,6 +30,10 @@ export const triggerLumaSync = createServerFn({ method: "POST" }).handler(
         "LUMA_API_KEY ou LUMA_CALENDAR_API_ID não configurados nos secrets.",
       );
     }
-    return syncEntireCalendar({ apiKey, calendarApiId: calendarId });
-  },
-);
+    return syncEntireCalendar({
+      apiKey,
+      calendarApiId: calendarId,
+      sinceDate: data.since_date,
+      untilDate: data.until_date,
+    });
+  });
