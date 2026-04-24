@@ -219,6 +219,7 @@ function CheckinPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<EventWithStats[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
   const [eventCheckins, setEventCheckins] = useState<any[]>([]);
+  const [eventParticipants, setEventParticipants] = useState<EventParticipant[]>([]);
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
   const [eventRegCount, setEventRegCount] = useState(0);
   const [eventsLoaded, setEventsLoaded] = useState(false);
@@ -243,6 +244,7 @@ function CheckinPage() {
   const [syncing, setSyncing] = useState(false);
   const [exportPeriod, setExportPeriod] = useState("Todos");
   const [exportAccessType, setExportAccessType] = useState("Todos");
+  const [checkingInFromListId, setCheckingInFromListId] = useState<string | null>(null);
   const [, forceTick] = useState(0);
 
   const refreshLastSync = useCallback(async () => {
