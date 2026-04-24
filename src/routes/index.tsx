@@ -560,12 +560,18 @@ function CheckinPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <h3 className="text-sm font-semibold text-foreground">Exportação unificada do dia</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV ou XLSX</p>
               </div>
-              <Button size="sm" onClick={handleExportTodayCheckins} className="rounded-xl gap-2">
-                <Download className="w-3.5 h-3.5" />
-                Baixar CSV
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleExportTodayCheckins("csv")} className="rounded-xl gap-2">
+                  <Download className="w-3.5 h-3.5" />
+                  CSV
+                </Button>
+                <Button size="sm" onClick={() => handleExportTodayCheckins("xlsx")} className="rounded-xl gap-2">
+                  <Download className="w-3.5 h-3.5" />
+                  XLSX
+                </Button>
+              </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Período</span>
