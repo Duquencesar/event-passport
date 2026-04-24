@@ -480,6 +480,32 @@ function CheckinPage() {
     }
   };
 
+  const handleParticipantCheckin = async (participant: EventParticipant) => {
+    if (!selectedEvent) return;
+    setCheckingInFromListId(participant.id);
+    try {
+      await createCheckin({
+        data: {
+          person_id: participant.id,
+          period,
+          access_type: participant.access_type,
+          event_name: selectedEvent.name,
+          event_id: selectedEvent.id,
+        },
+      });
+      toast.success("Check-in registrado", { description: participant.name });
+      await refreshSelectedEventData(selectedEvent);
+      const [allCheckins, allCount] = await Promise.all([getTodayCheckins(), getTodayCount()]);
+      setTodayCheckins(allCheckins);
+      setTodayCount(allCount);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao registrar check-in";
+      toast.error("Falha no check-in", { description: msg });
+    } finally {
+      setCheckingInFromListId(null);
+    }
+  };
+
   const handleDelete = async (checkinId: string) => {
     try {
       await deleteCheckin({ data: { checkin_id: checkinId } });
