@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getBrasiliaTodayKey, getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 import { hasFullAccessTag, isDayPassValidToday, isWeeklyPassValidToday } from "@/lib/access-validation";
 import { db as supabaseAdmin } from "./db";
+import { fetchAllRows } from "./pagination";
 
 export const searchPeople = createServerFn({ method: "POST" })
   .inputValidator((input: { query: string }) => input)
@@ -160,6 +161,44 @@ export const getTodayCheckins = createServerFn({ method: "GET" })
       .limit(30);
     if (error) throw new Error(error.message);
     return checkins || [];
+  });
+
+export const getTodayCheckinsForExport = createServerFn({ method: "POST" })
+  .inputValidator((input: { period?: string; access_type?: string }) => input)
+  .handler(async ({ data }) => {
+    const today = await getBrasiliaTodayKey();
+    type Row = {
+      id: string;
+      period: string;
+      access_type: string;
+      event_name: string | null;
+      checked_in_at: string;
+      source: string;
+      people: { name: string; tag: string | null } | null;
+    };
+
+    const rows = await fetchAllRows<Row>((from, to) => {
+      let query = supabaseAdmin
+        .from("checkins")
+        .select("id, period, access_type, event_name, checked_in_at, source, people(name, tag)")
+        .eq("date", today)
+        .order("checked_in_at", { ascending: true })
+        .range(from, to);
+
+      if (data.period) query = query.ilike("period", data.period);
+      if (data.access_type) query = query.eq("access_type", data.access_type);
+      return query;
+    });
+
+    return rows.map((row) => ({
+      nome: row.people?.name || "",
+      categoria: row.people?.tag || row.access_type,
+      acesso: row.access_type,
+      periodo: row.period,
+      evento: row.event_name || "Check-in avulso",
+      checkin_em: row.checked_in_at,
+      origem: row.source,
+    }));
   });
 
 export const getEventCheckins = createServerFn({ method: "POST" })
