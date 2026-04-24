@@ -248,7 +248,8 @@ function CheckinPage() {
   const handleManualSync = async () => {
     setSyncing(true);
     try {
-      const result = await triggerLumaSync();
+      const today = getCurrentBrasiliaDateKeySync();
+      const result = await triggerLumaSync({ data: { since_date: today, until_date: today } });
       const t = result.totals;
       toast.success("Sincronização concluída", {
         description: `${result.events_processed} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
@@ -260,6 +261,25 @@ function CheckinPage() {
       toast.error("Erro na sincronização", { description: msg });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleExportEventCheckins = async () => {
+    if (!selectedEvent) return;
+    try {
+      const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: selectedEvent.id } });
+      const header = ["nome", "categoria", "acesso", "periodo", "checkin_em", "origem"];
+      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
+      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selectedEvent.date}-${selectedEvent.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao exportar participantes";
+      toast.error("Exportação não concluída", { description: msg });
     }
   };
 
