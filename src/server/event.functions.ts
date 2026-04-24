@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getBrasiliaTodayKey } from "@/lib/brasilia-time";
 import { hasFullAccessTag, isDayPassValidToday, isWeeklyPassValidToday } from "@/lib/access-validation";
 import { db as supabaseAdmin } from "./db";
+import { fetchAllRows } from "./pagination";
 
 export const getEvents = createServerFn({ method: "GET" })
   .handler(async () => {
@@ -173,17 +174,26 @@ export const getEventParticipants = createServerFn({ method: "POST" })
   .inputValidator((input: { event_id: string; event_date: string }) => input)
   .handler(async ({ data }) => {
     type Participant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
+    type RegisteredRow = { ticket_type: string; people: { id: string; name: string; tag: string | null } | null };
+    type AccessPersonRow = {
+      id: string;
+      name: string;
+      tag: string | null;
+      registrations: Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null }> | null;
+    };
     const participants = new Map<string, Participant>();
 
-    const { data: registered, error: registeredError } = await supabaseAdmin
-      .from("registrations")
-      .select("ticket_type, people!inner(id, name, tag)")
-      .eq("event_id", data.event_id)
-      .limit(1000);
-    if (registeredError) throw new Error(registeredError.message);
+    const registered = await fetchAllRows<RegisteredRow>((from, to) =>
+      supabaseAdmin
+        .from("registrations")
+        .select("ticket_type, people!inner(id, name, tag)")
+        .eq("event_id", data.event_id)
+        .range(from, to),
+    );
 
-    for (const row of registered || []) {
-      const person = row.people as unknown as { id: string; name: string; tag: string | null };
+    for (const row of registered) {
+      const person = row.people;
+      if (!person) continue;
       participants.set(person.id, {
         id: person.id,
         name: person.name,
@@ -193,15 +203,16 @@ export const getEventParticipants = createServerFn({ method: "POST" })
       });
     }
 
-    const { data: accessPeople, error: accessError } = await supabaseAdmin
-      .from("people")
-      .select("id, name, tag, registrations(ticket_type, day_pass_date, week_pass_start_date)")
-      .limit(1000);
-    if (accessError) throw new Error(accessError.message);
+    const accessPeople = await fetchAllRows<AccessPersonRow>((from, to) =>
+      supabaseAdmin
+        .from("people")
+        .select("id, name, tag, registrations(ticket_type, day_pass_date, week_pass_start_date)")
+        .range(from, to),
+    );
 
-    for (const person of accessPeople || []) {
+    for (const person of accessPeople) {
       if (participants.has(person.id)) continue;
-      const regs = (person.registrations as Array<{ ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null }>) || [];
+      const regs = person.registrations || [];
       const hasTimedAccess = regs.some((r) => isDayPassValidToday(r, data.event_date) || isWeeklyPassValidToday(r, data.event_date));
       if (!hasFullAccessTag(person.tag) && !hasTimedAccess) continue;
       const dayPass = regs.find((r) => isDayPassValidToday(r, data.event_date));
