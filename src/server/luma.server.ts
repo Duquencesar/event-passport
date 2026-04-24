@@ -317,9 +317,10 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
 
     if (existing) {
       personId = existing.id;
+      const nextTag = tag || existing.tag || null;
       await supabaseAdmin
         .from("people")
-        .update({ name, ...(tag && !existing.tag ? { tag } : {}) })
+        .update({ name, tag: nextTag })
         .eq("id", personId);
       updated++;
     } else {
