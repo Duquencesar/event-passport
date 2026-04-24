@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatBrasiliaTime, getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 import {
@@ -245,6 +246,8 @@ function CheckinPage() {
   const [exportPeriod, setExportPeriod] = useState("Todos");
   const [exportAccessType, setExportAccessType] = useState("Todos");
   const [checkingInFromListId, setCheckingInFromListId] = useState<string | null>(null);
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<Set<string>>(new Set());
+  const [bulkCheckingIn, setBulkCheckingIn] = useState(false);
   const [, forceTick] = useState(0);
 
   const refreshLastSync = useCallback(async () => {
@@ -317,6 +320,10 @@ function CheckinPage() {
     setEventCheckinCount(checkinCount);
     setEventRegCount(regCount);
     setEventParticipants(participants as EventParticipant[]);
+    setSelectedParticipantIds((current) => {
+      const available = new Set((participants as EventParticipant[]).map((p) => p.id));
+      return new Set([...current].filter((id) => available.has(id)));
+    });
   }, []);
 
   const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
@@ -503,6 +510,46 @@ function CheckinPage() {
       toast.error("Falha no check-in", { description: msg });
     } finally {
       setCheckingInFromListId(null);
+    }
+  };
+
+  const handleBulkParticipantCheckin = async () => {
+    if (!selectedEvent || selectedParticipantIds.size === 0) return;
+    const selectedParticipants = eventParticipants.filter(
+      (participant) => selectedParticipantIds.has(participant.id) && !eventCheckins.some((c: any) => c.person_id === participant.id),
+    );
+    if (selectedParticipants.length === 0) return;
+
+    setBulkCheckingIn(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedParticipants.map((participant) =>
+          createCheckin({
+            data: {
+              person_id: participant.id,
+              period,
+              access_type: participant.access_type,
+              event_name: selectedEvent.name,
+              event_id: selectedEvent.id,
+            },
+          }),
+        ),
+      );
+      const done = results.filter((result) => result.status === "fulfilled").length;
+      const failed = results.length - done;
+      toast.success("Check-in em massa concluído", {
+        description: failed ? `${done} registrados · ${failed} não registrados` : `${done} registrados`,
+      });
+      setSelectedParticipantIds(new Set());
+      await refreshSelectedEventData(selectedEvent);
+      const [allCheckins, allCount] = await Promise.all([getTodayCheckins(), getTodayCount()]);
+      setTodayCheckins(allCheckins);
+      setTodayCount(allCount);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao registrar check-ins";
+      toast.error("Falha no check-in em massa", { description: msg });
+    } finally {
+      setBulkCheckingIn(false);
     }
   };
 
@@ -800,6 +847,9 @@ function CheckinPage() {
   const isEventMode = selectedEvent && selectedEvent.id !== "";
   const currentCheckins = isEventMode ? eventCheckins : todayCheckins;
   const checkedInPersonIds = new Set(eventCheckins.map((c: any) => c.person_id));
+  const availableParticipants = eventParticipants.filter((participant) => !checkedInPersonIds.has(participant.id));
+  const selectedAvailableCount = availableParticipants.filter((participant) => selectedParticipantIds.has(participant.id)).length;
+  const allAvailableSelected = availableParticipants.length > 0 && selectedAvailableCount === availableParticipants.length;
 
   return (
     <Layout>
@@ -1072,9 +1122,33 @@ function CheckinPage() {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                 Inscritos e acessos válidos
               </h3>
-              <Badge variant="outline" className="rounded-lg border-border/40">
-                {eventParticipants.length} pessoas
-              </Badge>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <Badge variant="outline" className="rounded-lg border-border/40">
+                  {eventParticipants.length} pessoas
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={availableParticipants.length === 0 || bulkCheckingIn}
+                  onClick={() => {
+                    setSelectedParticipantIds(
+                      allAvailableSelected ? new Set() : new Set(availableParticipants.map((participant) => participant.id)),
+                    );
+                  }}
+                  className="rounded-xl h-8 text-xs"
+                >
+                  {allAvailableSelected ? "Limpar seleção" : "Selecionar todos"}
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={selectedAvailableCount === 0 || bulkCheckingIn}
+                  onClick={handleBulkParticipantCheckin}
+                  className="rounded-xl h-8 gap-2 text-xs"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  {bulkCheckingIn ? "Registrando..." : `Check-in selecionados (${selectedAvailableCount})`}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               {eventParticipants.length === 0 && (
@@ -1086,7 +1160,22 @@ function CheckinPage() {
                 const alreadyCheckedIn = checkedInPersonIds.has(participant.id);
                 return (
                   <div key={participant.id} className="glass-subtle rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Checkbox
+                        checked={selectedParticipantIds.has(participant.id)}
+                        disabled={alreadyCheckedIn || bulkCheckingIn}
+                        onCheckedChange={(checked) => {
+                          setSelectedParticipantIds((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(participant.id);
+                            else next.delete(participant.id);
+                            return next;
+                          });
+                        }}
+                        aria-label={`Selecionar ${participant.name}`}
+                        className="shrink-0"
+                      />
+                      <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm text-foreground truncate">{participant.name}</span>
                         {participant.tag && <Badge variant="secondary" className="text-xs rounded-lg">{participant.tag}</Badge>}
@@ -1097,6 +1186,7 @@ function CheckinPage() {
                         <Badge variant="outline" className="rounded-lg border-primary/35 bg-primary/10 text-primary text-xs font-semibold">
                           Tipo de acesso: {participant.access_type}
                         </Badge>
+                      </div>
                       </div>
                     </div>
                     <Button
