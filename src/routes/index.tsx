@@ -513,6 +513,46 @@ function CheckinPage() {
     }
   };
 
+  const handleBulkParticipantCheckin = async () => {
+    if (!selectedEvent || selectedParticipantIds.size === 0) return;
+    const selectedParticipants = eventParticipants.filter(
+      (participant) => selectedParticipantIds.has(participant.id) && !eventCheckins.some((c: any) => c.person_id === participant.id),
+    );
+    if (selectedParticipants.length === 0) return;
+
+    setBulkCheckingIn(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedParticipants.map((participant) =>
+          createCheckin({
+            data: {
+              person_id: participant.id,
+              period,
+              access_type: participant.access_type,
+              event_name: selectedEvent.name,
+              event_id: selectedEvent.id,
+            },
+          }),
+        ),
+      );
+      const done = results.filter((result) => result.status === "fulfilled").length;
+      const failed = results.length - done;
+      toast.success("Check-in em massa concluído", {
+        description: failed ? `${done} registrados · ${failed} não registrados` : `${done} registrados`,
+      });
+      setSelectedParticipantIds(new Set());
+      await refreshSelectedEventData(selectedEvent);
+      const [allCheckins, allCount] = await Promise.all([getTodayCheckins(), getTodayCount()]);
+      setTodayCheckins(allCheckins);
+      setTodayCount(allCount);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao registrar check-ins";
+      toast.error("Falha no check-in em massa", { description: msg });
+    } finally {
+      setBulkCheckingIn(false);
+    }
+  };
+
   const handleDelete = async (checkinId: string) => {
     try {
       await deleteCheckin({ data: { checkin_id: checkinId } });
