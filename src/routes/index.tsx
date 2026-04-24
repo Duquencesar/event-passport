@@ -348,7 +348,7 @@ function CheckinPage() {
           access_type: exportAccessType === "Todos" ? undefined : exportAccessType,
         },
       });
-      const header = ["nome", "categoria", "acesso", "periodo", "evento", "checkin_em", "origem"];
+      const header = ["nome", "categoria", "tipo_de_acesso", "periodo", "evento", "checkin_em", "origem"];
       const filename = `${getCurrentBrasiliaDateKeySync()}-checkins${exportPeriod !== "Todos" ? `-${slugify(exportPeriod)}` : ""}${exportAccessType !== "Todos" ? `-${slugify(exportAccessType)}` : ""}`;
       downloadRows(rows as ExportRow[], header, filename, format);
       toast.success(`${format.toUpperCase()} gerado`, { description: `${rows.length} check-ins exportados` });
