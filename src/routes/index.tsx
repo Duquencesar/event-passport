@@ -387,14 +387,7 @@ function CheckinPage() {
     setSelected(null);
     setSuccess(false);
     setAccessWarning(null);
-    const [checkins, checkinCount, regCount] = await Promise.all([
-      getEventCheckins({ data: { event_id: event.id } }),
-      getEventCheckinCount({ data: { event_id: event.id } }),
-      getEventRegistrationCount({ data: { event_id: event.id } }),
-    ]);
-    setEventCheckins(checkins);
-    setEventCheckinCount(checkinCount);
-    setEventRegCount(regCount);
+    await refreshSelectedEventData(event);
   };
 
   const handleSearch = async (value: string) => {
@@ -473,12 +466,7 @@ function CheckinPage() {
       }, 2000);
 
       if (selectedEvent) {
-        const [checkins, count] = await Promise.all([
-          getEventCheckins({ data: { event_id: selectedEvent.id } }),
-          getEventCheckinCount({ data: { event_id: selectedEvent.id } }),
-        ]);
-        setEventCheckins(checkins);
-        setEventCheckinCount(count);
+        await refreshSelectedEventData(selectedEvent);
       }
       const [allCheckins, allCount] = await Promise.all([getTodayCheckins(), getTodayCount()]);
       setTodayCheckins(allCheckins);
