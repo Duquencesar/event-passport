@@ -799,6 +799,7 @@ function CheckinPage() {
 
   const isEventMode = selectedEvent && selectedEvent.id !== "";
   const currentCheckins = isEventMode ? eventCheckins : todayCheckins;
+  const checkedInPersonIds = new Set(eventCheckins.map((c: any) => c.person_id));
 
   return (
     <Layout>
@@ -849,25 +850,18 @@ function CheckinPage() {
               </div>
             )}
             {isEventMode && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExportEventCheckins(undefined, "csv")}
-                  className="rounded-xl gap-2"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  CSV
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleExportEventCheckins(undefined, "xlsx")}
-                  className="rounded-xl gap-2"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  XLSX
-                </Button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-xl gap-2">
+                    <Download className="w-3.5 h-3.5" />
+                    Baixar check-ins
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem onClick={() => handleExportEventCheckins(undefined, "csv")}>CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExportEventCheckins(undefined, "xlsx")}>XLSX</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <div className="glass-strong rounded-2xl px-4 py-2.5 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-primary" />
