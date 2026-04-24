@@ -168,6 +168,35 @@ export const getEventCheckinCount = createServerFn({ method: "POST" })
     return count || 0;
   });
 
+export const getEventCheckedInParticipantsForExport = createServerFn({ method: "POST" })
+  .inputValidator((input: { event_id: string }) => input)
+  .handler(async ({ data }) => {
+    type Row = {
+      id: string;
+      period: string;
+      access_type: string;
+      checked_in_at: string;
+      source: string;
+      people: { name: string; tag: string | null } | null;
+    };
+
+    const { data: rows, error } = await supabaseAdmin
+      .from("checkins")
+      .select("id, period, access_type, checked_in_at, source, people(name, tag)")
+      .eq("event_id", data.event_id)
+      .order("checked_in_at", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    return ((rows || []) as Row[]).map((row) => ({
+      nome: row.people?.name || "",
+      categoria: row.people?.tag || row.access_type,
+      acesso: row.access_type,
+      periodo: row.period,
+      checkin_em: row.checked_in_at,
+      origem: row.source,
+    }));
+  });
+
 export const getEventRegistrationCount = createServerFn({ method: "POST" })
   .inputValidator((input: { event_id: string }) => input)
   .handler(async ({ data }) => {
