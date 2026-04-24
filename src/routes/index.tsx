@@ -587,51 +587,6 @@ function CheckinPage() {
             </Button>
           </div>
 
-          <div className="glass-subtle rounded-2xl px-5 py-4 space-y-4">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Exportação unificada do dia</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV ou XLSX</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleExportTodayCheckins("csv")} className="rounded-xl gap-2">
-                  <Download className="w-3.5 h-3.5" />
-                  CSV
-                </Button>
-                <Button size="sm" onClick={() => handleExportTodayCheckins("xlsx")} className="rounded-xl gap-2">
-                  <Download className="w-3.5 h-3.5" />
-                  XLSX
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Período</span>
-              {(["Todos", "Manhã", "Tarde"] as const).map((p) => (
-                <Button
-                  key={p}
-                  variant={exportPeriod === p ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setExportPeriod(p)}
-                  className="rounded-xl h-8 px-3 text-xs"
-                >
-                  {p}
-                </Button>
-              ))}
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest sm:ml-3">Acesso</span>
-              {exportAccessTypes.map((t) => (
-                <Button
-                  key={t}
-                  variant={exportAccessType === t ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setExportAccessType(t)}
-                  className="rounded-xl h-8 px-3 text-xs"
-                >
-                  {t}
-                </Button>
-              ))}
-            </div>
-          </div>
-
           {events.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
@@ -692,28 +647,6 @@ function CheckinPage() {
                         {event.registration_count > 0 && (
                           <span className="text-muted-foreground font-medium">{pct}%</span>
                         )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          CSV
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          XLSX
-                        </Button>
                       </div>
 
                       {/* Progress bar */}
@@ -802,28 +735,6 @@ function CheckinPage() {
                         {event.registration_count > 0 && (
                           <span className="text-muted-foreground font-medium">{pct}%</span>
                         )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          CSV
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          XLSX
-                        </Button>
                       </div>
 
                       {event.registration_count > 0 && (
