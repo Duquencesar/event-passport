@@ -83,10 +83,12 @@ function EventCard({
   event,
   today,
   showStats = true,
+  onExport,
 }: {
   event: EventWithStats;
   today: string;
   showStats?: boolean;
+  onExport: (event: EventWithStats) => void;
 }) {
   const isToday = event.date === today;
   const isPast = event.date < today;
@@ -119,17 +121,26 @@ function EventCard({
           </div>
           <h4 className="font-bold text-foreground leading-tight">{event.name}</h4>
         </div>
-        {event.url && (
-          <a
-            href={event.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="text-muted-foreground hover:text-primary transition-colors shrink-0 p-1"
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => onExport(event)}
+            className="text-muted-foreground hover:text-primary transition-colors p-1"
+            title="Baixar check-ins"
           >
-            <ExternalLink className="w-4 h-4" />
-          </a>
-        )}
+            <Download className="w-4 h-4" />
+          </button>
+          {event.url && (
+            <a
+              href={event.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-muted-foreground hover:text-primary transition-colors p-1"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Meta row */}
