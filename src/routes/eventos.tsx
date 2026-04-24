@@ -265,6 +265,19 @@ function EventosPage() {
   const totalCheckins = allEvents.reduce((s, e) => s + e.checkin_count, 0);
   const totalRegistrations = allEvents.reduce((s, e) => s + (e.registration_count || 0), 0);
 
+  const handleExportEventCheckins = async (event: EventWithStats) => {
+    const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: event.id } });
+    const header = ["nome", "categoria", "acesso", "periodo", "checkin_em", "origem"];
+    const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${event.date}-${event.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Layout>
       <div className="space-y-8">
@@ -338,7 +351,7 @@ function EventosPage() {
                   </span>
                 </div>
                 {todayEvents.map((event) => (
-                  <EventCard key={event.id} event={event} today={today} />
+                  <EventCard key={event.id} event={event} today={today} onExport={handleExportEventCheckins} />
                 ))}
               </TabsContent>
             )}
