@@ -770,7 +770,7 @@ function CheckinPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleExportEventCheckins}
+                onClick={() => handleExportEventCheckins()}
                 className="rounded-xl gap-2"
               >
                 <Download className="w-3.5 h-3.5" />
