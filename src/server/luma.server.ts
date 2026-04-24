@@ -301,7 +301,9 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
     const email = rawEmail.toLowerCase().trim();
     const name = rawName.trim();
     const ticketName = guest.event_ticket?.name || guest.ticket?.name || "Geral";
-    const tag = ticketToTag(ticketName) || input.defaultTag || null;
+    const ticketClassification = classifyLumaTicket(ticketName);
+    const defaultTag = isPrimaryAccessTag(input.defaultTag) ? input.defaultTag : null;
+    const tag = ticketClassification.tag || defaultTag;
     const ticketLower = ticketName.toLowerCase();
 
     // Upsert person
@@ -315,15 +317,16 @@ export async function syncLumaEvent(input: SyncEventInput): Promise<SyncEventRes
 
     if (existing) {
       personId = existing.id;
-      const shouldPreservePrimaryTag = hasFullAccessTag(existing.tag) && tag !== existing.tag;
+      const shouldPreservePrimaryTag = isPrimaryAccessTag(existing.tag) && ticketClassification.accessClass !== "primary";
       const nextTag = shouldPreservePrimaryTag ? existing.tag : tag || existing.tag || null;
       if (shouldPreservePrimaryTag) {
         console.log("Luma import: mantendo tag principal da planilha", {
           person_id: personId,
           existing_tag: existing.tag,
           incoming_ticket: ticketName,
+          incoming_ticket_class: ticketClassification.accessClass,
           incoming_tag: tag,
-          reason: "Pessoa já possui acesso principal; ticket do evento não deve sobrescrever a referência da planilha.",
+          reason: "Pessoa já possui acesso principal indicado pela planilha; ticket recebido não é de acesso principal.",
         });
       }
       await supabaseAdmin
