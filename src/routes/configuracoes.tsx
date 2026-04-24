@@ -341,8 +341,8 @@ function ConfiguracoesPage() {
           </div>
 
           {/* Info banner */}
-          <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[#0052FF]/5 border border-[#0052FF]/15 text-sm">
-            <Info className="w-4 h-4 text-[#0052FF] shrink-0 mt-0.5" />
+          <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-[#84E400]/5 border border-[#84E400]/15 text-sm">
+            <Info className="w-4 h-4 text-[#84E400] shrink-0 mt-0.5" />
             <div className="space-y-1 text-muted-foreground">
               <p>
                 O pg_cron chama{" "}
@@ -474,7 +474,7 @@ function ConfiguracoesPage() {
                   onClick={() => setTestPeriod(p)}
                   className={`px-5 py-2.5 text-sm font-medium transition-colors ${
                     testPeriod === p
-                      ? "bg-[#0052FF]/15 text-[#0052FF]"
+                      ? "bg-[#84E400]/15 text-[#84E400]"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -556,7 +556,7 @@ function ConfiguracoesPage() {
                 {ACCESS_TYPES.map((row) => (
                   <TableRow
                     key={row.tipo}
-                    className="border-border hover:bg-[#0052FF]/3 transition-colors duration-150"
+                    className="border-border hover:bg-[#84E400]/3 transition-colors duration-150"
                   >
                     <TableCell className="font-semibold text-sm">
                       <span className={row.color}>{row.tipo}</span>

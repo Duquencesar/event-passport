@@ -680,7 +680,7 @@ function CheckinPage() {
                     onClick={() => selectEvent(event)}
                     className="w-full rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group text-left"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0052FF]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#84E400]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                     <div className="space-y-3 relative">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -768,7 +768,7 @@ function CheckinPage() {
                     onClick={() => selectEvent(event)}
                     className="w-full rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group text-left opacity-80 hover:opacity-100"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0052FF]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#84E400]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                     <div className="space-y-3 relative">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -854,7 +854,7 @@ function CheckinPage() {
                       className="flex items-center justify-between px-5 py-3"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0d2a54] to-[#29B6F6] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                           {c.people?.name ? c.people.name.charAt(0).toUpperCase() : "?"}
                         </div>
                         <div>
@@ -1347,7 +1347,7 @@ function CheckinPage() {
                     // Normal view
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#0d2a54] to-[#29B6F6] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                           {c.people?.name ? c.people.name.charAt(0).toUpperCase() : "?"}
                         </div>
                         <div className="flex items-center gap-2">

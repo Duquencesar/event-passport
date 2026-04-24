@@ -304,7 +304,7 @@ function DashboardPage() {
                       boxShadow: "0 4px 16px oklch(0.5 0.02 250 / 8%)",
                     }}
                   />
-                  <Bar dataKey="count" fill="#0052FF" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="#84E400" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -371,14 +371,14 @@ function DashboardPage() {
                 {current.topPeople.map((p: { name: string; email: string; tag: string | null; count: number }, i: number) => (
                   <TableRow
                     key={p.email || `${p.name}-${i}`}
-                    className="hover:bg-[#0052FF]/5 transition-colors duration-150"
+                    className="hover:bg-[#84E400]/5 transition-colors duration-150"
                   >
                     <TableCell className="font-mono text-muted-foreground">
                       {i + 1}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                        <div className="h-7 w-7 rounded-full bg-gradient-to-br from-[#0d2a54] to-[#29B6F6] flex items-center justify-center text-white text-xs font-semibold shrink-0">
                           {p.name.charAt(0).toUpperCase()}
                         </div>
                         <div>

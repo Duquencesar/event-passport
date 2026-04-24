@@ -51,43 +51,43 @@
 :root {
   --radius: 0.75rem;
 
-  /* === Saas Dark Tokens — Electric Blue === */
-  --background: oklch(0.13 0.02 265);       /* #0F172A slate-900 */
-  --foreground: oklch(0.94 0.01 265);       /* #F1F5F9 slate-100 */
-  --card: oklch(0.18 0.02 265);             /* #1E293B slate-800 */
-  --card-foreground: oklch(0.94 0.01 265);
-  --popover: oklch(0.18 0.02 265);
-  --popover-foreground: oklch(0.94 0.01 265);
-  --primary: oklch(0.48 0.27 265);          /* #0052FF electric blue */
-  --primary-foreground: oklch(1 0 0);       /* white */
-  --secondary: oklch(0.58 0.20 265);        /* #4D7CFF secondary blue */
+  /* === Ipê Village Brand Tokens — Deep Navy + Lime === */
+  --background: oklch(0.11 0.05 250);       /* #0B1929 Ipê deep navy */
+  --foreground: oklch(0.95 0.005 265);      /* near-white */
+  --card: oklch(0.16 0.05 250);             /* #0F2035 card navy */
+  --card-foreground: oklch(0.95 0.005 265);
+  --popover: oklch(0.16 0.05 250);
+  --popover-foreground: oklch(0.95 0.005 265);
+  --primary: oklch(0.82 0.24 130);          /* #84E400 Ipê lime */
+  --primary-foreground: oklch(0.11 0.05 250); /* dark navy on lime */
+  --secondary: oklch(0.72 0.13 210);        /* #29B6F6 sky blue */
   --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.42 0.03 265);            /* #64748B slate-500 */
-  --muted-foreground: oklch(0.62 0.02 265); /* #94A3B8 slate-400 */
-  --accent: oklch(0.22 0.02 265);           /* ~#1E293B/slightly lighter */
-  --accent-foreground: oklch(0.94 0.01 265);
-  --destructive: oklch(0.58 0.22 25);       /* #EF4444 red */
+  --muted: oklch(0.26 0.05 250);            /* dark muted navy */
+  --muted-foreground: oklch(0.58 0.05 250); /* blue-gray */
+  --accent: oklch(0.20 0.05 250);           /* hover navy */
+  --accent-foreground: oklch(0.95 0.005 265);
+  --destructive: oklch(0.58 0.22 25);       /* red */
   --destructive-foreground: oklch(0.98 0.005 25);
-  --border: oklch(0.27 0.03 265);           /* #334155 slate-700 */
-  --input: oklch(0.27 0.03 265);
-  --ring: oklch(0.48 0.27 265);             /* electric blue */
+  --border: oklch(0.23 0.06 250);           /* navy border */
+  --input: oklch(0.23 0.06 250);
+  --ring: oklch(0.82 0.24 130);             /* lime ring */
 
   /* Chart */
-  --chart-1: oklch(0.48 0.27 265);
-  --chart-2: oklch(0.67 0.18 160);          /* emerald */
+  --chart-1: oklch(0.82 0.24 130);          /* lime */
+  --chart-2: oklch(0.72 0.13 210);          /* sky blue */
   --chart-3: oklch(0.75 0.17 82);           /* amber */
   --chart-4: oklch(0.57 0.22 295);          /* violet */
   --chart-5: oklch(0.58 0.22 25);           /* red */
 
   /* Sidebar */
-  --sidebar: oklch(0.18 0.02 265);
-  --sidebar-foreground: oklch(0.94 0.01 265);
-  --sidebar-primary: oklch(0.48 0.27 265);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.22 0.02 265);
-  --sidebar-accent-foreground: oklch(0.94 0.01 265);
-  --sidebar-border: oklch(0.27 0.03 265);
-  --sidebar-ring: oklch(0.48 0.27 265);
+  --sidebar: oklch(0.16 0.05 250);
+  --sidebar-foreground: oklch(0.95 0.005 265);
+  --sidebar-primary: oklch(0.82 0.24 130);
+  --sidebar-primary-foreground: oklch(0.11 0.05 250);
+  --sidebar-accent: oklch(0.20 0.05 250);
+  --sidebar-accent-foreground: oklch(0.95 0.005 265);
+  --sidebar-border: oklch(0.23 0.06 250);
+  --sidebar-ring: oklch(0.82 0.24 130);
 
   /* Typography */
   --font-display: "Calistoga", Georgia, serif;
@@ -95,11 +95,11 @@
   --font-mono: "JetBrains Mono", monospace;
 
   /* Shadows */
-  --shadow-accent: 0 4px 14px rgba(0, 82, 255, 0.25);
-  --shadow-accent-lg: 0 8px 28px rgba(0, 82, 255, 0.35);
+  --shadow-accent: 0 4px 14px rgba(132, 228, 0, 0.25);
+  --shadow-accent-lg: 0 8px 28px rgba(132, 228, 0, 0.35);
 
   /* Gradient */
-  --gradient-signature: linear-gradient(135deg, #0052FF, #4D7CFF);
+  --gradient-signature: linear-gradient(135deg, #84E400, #29B6F6);
 }
 
 @layer base {
@@ -155,9 +155,9 @@
 
 /* === Saas Brand Utilities === */
 
-/* Gradient text — Electric Blue signature */
+/* Gradient text — Ipê lime to sky blue */
 .gradient-text {
-  background: linear-gradient(to right, #0052FF, #4D7CFF);
+  background: linear-gradient(135deg, #84E400, #29B6F6);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -181,7 +181,7 @@
   position: absolute;
   top: -150px; right: -150px;
   width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(0,82,255,0.08), transparent 70%);
+  background: radial-gradient(circle, rgba(132,228,0,0.08), transparent 70%);
   filter: blur(60px);
   pointer-events: none;
   z-index: 0;

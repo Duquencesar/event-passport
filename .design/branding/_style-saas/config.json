@@ -1,0 +1,9 @@
+{
+  "version": "0.5.0",
+  "project_type": "brand",
+  "brand_mode": "quick",
+  "style_preset": "saas",
+  "system_config": {
+    "system_strategy": "generate"
+  }
+}

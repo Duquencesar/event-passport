@@ -234,7 +234,7 @@ function DateGroup({
 function EmptyState({ label }: { label: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#0052FF] to-[#4D7CFF] mx-auto mb-4 shadow-[0_4px_14px_rgba(0,82,255,0.3)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#0884c7] to-[#29B6F6] mx-auto mb-4 shadow-[0_4px_14px_rgba(41,182,246,0.3)]">
         <Calendar className="h-7 w-7 text-white" />
       </div>
       <p className="text-sm font-medium text-foreground">Nenhum evento encontrado</p>
@@ -361,8 +361,8 @@ function EventosPage() {
                 <span className="text-xs text-muted-foreground">eventos</span>
               </div>
               <div className="rounded-xl border border-border bg-card px-4 py-2.5 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-[#0052FF]" />
-                <span className="text-lg font-bold text-[#0052FF]">{totalCheckins}</span>
+                <TrendingUp className="w-4 h-4 text-[#84E400]" />
+                <span className="text-lg font-bold text-[#84E400]">{totalCheckins}</span>
                 <span className="text-xs text-muted-foreground">check-ins</span>
               </div>
             </div>
@@ -379,7 +379,7 @@ function EventosPage() {
             <span
               className={`h-2 w-2 rounded-full shrink-0 ${
                 syncing
-                  ? "bg-[#0052FF] animate-pulse"
+                  ? "bg-[#84E400] animate-pulse"
                   : syncStale
                     ? "bg-amber-400 animate-pulse"
                     : "bg-emerald-400"
@@ -431,20 +431,20 @@ function EventosPage() {
           <Tabs defaultValue={todayEvents.length > 0 ? "hoje" : upcomingEvents.length > 0 ? "proximos" : "passados"}>
             <TabsList className="glass rounded-xl p-1 h-auto gap-1 flex-wrap">
               {todayEvents.length > 0 && (
-                <TabsTrigger value="hoje" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10 gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#0052FF] inline-block" />
+                <TabsTrigger value="hoje" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10 gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#84E400] inline-block" />
                   Hoje ({todayEvents.length})
                 </TabsTrigger>
               )}
-              <TabsTrigger value="proximos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10 gap-2">
+              <TabsTrigger value="proximos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10 gap-2">
                 <CalendarClock className="w-3.5 h-3.5" />
                 Próximos ({upcomingEvents.length})
               </TabsTrigger>
-              <TabsTrigger value="passados" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10 gap-2">
+              <TabsTrigger value="passados" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10 gap-2">
                 <History className="w-3.5 h-3.5" />
                 Passados ({pastEvents.length})
               </TabsTrigger>
-              <TabsTrigger value="todos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#0052FF] data-[state=active]:bg-[#0052FF]/10">
+              <TabsTrigger value="todos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10">
                 Todos ({allEvents.length})
               </TabsTrigger>
             </TabsList>

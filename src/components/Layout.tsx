@@ -70,7 +70,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     to={to}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                       active
-                        ? "bg-primary/10 text-primary relative after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-[#0052FF]"
+                        ? "bg-primary/10 text-primary relative after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-[#84E400]"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                     }`}
                   >
@@ -125,7 +125,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         to={to}
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                           active
-                            ? "bg-primary/10 text-primary relative after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-[#0052FF]"
+                            ? "bg-primary/10 text-primary relative after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:rounded-full after:bg-[#84E400]"
                             : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                         }`}
                       >

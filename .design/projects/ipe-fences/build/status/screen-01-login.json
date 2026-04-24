@@ -1,0 +1,17 @@
+{
+  "screen": "01-login",
+  "name": "Login",
+  "status": "complete",
+  "date": "2026-04-22",
+  "files_modified": [
+    "src/routes/login.tsx",
+    "src/components/SectionBadge.tsx"
+  ],
+  "build": {
+    "command": "npx vite build",
+    "result": "success",
+    "duration_seconds": 22.73
+  },
+  "critique_fixes": ["I8", "C3"],
+  "notes": "Auth logic preserved. Visual-only refresh: split 55/45 layout, glass-strong card, animated hero graphic, accessibility attrs, forgot-password link. SectionBadge extended with optional style prop."
+}

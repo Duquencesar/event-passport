@@ -1,0 +1,19 @@
+{
+  "version": "0.5.0",
+  "project_type": "design",
+  "project_name": "Ipê Fences",
+  "project_slug": "ipe-fences",
+  "implementation_target": "shadcn",
+  "design_scope": "screens",
+  "codebase_type": "existing",
+  "repo_type": "single",
+  "app_path": "",
+  "style_preset": "saas",
+  "tech_stack": {
+    "framework": "TanStack Start",
+    "styling": "Tailwind CSS v4",
+    "components": "shadcn/ui (New York)",
+    "language": "TypeScript"
+  },
+  "created": "2026-04-17"
+}

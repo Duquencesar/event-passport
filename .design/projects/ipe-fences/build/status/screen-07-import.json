@@ -1,0 +1,1 @@
+{"screen": "07-import", "name": "Import", "status": "complete", "date": "2026-04-24", "files_modified": ["src/routes/import.tsx"], "build": {"command": "npx vite build", "result": "success"}, "notes": "Visual refresh: SectionBadge + gradient-text h1, Electric Blue active tabs, gradient icon bg on drop zone upload icon. All CSV parsing and Luma sync logic preserved."}
