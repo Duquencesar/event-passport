@@ -13,8 +13,9 @@ import {
   TrendingUp,
   CalendarClock,
   History,
+  Download,
 } from "lucide-react";
-import { getAllEventsWithStats } from "@/server/event.functions";
+import { getAllEventsWithStats, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
 import { getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 
 export const Route = createFileRoute("/eventos")({
@@ -38,6 +39,11 @@ type EventWithStats = {
   registration_count: number;
   checkin_count: number;
 };
+
+function csvCell(value: unknown) {
+  const text = value == null ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
 
 const APP_TIME_ZONE = "America/Sao_Paulo";
 
