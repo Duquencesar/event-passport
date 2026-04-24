@@ -7,7 +7,7 @@
  *   GET /public/v1/event/get-guests      — lista participantes (com checked_in_at)
  */
 
-import { hasFullAccessTag } from "@/lib/access-validation";
+import { classifyLumaTicket, isPrimaryAccessTag } from "@/lib/luma-ticket-classification";
 import { db as supabaseAdmin } from "./db";
 
 const LUMA_BASE = "https://api.lu.ma/public/v1";
@@ -101,10 +101,7 @@ export function toTimeKey(isoString: string): string {
 
 /** Mapeia ticket type do Luma para tag interna */
 export function ticketToTag(ticketName: string): string | null {
-  const lower = ticketName.toLowerCase();
-  if (lower.includes("architect") || lower.includes("arquiteto")) return "Arquiteto";
-  if (lower.includes("explorer")) return "Explorer";
-  return null;
+  return classifyLumaTicket(ticketName).tag;
 }
 
 /** Determina o período (manha/tarde/noite) a partir de um ISO timestamp */
