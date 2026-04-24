@@ -193,7 +193,7 @@ export const getTodayCheckinsForExport = createServerFn({ method: "POST" })
     return rows.map((row) => ({
       nome: row.people?.name || "",
       categoria: row.people?.tag || row.access_type,
-      acesso: row.access_type,
+      tipo_de_acesso: row.access_type,
       periodo: row.period,
       evento: row.event_name || "Check-in avulso",
       checkin_em: row.checked_in_at,
