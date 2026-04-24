@@ -21,6 +21,7 @@ import {
   Pencil,
   X,
   Check,
+  Download,
 } from "lucide-react";
 import {
   searchPeople,
@@ -34,7 +35,7 @@ import {
   getPersonRegistrations,
   checkDuplicateCheckin,
 } from "@/server/checkin.functions";
-import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents } from "@/server/event.functions";
+import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -53,6 +54,11 @@ type Person = { id: string; name: string; tag: string | null; registered?: boole
 type EventBase = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
 type EventWithStats = EventBase & { registration_count: number; checkin_count: number };
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null };
+
+function csvCell(value: unknown) {
+  const text = value == null ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
 
 type AccessWarning = {
   type: "ok" | "warning" | "danger";
