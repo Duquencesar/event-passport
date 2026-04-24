@@ -264,17 +264,18 @@ function CheckinPage() {
     }
   };
 
-  const handleExportEventCheckins = async () => {
-    if (!selectedEvent) return;
+  const handleExportEventCheckins = async (eventOverride?: EventBase) => {
+    const eventToExport = eventOverride || selectedEvent;
+    if (!eventToExport) return;
     try {
-      const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: selectedEvent.id } });
+      const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: eventToExport.id } });
       const header = ["nome", "categoria", "acesso", "periodo", "checkin_em", "origem"];
       const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
       const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${selectedEvent.date}-${selectedEvent.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
+      a.download = `${eventToExport.date}-${eventToExport.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
