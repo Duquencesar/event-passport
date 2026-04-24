@@ -907,15 +907,25 @@ function CheckinPage() {
               </div>
             )}
             {isEventMode && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExportEventCheckins()}
-                className="rounded-xl gap-2"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Baixar check-ins
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleExportEventCheckins(undefined, "csv")}
+                  className="rounded-xl gap-2"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  CSV
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleExportEventCheckins(undefined, "xlsx")}
+                  className="rounded-xl gap-2"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  XLSX
+                </Button>
+              </div>
             )}
             <div className="glass-strong rounded-2xl px-4 py-2.5 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-primary" />
