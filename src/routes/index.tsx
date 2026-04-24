@@ -567,6 +567,17 @@ function CheckinPage() {
                         )}
                       </div>
 
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event); }}
+                        className="w-full rounded-xl gap-2"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Exportar check-ins
+                      </Button>
+
                       {/* Progress bar */}
                       {event.registration_count > 0 && (
                         <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
@@ -654,6 +665,17 @@ function CheckinPage() {
                           <span className="text-muted-foreground font-medium">{pct}%</span>
                         )}
                       </div>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event); }}
+                        className="w-full rounded-xl gap-2"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Exportar check-ins
+                      </Button>
 
                       {event.registration_count > 0 && (
                         <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
