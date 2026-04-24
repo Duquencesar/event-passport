@@ -302,27 +302,21 @@ function CheckinPage() {
     }
   };
 
-  const handleExportEventCheckins = async (eventOverride?: EventBase) => {
+  const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
     const eventToExport = eventOverride || selectedEvent;
     if (!eventToExport) return;
     try {
       const rows = await getEventCheckedInParticipantsForExport({ data: { event_id: eventToExport.id } });
       const header = ["nome", "categoria", "acesso", "periodo", "checkin_em", "origem"];
-      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
-      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${eventToExport.date}-${eventToExport.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadRows(rows as ExportRow[], header, `${eventToExport.date}-${slugify(eventToExport.name)}-checkins`, format);
+      toast.success(`${format.toUpperCase()} gerado`, { description: `${rows.length} check-ins exportados` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao exportar participantes";
       toast.error("Exportação não concluída", { description: msg });
     }
   };
 
-  const handleExportTodayCheckins = async () => {
+  const handleExportTodayCheckins = async (format: ExportFormat = "csv") => {
     try {
       const rows = await getTodayCheckinsForExport({
         data: {
@@ -331,15 +325,9 @@ function CheckinPage() {
         },
       });
       const header = ["nome", "categoria", "acesso", "periodo", "evento", "checkin_em", "origem"];
-      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
-      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${getCurrentBrasiliaDateKeySync()}-checkins${exportPeriod !== "Todos" ? `-${exportPeriod.toLowerCase()}` : ""}${exportAccessType !== "Todos" ? `-${exportAccessType.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}` : ""}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("CSV gerado", { description: `${rows.length} check-ins exportados` });
+      const filename = `${getCurrentBrasiliaDateKeySync()}-checkins${exportPeriod !== "Todos" ? `-${slugify(exportPeriod)}` : ""}${exportAccessType !== "Todos" ? `-${slugify(exportAccessType)}` : ""}`;
+      downloadRows(rows as ExportRow[], header, filename, format);
+      toast.success(`${format.toUpperCase()} gerado`, { description: `${rows.length} check-ins exportados` });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao exportar check-ins";
       toast.error("Exportação não concluída", { description: msg });
