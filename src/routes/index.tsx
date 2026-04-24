@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatBrasiliaTime, getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 import {
   Search,
@@ -36,7 +37,7 @@ import {
   getPersonRegistrations,
   checkDuplicateCheckin,
 } from "@/server/checkin.functions";
-import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
+import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents, getEventCheckedInParticipantsForExport, getEventParticipants } from "@/server/event.functions";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -56,6 +57,7 @@ type Person = { id: string; name: string; tag: string | null; registered?: boole
 type EventBase = { id: string; name: string; date: string; time: string | null; organizer: string | null; location: string | null };
 type EventWithStats = EventBase & { registration_count: number; checkin_count: number };
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null };
+type EventParticipant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
 
 function csvCell(value: unknown) {
   const text = value == null ? "" : String(value);
@@ -217,6 +219,7 @@ function CheckinPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<EventWithStats[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
   const [eventCheckins, setEventCheckins] = useState<any[]>([]);
+  const [eventParticipants, setEventParticipants] = useState<EventParticipant[]>([]);
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
   const [eventRegCount, setEventRegCount] = useState(0);
   const [eventsLoaded, setEventsLoaded] = useState(false);
@@ -241,6 +244,7 @@ function CheckinPage() {
   const [syncing, setSyncing] = useState(false);
   const [exportPeriod, setExportPeriod] = useState("Todos");
   const [exportAccessType, setExportAccessType] = useState("Todos");
+  const [checkingInFromListId, setCheckingInFromListId] = useState<string | null>(null);
   const [, forceTick] = useState(0);
 
   const refreshLastSync = useCallback(async () => {
@@ -301,6 +305,19 @@ function CheckinPage() {
       setSyncing(false);
     }
   };
+
+  const refreshSelectedEventData = useCallback(async (event: EventBase) => {
+    const [checkins, checkinCount, regCount, participants] = await Promise.all([
+      getEventCheckins({ data: { event_id: event.id } }),
+      getEventCheckinCount({ data: { event_id: event.id } }),
+      getEventRegistrationCount({ data: { event_id: event.id } }),
+      getEventParticipants({ data: { event_id: event.id, event_date: event.date } }),
+    ]);
+    setEventCheckins(checkins);
+    setEventCheckinCount(checkinCount);
+    setEventRegCount(regCount);
+    setEventParticipants(participants as EventParticipant[]);
+  }, []);
 
   const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
     const eventToExport = eventOverride || selectedEvent;
@@ -370,14 +387,7 @@ function CheckinPage() {
     setSelected(null);
     setSuccess(false);
     setAccessWarning(null);
-    const [checkins, checkinCount, regCount] = await Promise.all([
-      getEventCheckins({ data: { event_id: event.id } }),
-      getEventCheckinCount({ data: { event_id: event.id } }),
-      getEventRegistrationCount({ data: { event_id: event.id } }),
-    ]);
-    setEventCheckins(checkins);
-    setEventCheckinCount(checkinCount);
-    setEventRegCount(regCount);
+    await refreshSelectedEventData(event);
   };
 
   const handleSearch = async (value: string) => {
@@ -456,12 +466,7 @@ function CheckinPage() {
       }, 2000);
 
       if (selectedEvent) {
-        const [checkins, count] = await Promise.all([
-          getEventCheckins({ data: { event_id: selectedEvent.id } }),
-          getEventCheckinCount({ data: { event_id: selectedEvent.id } }),
-        ]);
-        setEventCheckins(checkins);
-        setEventCheckinCount(count);
+        await refreshSelectedEventData(selectedEvent);
       }
       const [allCheckins, allCount] = await Promise.all([getTodayCheckins(), getTodayCount()]);
       setTodayCheckins(allCheckins);
@@ -472,6 +477,32 @@ function CheckinPage() {
       toast.error("Falha no check-in", { description: msg });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleParticipantCheckin = async (participant: EventParticipant) => {
+    if (!selectedEvent) return;
+    setCheckingInFromListId(participant.id);
+    try {
+      await createCheckin({
+        data: {
+          person_id: participant.id,
+          period,
+          access_type: participant.access_type,
+          event_name: selectedEvent.name,
+          event_id: selectedEvent.id,
+        },
+      });
+      toast.success("Check-in registrado", { description: participant.name });
+      await refreshSelectedEventData(selectedEvent);
+      const [allCheckins, allCount] = await Promise.all([getTodayCheckins(), getTodayCount()]);
+      setTodayCheckins(allCheckins);
+      setTodayCount(allCount);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao registrar check-in";
+      toast.error("Falha no check-in", { description: msg });
+    } finally {
+      setCheckingInFromListId(null);
     }
   };
 
@@ -556,51 +587,6 @@ function CheckinPage() {
             </Button>
           </div>
 
-          <div className="glass-subtle rounded-2xl px-5 py-4 space-y-4">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">Exportação unificada do dia</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV ou XLSX</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleExportTodayCheckins("csv")} className="rounded-xl gap-2">
-                  <Download className="w-3.5 h-3.5" />
-                  CSV
-                </Button>
-                <Button size="sm" onClick={() => handleExportTodayCheckins("xlsx")} className="rounded-xl gap-2">
-                  <Download className="w-3.5 h-3.5" />
-                  XLSX
-                </Button>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Período</span>
-              {(["Todos", "Manhã", "Tarde"] as const).map((p) => (
-                <Button
-                  key={p}
-                  variant={exportPeriod === p ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setExportPeriod(p)}
-                  className="rounded-xl h-8 px-3 text-xs"
-                >
-                  {p}
-                </Button>
-              ))}
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest sm:ml-3">Acesso</span>
-              {exportAccessTypes.map((t) => (
-                <Button
-                  key={t}
-                  variant={exportAccessType === t ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setExportAccessType(t)}
-                  className="rounded-xl h-8 px-3 text-xs"
-                >
-                  {t}
-                </Button>
-              ))}
-            </div>
-          </div>
-
           {events.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
@@ -661,28 +647,6 @@ function CheckinPage() {
                         {event.registration_count > 0 && (
                           <span className="text-muted-foreground font-medium">{pct}%</span>
                         )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          CSV
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          XLSX
-                        </Button>
                       </div>
 
                       {/* Progress bar */}
@@ -773,28 +737,6 @@ function CheckinPage() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "csv"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          CSV
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); handleExportEventCheckins(event, "xlsx"); }}
-                          className="w-full rounded-xl gap-2"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          XLSX
-                        </Button>
-                      </div>
-
                       {event.registration_count > 0 && (
                         <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
                           <div
@@ -857,6 +799,7 @@ function CheckinPage() {
 
   const isEventMode = selectedEvent && selectedEvent.id !== "";
   const currentCheckins = isEventMode ? eventCheckins : todayCheckins;
+  const checkedInPersonIds = new Set(eventCheckins.map((c: any) => c.person_id));
 
   return (
     <Layout>
@@ -907,25 +850,18 @@ function CheckinPage() {
               </div>
             )}
             {isEventMode && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExportEventCheckins(undefined, "csv")}
-                  className="rounded-xl gap-2"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  CSV
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleExportEventCheckins(undefined, "xlsx")}
-                  className="rounded-xl gap-2"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  XLSX
-                </Button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-xl gap-2">
+                    <Download className="w-3.5 h-3.5" />
+                    Baixar check-ins
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem onClick={() => handleExportEventCheckins(undefined, "csv")}>CSV</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExportEventCheckins(undefined, "xlsx")}>XLSX</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <div className="glass-strong rounded-2xl px-4 py-2.5 flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-primary" />
@@ -1129,6 +1065,51 @@ function CheckinPage() {
             </div>
           )}
         </div>
+
+        {isEventMode && (
+          <div>
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+                Inscritos e acessos válidos
+              </h3>
+              <Badge variant="outline" className="rounded-lg border-border/40">
+                {eventParticipants.length} pessoas
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {eventParticipants.length === 0 && (
+                <div className="glass-subtle rounded-2xl py-8 text-center">
+                  <p className="text-muted-foreground text-sm">Nenhum inscrito encontrado para este evento</p>
+                </div>
+              )}
+              {eventParticipants.map((participant) => {
+                const alreadyCheckedIn = checkedInPersonIds.has(participant.id);
+                return (
+                  <div key={participant.id} className="glass-subtle rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium text-sm text-foreground truncate">{participant.name}</span>
+                        {participant.tag && <Badge variant="secondary" className="text-xs rounded-lg">{participant.tag}</Badge>}
+                        {alreadyCheckedIn && <Badge className="bg-primary/12 text-primary border-0 rounded-lg text-xs">Check-in feito</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">{participant.ticket_type}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant={alreadyCheckedIn ? "outline" : "default"}
+                      disabled={alreadyCheckedIn || checkingInFromListId === participant.id}
+                      onClick={() => handleParticipantCheckin(participant)}
+                      className="rounded-xl gap-2 shrink-0"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      {checkingInFromListId === participant.id ? "Registrando..." : alreadyCheckedIn ? "Feito" : "Check-in"}
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Check-ins feed with edit/delete */}
         <div>
