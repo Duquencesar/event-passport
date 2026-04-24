@@ -203,10 +203,12 @@ function DateGroup({
   date,
   events,
   today,
+  onExport,
 }: {
   date: string;
   events: EventWithStats[];
   today: string;
+  onExport: (event: EventWithStats) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -216,7 +218,7 @@ function DateGroup({
       </h3>
       <div className="space-y-3">
         {events.map((event) => (
-          <EventCard key={event.id} event={event} today={today} />
+          <EventCard key={event.id} event={event} today={today} onExport={onExport} />
         ))}
       </div>
     </div>
