@@ -110,6 +110,24 @@ export const createCheckin = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const today = await getBrasiliaTodayKey();
 
+    let duplicateQuery = supabaseAdmin
+      .from("checkins")
+      .select("id")
+      .eq("person_id", data.person_id)
+      .eq("date", today)
+      .ilike("period", data.period)
+      .limit(1);
+
+    duplicateQuery = data.event_id
+      ? duplicateQuery.eq("event_id", data.event_id)
+      : duplicateQuery.is("event_id", null);
+
+    const { data: duplicate, error: duplicateError } = await duplicateQuery;
+    if (duplicateError) throw new Error(duplicateError.message);
+    if (duplicate?.[0]) {
+      throw new Error("Check-in já registrado para este email neste evento e período.");
+    }
+
     const { data: checkin, error } = await supabaseAdmin
       .from("checkins")
       .insert({
@@ -122,7 +140,12 @@ export const createCheckin = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.code === "23505") {
+        throw new Error("Check-in já registrado para este email neste evento e período.");
+      }
+      throw new Error(error.message);
+    }
     return checkin;
   });
 
