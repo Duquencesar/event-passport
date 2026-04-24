@@ -300,6 +300,15 @@ export const createEvent = createServerFn({ method: "POST" })
     (input: { name: string; date: string; time?: string; organizer?: string; location?: string; url?: string }) => input,
   )
   .handler(async ({ data }) => {
+    const { data: existingEvent, error: lookupError } = await supabaseAdmin
+      .from("events")
+      .select("id")
+      .eq("name", data.name)
+      .eq("date", data.date)
+      .maybeSingle();
+    if (lookupError) throw new Error(lookupError.message);
+    if (existingEvent) return existingEvent;
+
     const { data: event, error } = await supabaseAdmin
       .from("events")
       .insert({
