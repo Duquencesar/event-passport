@@ -40,6 +40,7 @@ import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCoun
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -59,6 +60,40 @@ type Registration = { id: string; event_name: string; ticket_type: string; day_p
 function csvCell(value: unknown) {
   const text = value == null ? "" : String(value);
   return `"${text.replace(/"/g, '""')}"`;
+}
+
+type ExportFormat = "csv" | "xlsx";
+type ExportRow = Record<string, unknown>;
+
+function slugify(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+}
+
+function downloadRows(rows: ExportRow[], header: string[], filename: string, format: ExportFormat) {
+  if (format === "csv") {
+    const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key])).join(","))].join("\n");
+    const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${filename}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(rows, { header });
+  worksheet["!cols"] = header.map((key) => ({ wch: Math.max(14, key.length + 4) }));
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Check-ins");
+  const data = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([data], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${filename}.xlsx`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 type AccessWarning = {
