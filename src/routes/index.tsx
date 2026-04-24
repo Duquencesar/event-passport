@@ -306,6 +306,19 @@ function CheckinPage() {
     }
   };
 
+  const refreshSelectedEventData = useCallback(async (event: EventBase) => {
+    const [checkins, checkinCount, regCount, participants] = await Promise.all([
+      getEventCheckins({ data: { event_id: event.id } }),
+      getEventCheckinCount({ data: { event_id: event.id } }),
+      getEventRegistrationCount({ data: { event_id: event.id } }),
+      getEventParticipants({ data: { event_id: event.id, event_date: event.date } }),
+    ]);
+    setEventCheckins(checkins);
+    setEventCheckinCount(checkinCount);
+    setEventRegCount(regCount);
+    setEventParticipants(participants as EventParticipant[]);
+  }, []);
+
   const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
     const eventToExport = eventOverride || selectedEvent;
     if (!eventToExport) return;
