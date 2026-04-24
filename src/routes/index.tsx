@@ -29,6 +29,7 @@ import {
   createCheckin,
   getEventCheckins,
   getTodayCheckins,
+  getTodayCheckinsForExport,
   getTodayCount,
   deleteCheckin,
   updateCheckin,
@@ -203,6 +204,8 @@ function CheckinPage() {
   // Luma sync status
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [exportPeriod, setExportPeriod] = useState("Todos");
+  const [exportAccessType, setExportAccessType] = useState("Todos");
   const [, forceTick] = useState(0);
 
   const refreshLastSync = useCallback(async () => {
@@ -280,6 +283,30 @@ function CheckinPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao exportar participantes";
+      toast.error("Exportação não concluída", { description: msg });
+    }
+  };
+
+  const handleExportTodayCheckins = async () => {
+    try {
+      const rows = await getTodayCheckinsForExport({
+        data: {
+          period: exportPeriod === "Todos" ? undefined : exportPeriod,
+          access_type: exportAccessType === "Todos" ? undefined : exportAccessType,
+        },
+      });
+      const header = ["nome", "categoria", "acesso", "periodo", "evento", "checkin_em", "origem"];
+      const csv = [header.join(","), ...rows.map((row) => header.map((key) => csvCell(row[key as keyof typeof row])).join(","))].join("\n");
+      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${getCurrentBrasiliaDateKeySync()}-checkins${exportPeriod !== "Todos" ? `-${exportPeriod.toLowerCase()}` : ""}${exportAccessType !== "Todos" ? `-${exportAccessType.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}` : ""}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("CSV gerado", { description: `${rows.length} check-ins exportados` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao exportar check-ins";
       toast.error("Exportação não concluída", { description: msg });
     }
   };
@@ -468,6 +495,7 @@ function CheckinPage() {
   };
 
   const accessTypes = ["IP Village", "Day Pass", "Explorers", "Workshop/Café"];
+  const exportAccessTypes = ["Todos", ...accessTypes];
 
   // Event selection screen
   if (!selectedEvent && eventsLoaded) {
@@ -503,6 +531,45 @@ function CheckinPage() {
               <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
               {syncing ? "Sincronizando..." : "Sincronizar agora"}
             </Button>
+          </div>
+
+          <div className="glass-subtle rounded-2xl px-5 py-4 space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Exportação unificada do dia</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Baixe todos os check-ins de hoje em CSV</p>
+              </div>
+              <Button size="sm" onClick={handleExportTodayCheckins} className="rounded-xl gap-2">
+                <Download className="w-3.5 h-3.5" />
+                Baixar CSV
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Período</span>
+              {(["Todos", "Manhã", "Tarde"] as const).map((p) => (
+                <Button
+                  key={p}
+                  variant={exportPeriod === p ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportPeriod(p)}
+                  className="rounded-xl h-8 px-3 text-xs"
+                >
+                  {p}
+                </Button>
+              ))}
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest sm:ml-3">Acesso</span>
+              {exportAccessTypes.map((t) => (
+                <Button
+                  key={t}
+                  variant={exportAccessType === t ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setExportAccessType(t)}
+                  className="rounded-xl h-8 px-3 text-xs"
+                >
+                  {t}
+                </Button>
+              ))}
+            </div>
           </div>
 
           {events.length > 0 ? (
