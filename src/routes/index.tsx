@@ -847,6 +847,9 @@ function CheckinPage() {
   const isEventMode = selectedEvent && selectedEvent.id !== "";
   const currentCheckins = isEventMode ? eventCheckins : todayCheckins;
   const checkedInPersonIds = new Set(eventCheckins.map((c: any) => c.person_id));
+  const availableParticipants = eventParticipants.filter((participant) => !checkedInPersonIds.has(participant.id));
+  const selectedAvailableCount = availableParticipants.filter((participant) => selectedParticipantIds.has(participant.id)).length;
+  const allAvailableSelected = availableParticipants.length > 0 && selectedAvailableCount === availableParticipants.length;
 
   return (
     <Layout>
