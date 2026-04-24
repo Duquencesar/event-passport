@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatBrasiliaTime, getCurrentBrasiliaDateKeySync } from "@/lib/brasilia-time";
 import {
@@ -245,6 +246,8 @@ function CheckinPage() {
   const [exportPeriod, setExportPeriod] = useState("Todos");
   const [exportAccessType, setExportAccessType] = useState("Todos");
   const [checkingInFromListId, setCheckingInFromListId] = useState<string | null>(null);
+  const [selectedParticipantIds, setSelectedParticipantIds] = useState<Set<string>>(new Set());
+  const [bulkCheckingIn, setBulkCheckingIn] = useState(false);
   const [, forceTick] = useState(0);
 
   const refreshLastSync = useCallback(async () => {
@@ -317,6 +320,10 @@ function CheckinPage() {
     setEventCheckinCount(checkinCount);
     setEventRegCount(regCount);
     setEventParticipants(participants as EventParticipant[]);
+    setSelectedParticipantIds((current) => {
+      const available = new Set((participants as EventParticipant[]).map((p) => p.id));
+      return new Set([...current].filter((id) => available.has(id)));
+    });
   }, []);
 
   const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
