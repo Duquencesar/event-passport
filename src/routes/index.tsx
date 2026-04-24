@@ -1122,9 +1122,33 @@ function CheckinPage() {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
                 Inscritos e acessos válidos
               </h3>
-              <Badge variant="outline" className="rounded-lg border-border/40">
-                {eventParticipants.length} pessoas
-              </Badge>
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <Badge variant="outline" className="rounded-lg border-border/40">
+                  {eventParticipants.length} pessoas
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={availableParticipants.length === 0 || bulkCheckingIn}
+                  onClick={() => {
+                    setSelectedParticipantIds(
+                      allAvailableSelected ? new Set() : new Set(availableParticipants.map((participant) => participant.id)),
+                    );
+                  }}
+                  className="rounded-xl h-8 text-xs"
+                >
+                  {allAvailableSelected ? "Limpar seleção" : "Selecionar todos"}
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={selectedAvailableCount === 0 || bulkCheckingIn}
+                  onClick={handleBulkParticipantCheckin}
+                  className="rounded-xl h-8 gap-2 text-xs"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  {bulkCheckingIn ? "Registrando..." : `Check-in selecionados (${selectedAvailableCount})`}
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               {eventParticipants.length === 0 && (
@@ -1136,7 +1160,22 @@ function CheckinPage() {
                 const alreadyCheckedIn = checkedInPersonIds.has(participant.id);
                 return (
                   <div key={participant.id} className="glass-subtle rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Checkbox
+                        checked={selectedParticipantIds.has(participant.id)}
+                        disabled={alreadyCheckedIn || bulkCheckingIn}
+                        onCheckedChange={(checked) => {
+                          setSelectedParticipantIds((current) => {
+                            const next = new Set(current);
+                            if (checked) next.add(participant.id);
+                            else next.delete(participant.id);
+                            return next;
+                          });
+                        }}
+                        aria-label={`Selecionar ${participant.name}`}
+                        className="shrink-0"
+                      />
+                      <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm text-foreground truncate">{participant.name}</span>
                         {participant.tag && <Badge variant="secondary" className="text-xs rounded-lg">{participant.tag}</Badge>}
@@ -1147,6 +1186,7 @@ function CheckinPage() {
                         <Badge variant="outline" className="rounded-lg border-primary/35 bg-primary/10 text-primary text-xs font-semibold">
                           Tipo de acesso: {participant.access_type}
                         </Badge>
+                      </div>
                       </div>
                     </div>
                     <Button
