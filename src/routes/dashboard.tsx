@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCurrentBrasiliaDateKeySync, shiftBrasiliaDateKeyByDays } from "@/lib/brasilia-time";
-import { Users, HardHat, TrendingUp, RefreshCw, Download, CalendarDays, Activity } from "lucide-react";
+import { Users, HardHat, RefreshCw, Download, CalendarDays, Activity } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -29,14 +29,10 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import {
   getDashboardStats,
   getDailyAttendance,
-  getAccessTypeBreakdown,
   getTopAttendees,
   getCheckinsForExport,
   getEventsForDashboard,
@@ -45,14 +41,13 @@ import { SectionBadge } from "@/components/SectionBadge";
 import { StatCard } from "@/components/StatCard";
 
 const loadDashboard = async (from: string, to: string, event_id?: string) => {
-  const [stats, daily, breakdown, topPeople, events] = await Promise.all([
+  const [stats, daily, topPeople, events] = await Promise.all([
     getDashboardStats({ data: { from, to, event_id } }),
     getDailyAttendance({ data: { from, to, event_id } }),
-    getAccessTypeBreakdown({ data: { from, to, event_id } }),
     getTopAttendees({ data: { from, to, event_id } }),
     getEventsForDashboard({ data: { from, to } }),
   ]);
-  return { stats, daily, breakdown, topPeople, events };
+  return { stats, daily, topPeople, events };
 };
 
 export const Route = createFileRoute("/dashboard")({
@@ -74,13 +69,6 @@ export const Route = createFileRoute("/dashboard")({
   },
   component: DashboardPage,
 });
-
-const PIE_COLORS = [
-  "oklch(0.72 0.19 135)",
-  "oklch(0.68 0.12 240)",
-  "oklch(0.65 0.14 180)",
-  "oklch(0.74 0.16 85)",
-];
 
 const CHART_TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)", fontFamily: "monospace" };
 
@@ -280,9 +268,8 @@ function DashboardPage() {
           />
         </div>
 
-        {/* Charts — Presença Diária + Tipo de Acesso */}
-        <div className="grid grid-cols-[3fr_2fr] gap-6">
-          {/* Presença Diária */}
+        {/* Presença Diária */}
+        <div>
           <div className="rounded-xl border border-border bg-card p-6">
             <SectionBadge label="PRESENÇA DIÁRIA" pulse={false} className="mb-4" />
             {current.daily.length > 0 ? (
@@ -313,45 +300,6 @@ function DashboardPage() {
               </p>
             )}
           </div>
-
-          {/* Tipo de Acesso */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <SectionBadge label="TIPO DE ACESSO" pulse={false} className="mb-4" />
-            {current.breakdown.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie
-                    data={current.breakdown}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={85}
-                    dataKey="value"
-                    label={({ name, percent }: { name: string; percent: number }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
-                  >
-                    {current.breakdown.map((_: { name: string; value: number }, i: number) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: "oklch(0.99 0.003 240)",
-                      border: "1px solid oklch(0.88 0.01 245)",
-                      borderRadius: 12,
-                      color: "oklch(0.18 0.02 260)",
-                      boxShadow: "0 4px 16px oklch(0.5 0.02 250 / 8%)",
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-muted-foreground text-sm text-center py-16">
-                Sem dados
-              </p>
-            )}
-          </div>
         </div>
 
         {/* Top attendees */}
@@ -368,7 +316,7 @@ function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.topPeople.map((p: { name: string; email: string; tag: string | null; count: number }, i: number) => (
+                {current.topPeople.map((p: { name: string; email?: string; tag: string | null; count: number }, i: number) => (
                   <TableRow
                     key={p.email || `${p.name}-${i}`}
                     className="hover:bg-[#84E400]/5 transition-colors duration-150"
