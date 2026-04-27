@@ -179,75 +179,103 @@ export const getEventCheckinCount = createServerFn({ method: "POST" })
 export const getEventParticipants = createServerFn({ method: "POST" })
   .inputValidator((input: { event_id: string; event_date: string }) => input)
   .handler(async ({ data }) => {
-    type Participant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
-    type RegisteredRow = { ticket_type: string; people: { id: string; name: string; tag: string | null } | null };
-    type AccessPersonRow = { id: string; name: string; tag: string | null };
-    type TimedRegistrationRow = RegisteredRow & { day_pass_date: string | null; week_pass_start_date: string | null };
-    const participants = new Map<string, Participant>();
-    const earliestWeeklyStart = addDaysToDateKey(data.event_date, -6);
+    return computeEventParticipants(data.event_id, data.event_date);
+  });
 
-    const registered = await fetchAllRows<RegisteredRow>((from, to) =>
-      supabaseAdmin
-        .from("registrations")
-        .select("ticket_type, people!inner(id, name, tag)")
-        .eq("event_id", data.event_id)
-        .range(from, to),
-    );
+type EventParticipant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
 
-    for (const row of registered) {
-      const person = row.people;
-      if (!person) continue;
-      participants.set(person.id, {
-        id: person.id,
-        name: person.name,
-        tag: person.tag,
-        ticket_type: row.ticket_type,
-        access_type: hasFullAccessTag(person.tag) ? (person.tag === "Explorer" ? "Explorers" : "IP Village") : "Workshop/Café",
-      });
-    }
+async function computeEventParticipants(eventId: string, eventDate: string): Promise<EventParticipant[]> {
+  type RegisteredRow = { ticket_type: string; people: { id: string; name: string; tag: string | null } | null };
+  type AccessPersonRow = { id: string; name: string; tag: string | null };
+  type TimedRegistrationRow = RegisteredRow & { day_pass_date: string | null; week_pass_start_date: string | null };
+  const participants = new Map<string, EventParticipant>();
+  const earliestWeeklyStart = addDaysToDateKey(eventDate, -6);
 
-    const accessPeople = await fetchAllRows<AccessPersonRow>((from, to) =>
-      supabaseAdmin
-        .from("people")
-        .select("id, name, tag")
-        .or("tag.eq.Arquiteto,tag.eq.Explorer")
-        .range(from, to),
-    );
+  const registered = await fetchAllRows<RegisteredRow>((from, to) =>
+    supabaseAdmin
+      .from("registrations")
+      .select("ticket_type, people!inner(id, name, tag)")
+      .eq("event_id", eventId)
+      .range(from, to),
+  );
 
-    for (const person of accessPeople) {
-      if (participants.has(person.id)) continue;
-      participants.set(person.id, {
-        id: person.id,
-        name: person.name,
-        tag: person.tag,
-        ticket_type: person.tag || "Acesso válido",
-        access_type: person.tag === "Explorer" ? "Explorers" : "IP Village",
-      });
-    }
+  for (const row of registered) {
+    const person = row.people;
+    if (!person) continue;
+    participants.set(person.id, {
+      id: person.id,
+      name: person.name,
+      tag: person.tag,
+      ticket_type: row.ticket_type,
+      access_type: hasFullAccessTag(person.tag) ? (person.tag === "Explorer" ? "Explorers" : "IP Village") : "Workshop/Café",
+    });
+  }
 
-    const timedRegistrations = await fetchAllRows<TimedRegistrationRow>((from, to) =>
-      supabaseAdmin
-        .from("registrations")
-        .select("ticket_type, day_pass_date, week_pass_start_date, people!inner(id, name, tag)")
-        .or(`day_pass_date.eq.${data.event_date},and(week_pass_start_date.gte.${earliestWeeklyStart},week_pass_start_date.lte.${data.event_date})`)
-        .range(from, to),
-    );
+  const accessPeople = await fetchAllRows<AccessPersonRow>((from, to) =>
+    supabaseAdmin
+      .from("people")
+      .select("id, name, tag")
+      .or("tag.eq.Arquiteto,tag.eq.Explorer")
+      .range(from, to),
+  );
 
-    for (const row of timedRegistrations) {
-      const person = row.people;
-      if (!person || participants.has(person.id)) continue;
-      const hasValidTimedAccess = isDayPassValidToday(row, data.event_date) || isWeeklyPassValidToday(row, data.event_date);
-      if (!hasValidTimedAccess) continue;
-      participants.set(person.id, {
-        id: person.id,
-        name: person.name,
-        tag: person.tag,
-        ticket_type: row.ticket_type,
-        access_type: isDayPassValidToday(row, data.event_date) ? "Day Pass" : "IP Village",
-      });
-    }
+  for (const person of accessPeople) {
+    if (participants.has(person.id)) continue;
+    participants.set(person.id, {
+      id: person.id,
+      name: person.name,
+      tag: person.tag,
+      ticket_type: person.tag || "Acesso válido",
+      access_type: person.tag === "Explorer" ? "Explorers" : "IP Village",
+    });
+  }
 
-    return Array.from(participants.values()).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  const timedRegistrations = await fetchAllRows<TimedRegistrationRow>((from, to) =>
+    supabaseAdmin
+      .from("registrations")
+      .select("ticket_type, day_pass_date, week_pass_start_date, people!inner(id, name, tag)")
+      .or(`day_pass_date.eq.${eventDate},and(week_pass_start_date.gte.${earliestWeeklyStart},week_pass_start_date.lte.${eventDate})`)
+      .range(from, to),
+  );
+
+  for (const row of timedRegistrations) {
+    const person = row.people;
+    if (!person || participants.has(person.id)) continue;
+    const hasValidTimedAccess = isDayPassValidToday(row, eventDate) || isWeeklyPassValidToday(row, eventDate);
+    if (!hasValidTimedAccess) continue;
+    participants.set(person.id, {
+      id: person.id,
+      name: person.name,
+      tag: person.tag,
+      ticket_type: row.ticket_type,
+      access_type: isDayPassValidToday(row, eventDate) ? "Day Pass" : "IP Village",
+    });
+  }
+
+  return Array.from(participants.values()).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+}
+
+export const getEventParticipantsCount = createServerFn({ method: "POST" })
+  .inputValidator((input: { event_id: string; event_date: string }) => input)
+  .handler(async ({ data }) => {
+    const all = await computeEventParticipants(data.event_id, data.event_date);
+    return { total: all.length };
+  });
+
+export const getEventParticipantsPage = createServerFn({ method: "POST" })
+  .inputValidator((input: { event_id: string; event_date: string; offset: number; limit: number }) => input)
+  .handler(async ({ data }) => {
+    const all = await computeEventParticipants(data.event_id, data.event_date);
+    const offset = Math.max(0, data.offset | 0);
+    const limit = Math.max(1, Math.min(200, data.limit | 0));
+    const items = all.slice(offset, offset + limit);
+    return {
+      items,
+      total: all.length,
+      offset,
+      limit,
+      has_more: offset + items.length < all.length,
+    };
   });
 
 export const getEventCheckedInParticipantsForExport = createServerFn({ method: "POST" })
