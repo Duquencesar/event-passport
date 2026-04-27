@@ -372,6 +372,10 @@ function CheckinPage() {
     });
   }, []);
 
+  // Auto-refresh ref (declared before loadMore so it can read current event)
+  const selectedEventRef = useRef<EventBase | null>(null);
+  selectedEventRef.current = selectedEvent;
+
   const loadMoreParticipants = useCallback(async () => {
     const event = selectedEventRef.current;
     if (!event || !event.id) return;
@@ -436,9 +440,6 @@ function CheckinPage() {
   };
 
   // Auto-refresh every 30 seconds
-  const selectedEventRef = useRef(selectedEvent);
-  selectedEventRef.current = selectedEvent;
-
   useEffect(() => {
     const interval = setInterval(async () => {
       const ev = selectedEventRef.current;
