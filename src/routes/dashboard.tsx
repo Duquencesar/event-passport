@@ -316,7 +316,7 @@ function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {current.topPeople.map((p: { name: string; email: string; tag: string | null; count: number }, i: number) => (
+                {current.topPeople.map((p: { name: string; email?: string; tag: string | null; count: number }, i: number) => (
                   <TableRow
                     key={p.email || `${p.name}-${i}`}
                     className="hover:bg-[#84E400]/5 transition-colors duration-150"
