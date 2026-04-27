@@ -39,7 +39,15 @@ import {
   getPersonRegistrations,
   checkDuplicateCheckin,
 } from "@/server/checkin.functions";
-import { getTodayEventsWithStats, getEventCheckinCount, getEventRegistrationCount, getNextUpcomingEvents, getEventCheckedInParticipantsForExport, getEventParticipants } from "@/server/event.functions";
+import {
+  getTodayEventsWithStats,
+  getEventCheckinCount,
+  getEventRegistrationCount,
+  getNextUpcomingEvents,
+  getEventCheckedInParticipantsForExport,
+  getEventParticipantsPage,
+} from "@/server/event.functions";
+import { ParticipantsVirtualList } from "@/components/ParticipantsVirtualList";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
@@ -222,6 +230,10 @@ function CheckinPage() {
   const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
   const [eventCheckins, setEventCheckins] = useState<any[]>([]);
   const [eventParticipants, setEventParticipants] = useState<EventParticipant[]>([]);
+  const [participantsTotal, setParticipantsTotal] = useState(0);
+  const [participantsHasMore, setParticipantsHasMore] = useState(false);
+  const [participantsLoadingMore, setParticipantsLoadingMore] = useState(false);
+  const PARTICIPANTS_PAGE_SIZE = 50;
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
   const [eventRegCount, setEventRegCount] = useState(0);
   const [eventsLoaded, setEventsLoaded] = useState(false);
@@ -335,21 +347,65 @@ function CheckinPage() {
   };
 
   const refreshSelectedEventData = useCallback(async (event: EventBase) => {
-    const [checkins, checkinCount, regCount, participants] = await Promise.all([
+    const [checkins, checkinCount, regCount, firstPage] = await Promise.all([
       getEventCheckins({ data: { event_id: event.id } }),
       getEventCheckinCount({ data: { event_id: event.id } }),
       getEventRegistrationCount({ data: { event_id: event.id } }),
-      getEventParticipants({ data: { event_id: event.id, event_date: event.date } }),
+      getEventParticipantsPage({
+        data: {
+          event_id: event.id,
+          event_date: event.date,
+          offset: 0,
+          limit: PARTICIPANTS_PAGE_SIZE,
+        },
+      }),
     ]);
     setEventCheckins(checkins);
     setEventCheckinCount(checkinCount);
     setEventRegCount(regCount);
-    setEventParticipants(participants as EventParticipant[]);
+    setEventParticipants(firstPage.items as EventParticipant[]);
+    setParticipantsTotal(firstPage.total);
+    setParticipantsHasMore(firstPage.has_more);
     setSelectedParticipantIds((current) => {
-      const available = new Set((participants as EventParticipant[]).map((p) => p.id));
+      const available = new Set((firstPage.items as EventParticipant[]).map((p) => p.id));
       return new Set([...current].filter((id) => available.has(id)));
     });
   }, []);
+
+  // Auto-refresh ref (declared before loadMore so it can read current event)
+  const selectedEventRef = useRef<EventBase | null>(null);
+  selectedEventRef.current = selectedEvent;
+
+  const loadMoreParticipants = useCallback(async () => {
+    const event = selectedEventRef.current;
+    if (!event || !event.id) return;
+    if (participantsLoadingMore || !participantsHasMore) return;
+    setParticipantsLoadingMore(true);
+    try {
+      const page = await getEventParticipantsPage({
+        data: {
+          event_id: event.id,
+          event_date: event.date,
+          offset: eventParticipants.length,
+          limit: PARTICIPANTS_PAGE_SIZE,
+        },
+      });
+      setEventParticipants((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        const merged = [...prev];
+        for (const item of page.items as EventParticipant[]) {
+          if (!seen.has(item.id)) merged.push(item);
+        }
+        return merged;
+      });
+      setParticipantsTotal(page.total);
+      setParticipantsHasMore(page.has_more);
+    } catch (err) {
+      console.error("loadMoreParticipants failed:", err);
+    } finally {
+      setParticipantsLoadingMore(false);
+    }
+  }, [eventParticipants.length, participantsHasMore, participantsLoadingMore]);
 
   const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
     const eventToExport = eventOverride || selectedEvent;
@@ -384,9 +440,6 @@ function CheckinPage() {
   };
 
   // Auto-refresh every 30 seconds
-  const selectedEventRef = useRef(selectedEvent);
-  selectedEventRef.current = selectedEvent;
-
   useEffect(() => {
     const interval = setInterval(async () => {
       const ev = selectedEventRef.current;
@@ -1167,7 +1220,7 @@ function CheckinPage() {
               </h3>
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 <Badge variant="outline" className="rounded-lg border-border/40">
-                  {eventParticipants.length} pessoas
+                  {eventParticipants.length} de {participantsTotal} pessoas
                 </Badge>
                 <Button
                   size="sm"
@@ -1180,7 +1233,7 @@ function CheckinPage() {
                   }}
                   className="rounded-xl h-8 text-xs"
                 >
-                  {allAvailableSelected ? "Limpar seleção" : "Selecionar todos"}
+                  {allAvailableSelected ? "Limpar seleção" : "Selecionar carregados"}
                 </Button>
                 <Button
                   size="sm"
@@ -1193,59 +1246,26 @@ function CheckinPage() {
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              {eventParticipants.length === 0 && (
-                <div className="glass-subtle rounded-2xl py-8 text-center">
-                  <p className="text-muted-foreground text-sm">Nenhum inscrito encontrado para este evento</p>
-                </div>
-              )}
-              {eventParticipants.map((participant) => {
-                const alreadyCheckedIn = checkedInPersonIds.has(participant.id);
-                return (
-                  <div key={participant.id} className="glass-subtle rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Checkbox
-                        checked={selectedParticipantIds.has(participant.id)}
-                        disabled={alreadyCheckedIn || bulkCheckingIn}
-                        onCheckedChange={(checked) => {
-                          setSelectedParticipantIds((current) => {
-                            const next = new Set(current);
-                            if (checked) next.add(participant.id);
-                            else next.delete(participant.id);
-                            return next;
-                          });
-                        }}
-                        aria-label={`Selecionar ${participant.name}`}
-                        className="shrink-0"
-                      />
-                      <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm text-foreground truncate">{participant.name}</span>
-                        {participant.tag && <Badge variant="secondary" className="text-xs rounded-lg">{participant.tag}</Badge>}
-                        {alreadyCheckedIn && <Badge className="bg-primary/12 text-primary border-0 rounded-lg text-xs">Check-in feito</Badge>}
-                      </div>
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-muted-foreground truncate max-w-full">{participant.ticket_type}</span>
-                        <Badge variant="outline" className="rounded-lg border-primary/35 bg-primary/10 text-primary text-xs font-semibold">
-                          Tipo de acesso: {participant.access_type}
-                        </Badge>
-                      </div>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={alreadyCheckedIn ? "outline" : "default"}
-                      disabled={alreadyCheckedIn || checkingInFromListId === participant.id}
-                      onClick={() => handleParticipantCheckin(participant)}
-                      className="rounded-xl gap-2 shrink-0"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      {checkingInFromListId === participant.id ? "Registrando..." : alreadyCheckedIn ? "Feito" : "Check-in"}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
+            <ParticipantsVirtualList
+              participants={eventParticipants}
+              total={participantsTotal}
+              hasMore={participantsHasMore}
+              loadingMore={participantsLoadingMore}
+              checkedInPersonIds={checkedInPersonIds}
+              selectedParticipantIds={selectedParticipantIds}
+              bulkCheckingIn={bulkCheckingIn}
+              checkingInFromListId={checkingInFromListId}
+              onToggleSelect={(id, checked) => {
+                setSelectedParticipantIds((current) => {
+                  const next = new Set(current);
+                  if (checked) next.add(id);
+                  else next.delete(id);
+                  return next;
+                });
+              }}
+              onCheckin={handleParticipantCheckin}
+              onLoadMore={loadMoreParticipants}
+            />
           </div>
         )}
 
