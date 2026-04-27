@@ -230,6 +230,10 @@ function CheckinPage() {
   const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
   const [eventCheckins, setEventCheckins] = useState<any[]>([]);
   const [eventParticipants, setEventParticipants] = useState<EventParticipant[]>([]);
+  const [participantsTotal, setParticipantsTotal] = useState(0);
+  const [participantsHasMore, setParticipantsHasMore] = useState(false);
+  const [participantsLoadingMore, setParticipantsLoadingMore] = useState(false);
+  const PARTICIPANTS_PAGE_SIZE = 50;
   const [eventCheckinCount, setEventCheckinCount] = useState(0);
   const [eventRegCount, setEventRegCount] = useState(0);
   const [eventsLoaded, setEventsLoaded] = useState(false);
@@ -343,21 +347,61 @@ function CheckinPage() {
   };
 
   const refreshSelectedEventData = useCallback(async (event: EventBase) => {
-    const [checkins, checkinCount, regCount, participants] = await Promise.all([
+    const [checkins, checkinCount, regCount, firstPage] = await Promise.all([
       getEventCheckins({ data: { event_id: event.id } }),
       getEventCheckinCount({ data: { event_id: event.id } }),
       getEventRegistrationCount({ data: { event_id: event.id } }),
-      getEventParticipants({ data: { event_id: event.id, event_date: event.date } }),
+      getEventParticipantsPage({
+        data: {
+          event_id: event.id,
+          event_date: event.date,
+          offset: 0,
+          limit: PARTICIPANTS_PAGE_SIZE,
+        },
+      }),
     ]);
     setEventCheckins(checkins);
     setEventCheckinCount(checkinCount);
     setEventRegCount(regCount);
-    setEventParticipants(participants as EventParticipant[]);
+    setEventParticipants(firstPage.items as EventParticipant[]);
+    setParticipantsTotal(firstPage.total);
+    setParticipantsHasMore(firstPage.has_more);
     setSelectedParticipantIds((current) => {
-      const available = new Set((participants as EventParticipant[]).map((p) => p.id));
+      const available = new Set((firstPage.items as EventParticipant[]).map((p) => p.id));
       return new Set([...current].filter((id) => available.has(id)));
     });
   }, []);
+
+  const loadMoreParticipants = useCallback(async () => {
+    const event = selectedEventRef.current;
+    if (!event || !event.id) return;
+    if (participantsLoadingMore || !participantsHasMore) return;
+    setParticipantsLoadingMore(true);
+    try {
+      const page = await getEventParticipantsPage({
+        data: {
+          event_id: event.id,
+          event_date: event.date,
+          offset: eventParticipants.length,
+          limit: PARTICIPANTS_PAGE_SIZE,
+        },
+      });
+      setEventParticipants((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        const merged = [...prev];
+        for (const item of page.items as EventParticipant[]) {
+          if (!seen.has(item.id)) merged.push(item);
+        }
+        return merged;
+      });
+      setParticipantsTotal(page.total);
+      setParticipantsHasMore(page.has_more);
+    } catch (err) {
+      console.error("loadMoreParticipants failed:", err);
+    } finally {
+      setParticipantsLoadingMore(false);
+    }
+  }, [eventParticipants.length, participantsHasMore, participantsLoadingMore]);
 
   const handleExportEventCheckins = async (eventOverride?: EventBase, format: ExportFormat = "csv") => {
     const eventToExport = eventOverride || selectedEvent;
