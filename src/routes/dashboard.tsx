@@ -20,7 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCurrentBrasiliaDateKeySync, shiftBrasiliaDateKeyByDays } from "@/lib/brasilia-time";
-import { Users, HardHat, TrendingUp, RefreshCw, Download, CalendarDays, Activity } from "lucide-react";
+import { Users, HardHat, RefreshCw, Download, CalendarDays, Activity } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -29,14 +29,10 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import {
   getDashboardStats,
   getDailyAttendance,
-  getAccessTypeBreakdown,
   getTopAttendees,
   getCheckinsForExport,
   getEventsForDashboard,
@@ -45,14 +41,13 @@ import { SectionBadge } from "@/components/SectionBadge";
 import { StatCard } from "@/components/StatCard";
 
 const loadDashboard = async (from: string, to: string, event_id?: string) => {
-  const [stats, daily, breakdown, topPeople, events] = await Promise.all([
+  const [stats, daily, topPeople, events] = await Promise.all([
     getDashboardStats({ data: { from, to, event_id } }),
     getDailyAttendance({ data: { from, to, event_id } }),
-    getAccessTypeBreakdown({ data: { from, to, event_id } }),
     getTopAttendees({ data: { from, to, event_id } }),
     getEventsForDashboard({ data: { from, to } }),
   ]);
-  return { stats, daily, breakdown, topPeople, events };
+  return { stats, daily, topPeople, events };
 };
 
 export const Route = createFileRoute("/dashboard")({
@@ -74,13 +69,6 @@ export const Route = createFileRoute("/dashboard")({
   },
   component: DashboardPage,
 });
-
-const PIE_COLORS = [
-  "oklch(0.72 0.19 135)",
-  "oklch(0.68 0.12 240)",
-  "oklch(0.65 0.14 180)",
-  "oklch(0.74 0.16 85)",
-];
 
 const CHART_TICK_STYLE = { fontSize: 11, fill: "var(--color-muted-foreground)", fontFamily: "monospace" };
 
