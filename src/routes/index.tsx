@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,6 +47,7 @@ import {
   getEventCheckedInParticipantsForExport,
   getEventParticipantsPage,
 } from "@/server/event.functions";
+import { ParticipantsVirtualList } from "@/components/ParticipantsVirtualList";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
