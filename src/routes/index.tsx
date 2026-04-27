@@ -1220,7 +1220,7 @@ function CheckinPage() {
               </h3>
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 <Badge variant="outline" className="rounded-lg border-border/40">
-                  {eventParticipants.length} pessoas
+                  {eventParticipants.length} de {participantsTotal} pessoas
                 </Badge>
                 <Button
                   size="sm"
@@ -1233,7 +1233,7 @@ function CheckinPage() {
                   }}
                   className="rounded-xl h-8 text-xs"
                 >
-                  {allAvailableSelected ? "Limpar seleção" : "Selecionar todos"}
+                  {allAvailableSelected ? "Limpar seleção" : "Selecionar carregados"}
                 </Button>
                 <Button
                   size="sm"
@@ -1246,59 +1246,26 @@ function CheckinPage() {
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              {eventParticipants.length === 0 && (
-                <div className="glass-subtle rounded-2xl py-8 text-center">
-                  <p className="text-muted-foreground text-sm">Nenhum inscrito encontrado para este evento</p>
-                </div>
-              )}
-              {eventParticipants.map((participant) => {
-                const alreadyCheckedIn = checkedInPersonIds.has(participant.id);
-                return (
-                  <div key={participant.id} className="glass-subtle rounded-2xl px-5 py-3.5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Checkbox
-                        checked={selectedParticipantIds.has(participant.id)}
-                        disabled={alreadyCheckedIn || bulkCheckingIn}
-                        onCheckedChange={(checked) => {
-                          setSelectedParticipantIds((current) => {
-                            const next = new Set(current);
-                            if (checked) next.add(participant.id);
-                            else next.delete(participant.id);
-                            return next;
-                          });
-                        }}
-                        aria-label={`Selecionar ${participant.name}`}
-                        className="shrink-0"
-                      />
-                      <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm text-foreground truncate">{participant.name}</span>
-                        {participant.tag && <Badge variant="secondary" className="text-xs rounded-lg">{participant.tag}</Badge>}
-                        {alreadyCheckedIn && <Badge className="bg-primary/12 text-primary border-0 rounded-lg text-xs">Check-in feito</Badge>}
-                      </div>
-                      <div className="mt-1 flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-muted-foreground truncate max-w-full">{participant.ticket_type}</span>
-                        <Badge variant="outline" className="rounded-lg border-primary/35 bg-primary/10 text-primary text-xs font-semibold">
-                          Tipo de acesso: {participant.access_type}
-                        </Badge>
-                      </div>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant={alreadyCheckedIn ? "outline" : "default"}
-                      disabled={alreadyCheckedIn || checkingInFromListId === participant.id}
-                      onClick={() => handleParticipantCheckin(participant)}
-                      className="rounded-xl gap-2 shrink-0"
-                    >
-                      <UserCheck className="w-3.5 h-3.5" />
-                      {checkingInFromListId === participant.id ? "Registrando..." : alreadyCheckedIn ? "Feito" : "Check-in"}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
+            <ParticipantsVirtualList
+              participants={eventParticipants}
+              total={participantsTotal}
+              hasMore={participantsHasMore}
+              loadingMore={participantsLoadingMore}
+              checkedInPersonIds={checkedInPersonIds}
+              selectedParticipantIds={selectedParticipantIds}
+              bulkCheckingIn={bulkCheckingIn}
+              checkingInFromListId={checkingInFromListId}
+              onToggleSelect={(id, checked) => {
+                setSelectedParticipantIds((current) => {
+                  const next = new Set(current);
+                  if (checked) next.add(id);
+                  else next.delete(id);
+                  return next;
+                });
+              }}
+              onCheckin={handleParticipantCheckin}
+              onLoadMore={loadMoreParticipants}
+            />
           </div>
         )}
 
