@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const navItems = [
-  { to: "/" as const, label: "Check-in", icon: ClipboardList },
   { to: "/eventos" as const, label: "Eventos", icon: CalendarDays },
+  { to: "/checkin" as const, label: "Check-in", icon: ClipboardList },
   { to: "/pessoas" as const, label: "Inscritos", icon: Users },
   { to: "/import" as const, label: "Importar", icon: Upload },
   { to: "/configuracoes" as const, label: "Config", icon: Settings },
