@@ -711,10 +711,23 @@ function CheckinPage() {
               </h1>
               <p className="text-muted-foreground text-sm mt-1">Selecione o evento para iniciar</p>
             </div>
-            <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
-              <UserCheck className="w-5 h-5 text-primary" />
-              <span className="text-2xl font-bold text-foreground">{todayCount}</span>
-              <span className="text-sm text-muted-foreground">hoje</span>
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleForceRefresh}
+                disabled={refreshing}
+                className="rounded-xl gap-2"
+                title="Invalidar cache do SSR e recarregar os cards"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                {refreshing ? "Atualizando..." : "Atualizar tela"}
+              </Button>
+              <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
+                <UserCheck className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-bold text-foreground">{todayCount}</span>
+                <span className="text-sm text-muted-foreground">hoje</span>
+              </div>
             </div>
           </div>
 
