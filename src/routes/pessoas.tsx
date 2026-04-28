@@ -223,7 +223,7 @@ function PessoasPage() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-6 fade-up stagger">
         {/* Header */}
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
@@ -335,7 +335,7 @@ function PessoasPage() {
               placeholder="Buscar por nome..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="pl-12 h-12 rounded-xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
+              className="pl-12 h-12 rounded-xl border-border/40 bg-background/60 focus:bg-background/80 focus-glow"
             />
           </div>
           <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
@@ -423,7 +423,7 @@ function PessoasPage() {
                 <button
                   key={p.id}
                   onClick={() => openProfile(p)}
-                  className="rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group flex flex-col gap-3 text-left w-full"
+                  className="rounded-xl border border-border bg-card p-4 cursor-pointer lift-glow relative overflow-hidden group flex flex-col gap-3 text-left w-full scale-in"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-[#84E400]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                   <div className="flex items-center gap-3 relative">

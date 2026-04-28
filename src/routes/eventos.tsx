@@ -106,14 +106,17 @@ function EventCard({
 
   return (
     <div
-      className={`glass rounded-2xl p-5 space-y-4 transition-opacity ${isPast && !isToday ? "opacity-70 hover:opacity-90" : ""}`}
+      className={`glass lift-glow rounded-2xl p-5 space-y-4 ${isPast && !isToday ? "opacity-70 hover:opacity-100" : ""} ${isToday ? "border-primary/30" : ""}`}
     >
       {/* Top row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             {isToday && (
-              <Badge className="bg-primary/12 text-primary border-0 rounded-lg text-xs">Hoje</Badge>
+              <Badge className="bg-primary/12 text-primary border-0 rounded-lg text-xs flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary pulse-ring" />
+                Hoje
+              </Badge>
             )}
             {isPast && !isToday && (
               <Badge variant="secondary" className="text-xs rounded-lg opacity-70">Passado</Badge>
@@ -130,7 +133,7 @@ function EventCard({
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => onExport(event)}
-            className="text-muted-foreground hover:text-primary transition-colors p-1"
+            className="text-muted-foreground hover:text-primary tap-pop p-1.5 rounded-lg hover:bg-primary/10"
             title="Baixar check-ins"
           >
             <Download className="w-4 h-4" />
@@ -141,7 +144,7 @@ function EventCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-muted-foreground hover:text-primary transition-colors p-1"
+              className="text-muted-foreground hover:text-primary tap-pop p-1.5 rounded-lg hover:bg-primary/10"
             >
               <ExternalLink className="w-4 h-4" />
             </a>
@@ -343,7 +346,7 @@ function EventosPage() {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-8 fade-up stagger">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
@@ -371,7 +374,7 @@ function EventosPage() {
 
         {/* Luma sync status bar */}
         <div
-          className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-4 flex-wrap"
+          className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-4 flex-wrap lift-glow group"
           role="status"
           aria-label={`Status de sincronização com Luma: ${lastSync ? `sincronizado ${formatRelativeTime(lastSync)}` : "nunca sincronizado"}`}
         >
@@ -402,11 +405,11 @@ function EventosPage() {
           </div>
           <Button
             size="sm"
-            className="h-9 px-4 rounded-xl gap-2"
+            className="h-9 px-4 rounded-xl gap-2 tap-pop"
             onClick={handleSync}
             disabled={syncing}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : "icon-spin-hover"}`} />
             {syncing ? "Sincronizando..." : "Sincronizar agora"}
           </Button>
         </div>
