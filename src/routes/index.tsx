@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { Input } from "@/components/ui/input";
@@ -210,6 +210,7 @@ function checkAccess(
 }
 
 function CheckinPage() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Person[]>([]);
   const [selected, setSelected] = useState<Person | null>(null);
@@ -256,6 +257,7 @@ function CheckinPage() {
   // Luma sync status
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [exportPeriod, setExportPeriod] = useState("Todos");
   const [exportAccessType, setExportAccessType] = useState("Todos");
   const [checkingInFromListId, setCheckingInFromListId] = useState<string | null>(null);
@@ -343,6 +345,24 @@ function CheckinPage() {
       toast.error("Erro na sincronização", { description: msg });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleForceRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await router.invalidate();
+      const tasks: Promise<unknown>[] = [loadToday(), refreshLastSync()];
+      const ev = selectedEventRef.current;
+      if (ev && ev.id) tasks.push(refreshSelectedEventData(ev));
+      await Promise.all(tasks);
+      toast.success("Tela atualizada", { description: "Cache invalidado e dados recarregados" });
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Falha ao atualizar";
+      toast.error("Erro ao atualizar", { description: msg });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -691,10 +711,23 @@ function CheckinPage() {
               </h1>
               <p className="text-muted-foreground text-sm mt-1">Selecione o evento para iniciar</p>
             </div>
-            <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
-              <UserCheck className="w-5 h-5 text-primary" />
-              <span className="text-2xl font-bold text-foreground">{todayCount}</span>
-              <span className="text-sm text-muted-foreground">hoje</span>
+            <div className="flex items-center gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleForceRefresh}
+                disabled={refreshing}
+                className="rounded-xl gap-2"
+                title="Invalidar cache do SSR e recarregar os cards"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+                {refreshing ? "Atualizando..." : "Atualizar tela"}
+              </Button>
+              <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
+                <UserCheck className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-bold text-foreground">{todayCount}</span>
+                <span className="text-sm text-muted-foreground">hoje</span>
+              </div>
             </div>
           </div>
 
