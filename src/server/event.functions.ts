@@ -73,12 +73,14 @@ export const getTodayEvents = createServerFn({ method: "GET" })
 export const getTodayEventsWithStats = createServerFn({ method: "GET" })
   .handler(async () => {
     const today = await getBrasiliaTodayKey();
+    console.log("[getTodayEventsWithStats] today =", today);
     const { data: events, error } = await supabaseAdmin
       .from("events")
       .select("*")
       .eq("date", today)
       .order("time", { ascending: true });
     if (error) throw new Error(error.message);
+    console.log("[getTodayEventsWithStats] found", events?.length || 0, "events");
     if (!events || events.length === 0) return [];
 
     const { count: fullAccessCount } = await supabaseAdmin
