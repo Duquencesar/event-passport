@@ -372,43 +372,6 @@ function EventosPage() {
           )}
         </div>
 
-        {/* Luma sync status — compact pill */}
-        <div
-          className="inline-flex items-center gap-3 rounded-full border border-border bg-card/60 pl-3 pr-1 py-1 ml-auto w-fit"
-          role="status"
-          aria-label={`Status de sincronização com Luma: ${lastSync ? `sincronizado ${formatRelativeTime(lastSync)}` : "nunca sincronizado"}`}
-        >
-          <div className="flex items-center gap-2">
-            <span
-              className={`h-2 w-2 rounded-full shrink-0 ${
-                syncing
-                  ? "bg-[#84E400] animate-pulse"
-                  : syncStale
-                    ? "bg-amber-400 animate-pulse"
-                    : "bg-emerald-400"
-              }`}
-            />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {syncing
-                ? "Sincronizando..."
-                : lastSync
-                  ? `Sincronizado ${formatRelativeTime(lastSync)}`
-                  : "Nunca sincronizado"}
-            </span>
-          </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-7 px-2 rounded-lg gap-1.5 text-xs text-muted-foreground hover:text-foreground tap-pop"
-            onClick={handleSync}
-            disabled={syncing}
-            title={syncing ? "Sincronizando..." : "Sincronizar agora"}
-          >
-            <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : "icon-spin-hover"}`} />
-            <span className="hidden sm:inline">{syncing ? "Sincronizando" : "Sincronizar"}</span>
-          </Button>
-        </div>
-
         {!loaded && (
           <div className="glass rounded-3xl py-16 text-center">
             <p className="text-muted-foreground text-sm">Carregando eventos...</p>
@@ -427,6 +390,7 @@ function EventosPage() {
 
         {loaded && allEvents.length > 0 && (
           <Tabs defaultValue={todayEvents.length > 0 ? "hoje" : upcomingEvents.length > 0 ? "proximos" : "passados"}>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
             <TabsList className="glass rounded-xl p-1 h-auto gap-1 flex-wrap">
               {todayEvents.length > 0 && (
                 <TabsTrigger value="hoje" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10 gap-2">
@@ -446,6 +410,40 @@ function EventosPage() {
                 Todos ({allEvents.length})
               </TabsTrigger>
             </TabsList>
+            <div
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 pl-3 pr-1 py-1"
+              role="status"
+              aria-label={`Status de sincronização com Luma: ${lastSync ? `sincronizado ${formatRelativeTime(lastSync)}` : "nunca sincronizado"}`}
+            >
+              <span
+                className={`h-2 w-2 rounded-full shrink-0 ${
+                  syncing
+                    ? "bg-[#84E400] animate-pulse"
+                    : syncStale
+                      ? "bg-amber-400 animate-pulse"
+                      : "bg-emerald-400"
+                }`}
+              />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                {syncing
+                  ? "Sincronizando..."
+                  : lastSync
+                    ? `Sincronizado ${formatRelativeTime(lastSync)}`
+                    : "Nunca sincronizado"}
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 rounded-lg gap-1.5 text-xs text-muted-foreground hover:text-foreground tap-pop"
+                onClick={handleSync}
+                disabled={syncing}
+                title={syncing ? "Sincronizando..." : "Sincronizar agora"}
+              >
+                <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : "icon-spin-hover"}`} />
+                <span className="hidden sm:inline">{syncing ? "Sincronizando" : "Sincronizar"}</span>
+              </Button>
+            </div>
+            </div>
 
             {/* Hoje */}
             {todayEvents.length > 0 && (
