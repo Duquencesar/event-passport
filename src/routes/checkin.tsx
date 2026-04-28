@@ -53,7 +53,7 @@ import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/checkin")({
   head: () => ({
     meta: [
       { title: "Ipê Village - Check-In" },
