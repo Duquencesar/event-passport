@@ -257,6 +257,7 @@ function CheckinPage() {
   // Luma sync status
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [exportPeriod, setExportPeriod] = useState("Todos");
   const [exportAccessType, setExportAccessType] = useState("Todos");
   const [checkingInFromListId, setCheckingInFromListId] = useState<string | null>(null);
