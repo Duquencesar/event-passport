@@ -205,7 +205,7 @@ function ConfiguracoesPage() {
 
   return (
     <Layout>
-      <div className="space-y-8 max-w-2xl fade-up">
+      <div className="space-y-8 max-w-2xl fade-up stagger">
         {/* Page header */}
         <div>
           <SectionBadge label="ADMINISTRAÇÃO" pulse={false} className="mb-3" />
@@ -219,10 +219,10 @@ function ConfiguracoesPage() {
         </div>
 
         {/* Luma sync */}
-        <div className="glass rounded-3xl p-6 space-y-5 border border-border/30">
+        <div className="glass lift-glow rounded-3xl p-6 space-y-5 border border-border/30 group">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-sky-500/15 flex items-center justify-center shrink-0">
-              <RefreshIcon className="w-5 h-5 text-sky-400" />
+              <RefreshIcon className="w-5 h-5 text-sky-400 icon-spin-hover" />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-base">Sincronizar com Luma</h3>

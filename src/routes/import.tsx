@@ -366,8 +366,8 @@ function LumaSyncTab() {
 function ImportPage() {
   return (
     <Layout>
-      <div className="space-y-8 max-w-2xl">
-        <div className="fade-up">
+      <div className="space-y-8 max-w-2xl fade-up stagger">
+        <div>
           <SectionBadge label="IMPORTAÇÃO" pulse={false} className="mb-3" />
           <h1
             style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}
@@ -383,14 +383,14 @@ function ImportPage() {
           <TabsList className="glass rounded-xl p-1 h-auto gap-1">
             <TabsTrigger
               value="luma"
-              className="rounded-lg px-5 py-2 text-sm flex items-center gap-2 data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10"
+              className="rounded-lg px-5 py-2 text-sm flex items-center gap-2 tap-pop data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10"
             >
               <Zap className="w-4 h-4" />
               Luma API
             </TabsTrigger>
             <TabsTrigger
               value="csv"
-              className="rounded-lg px-5 py-2 text-sm flex items-center gap-2 data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10"
+              className="rounded-lg px-5 py-2 text-sm flex items-center gap-2 tap-pop data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10"
             >
               <Upload className="w-4 h-4" />
               CSV manual

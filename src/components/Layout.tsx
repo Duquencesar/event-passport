@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Users, Upload, BarChart3, ClipboardList, CalendarDays, LogOut, Menu, X, Settings } from "lucide-react";
+import { Users, Upload, ClipboardList, CalendarDays, LogOut, Menu, X, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { formatBrasiliaLongDate } from "@/lib/brasilia-time";
 import { useEffect, useState } from "react";
@@ -10,7 +10,6 @@ const navItems = [
   { to: "/eventos" as const, label: "Eventos", icon: CalendarDays },
   { to: "/pessoas" as const, label: "Inscritos", icon: Users },
   { to: "/import" as const, label: "Importar", icon: Upload },
-  { to: "/dashboard" as const, label: "Dashboard", icon: BarChart3 },
   { to: "/configuracoes" as const, label: "Config", icon: Settings },
 ];
 

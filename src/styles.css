@@ -245,6 +245,86 @@
 .stagger > *:nth-child(3) { animation-delay: 0.3s; }
 .stagger > *:nth-child(4) { animation-delay: 0.4s; }
 .stagger > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger > *:nth-child(6) { animation-delay: 0.55s; }
+.stagger > *:nth-child(7) { animation-delay: 0.6s; }
+.stagger > *:nth-child(8) { animation-delay: 0.65s; }
+.stagger > *:nth-child(9) { animation-delay: 0.7s; }
+
+/* === Interactive micro-animations === */
+
+/* Lift + accent glow — for cards/buttons that should react to hover */
+.lift-glow {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s ease-out,
+              border-color 0.25s ease-out;
+}
+.lift-glow:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px -10px oklch(from var(--primary) l c h / 28%),
+              0 4px 12px oklch(from var(--background) l c h / 40%);
+  border-color: oklch(from var(--primary) l c h / 35%);
+}
+.lift-glow:active { transform: translateY(-1px) scale(0.995); }
+
+/* Pop on tap — small interactive elements (chips, icon buttons) */
+.tap-pop {
+  transition: transform 0.15s ease-out, background-color 0.15s ease-out;
+}
+.tap-pop:hover { transform: translateY(-1px); }
+.tap-pop:active { transform: scale(0.94); }
+
+/* Focus glow — inputs and search */
+.focus-glow {
+  transition: box-shadow 0.2s ease-out, border-color 0.2s ease-out;
+}
+.focus-glow:focus-visible,
+.focus-glow:focus-within {
+  box-shadow: 0 0 0 4px oklch(from var(--primary) l c h / 14%);
+  border-color: oklch(from var(--primary) l c h / 50%);
+  outline: none;
+}
+
+/* Shimmer sweep — for active/loading rows */
+@keyframes shimmer-sweep {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(from var(--primary) l c h / 12%) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 2.4s ease-in-out infinite;
+}
+
+/* Soft pulse ring — used on "live" indicators */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 oklch(from var(--primary) l c h / 55%); }
+  70%  { box-shadow: 0 0 0 10px oklch(from var(--primary) l c h / 0%); }
+  100% { box-shadow: 0 0 0 0 oklch(from var(--primary) l c h / 0%); }
+}
+.pulse-ring { animation: pulse-ring 2.2s ease-out infinite; }
+
+/* Icon spin on hover — playful affordance for refresh/sync icons */
+.icon-spin-hover { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.group:hover .icon-spin-hover,
+.icon-spin-hover:hover { transform: rotate(180deg); }
+
+/* Scale-in entry */
+@keyframes scale-in-soft {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.scale-in { animation: scale-in-soft 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lift-glow:hover, .tap-pop:hover, .tap-pop:active, .lift-glow:active { transform: none; }
+  .shimmer, .pulse-ring, .icon-spin-hover { animation: none; transition: none; }
+  .scale-in { animation: none; opacity: 1; transform: none; }
+}
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
