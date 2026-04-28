@@ -13,7 +13,6 @@ import { Route as PessoasRouteImport } from './routes/pessoas'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as EventosRouteImport } from './routes/eventos'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksTelegramPollRouteImport } from './routes/hooks/telegram-poll'
@@ -48,11 +47,6 @@ const ImportRoute = ImportRouteImport.update({
 const EventosRoute = EventosRouteImport.update({
   id: '/eventos',
   path: '/eventos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -139,7 +133,6 @@ const ApiHouseV1AccessEventsBatchRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/dashboard': typeof DashboardRoute
   '/eventos': typeof EventosRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
@@ -161,7 +154,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/dashboard': typeof DashboardRoute
   '/eventos': typeof EventosRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
@@ -184,7 +176,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/dashboard': typeof DashboardRoute
   '/eventos': typeof EventosRoute
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
@@ -208,7 +199,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/configuracoes'
-    | '/dashboard'
     | '/eventos'
     | '/import'
     | '/login'
@@ -230,7 +220,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/configuracoes'
-    | '/dashboard'
     | '/eventos'
     | '/import'
     | '/login'
@@ -252,7 +241,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/configuracoes'
-    | '/dashboard'
     | '/eventos'
     | '/import'
     | '/login'
@@ -275,7 +263,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
-  DashboardRoute: typeof DashboardRoute
   EventosRoute: typeof EventosRoute
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
@@ -323,13 +310,6 @@ declare module '@tanstack/react-router' {
       path: '/eventos'
       fullPath: '/eventos'
       preLoaderRoute: typeof EventosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -443,7 +423,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
-  DashboardRoute: DashboardRoute,
   EventosRoute: EventosRoute,
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
