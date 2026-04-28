@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as HooksTelegramPollRouteImport } from './routes/hooks/telegram-poll'
 import { Route as HooksTelegramDailyReportRouteImport } from './routes/hooks/telegram-daily-report'
 import { Route as HooksLumaSyncRouteImport } from './routes/hooks/luma-sync'
+import { Route as ApiPublicHooksLumaSyncFullRouteImport } from './routes/api/public/hooks/luma-sync-full'
 import { Route as ApiPublicHooksLumaSyncActiveRouteImport } from './routes/api/public/hooks/luma-sync-active'
 
 const PessoasRoute = PessoasRouteImport.update({
@@ -72,6 +73,12 @@ const HooksLumaSyncRoute = HooksLumaSyncRouteImport.update({
   path: '/hooks/luma-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksLumaSyncFullRoute =
+  ApiPublicHooksLumaSyncFullRouteImport.update({
+    id: '/api/public/hooks/luma-sync-full',
+    path: '/api/public/hooks/luma-sync-full',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksLumaSyncActiveRoute =
   ApiPublicHooksLumaSyncActiveRouteImport.update({
     id: '/api/public/hooks/luma-sync-active',
@@ -91,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
   '/api/public/hooks/luma-sync-active': typeof ApiPublicHooksLumaSyncActiveRoute
+  '/api/public/hooks/luma-sync-full': typeof ApiPublicHooksLumaSyncFullRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -104,6 +112,7 @@ export interface FileRoutesByTo {
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
   '/api/public/hooks/luma-sync-active': typeof ApiPublicHooksLumaSyncActiveRoute
+  '/api/public/hooks/luma-sync-full': typeof ApiPublicHooksLumaSyncFullRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -118,6 +127,7 @@ export interface FileRoutesById {
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
   '/api/public/hooks/luma-sync-active': typeof ApiPublicHooksLumaSyncActiveRoute
+  '/api/public/hooks/luma-sync-full': typeof ApiPublicHooksLumaSyncFullRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
     | '/api/public/hooks/luma-sync-active'
+    | '/api/public/hooks/luma-sync-full'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
     | '/api/public/hooks/luma-sync-active'
+    | '/api/public/hooks/luma-sync-full'
   id:
     | '__root__'
     | '/'
@@ -159,6 +171,7 @@ export interface FileRouteTypes {
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
     | '/api/public/hooks/luma-sync-active'
+    | '/api/public/hooks/luma-sync-full'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -173,6 +186,7 @@ export interface RootRouteChildren {
   HooksTelegramDailyReportRoute: typeof HooksTelegramDailyReportRoute
   HooksTelegramPollRoute: typeof HooksTelegramPollRoute
   ApiPublicHooksLumaSyncActiveRoute: typeof ApiPublicHooksLumaSyncActiveRoute
+  ApiPublicHooksLumaSyncFullRoute: typeof ApiPublicHooksLumaSyncFullRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -247,6 +261,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HooksLumaSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/luma-sync-full': {
+      id: '/api/public/hooks/luma-sync-full'
+      path: '/api/public/hooks/luma-sync-full'
+      fullPath: '/api/public/hooks/luma-sync-full'
+      preLoaderRoute: typeof ApiPublicHooksLumaSyncFullRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/luma-sync-active': {
       id: '/api/public/hooks/luma-sync-active'
       path: '/api/public/hooks/luma-sync-active'
@@ -269,6 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   HooksTelegramDailyReportRoute: HooksTelegramDailyReportRoute,
   HooksTelegramPollRoute: HooksTelegramPollRoute,
   ApiPublicHooksLumaSyncActiveRoute: ApiPublicHooksLumaSyncActiveRoute,
+  ApiPublicHooksLumaSyncFullRoute: ApiPublicHooksLumaSyncFullRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
