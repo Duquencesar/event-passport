@@ -111,6 +111,282 @@ export type Database = {
         }
         Relationships: []
       }
+      house_access_grants: {
+        Row: {
+          access_end: string
+          access_start: string
+          created_at: string
+          credential_type: string
+          credential_value: string | null
+          event_id: string | null
+          grant_scope: string
+          house_user_id: string
+          id: string
+          payload: Json
+          person_id: string
+          source: string
+          source_ref: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          access_end: string
+          access_start: string
+          created_at?: string
+          credential_type: string
+          credential_value?: string | null
+          event_id?: string | null
+          grant_scope: string
+          house_user_id: string
+          id?: string
+          payload?: Json
+          person_id: string
+          source: string
+          source_ref: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          access_end?: string
+          access_start?: string
+          created_at?: string
+          credential_type?: string
+          credential_value?: string | null
+          event_id?: string | null
+          grant_scope?: string
+          house_user_id?: string
+          id?: string
+          payload?: Json
+          person_id?: string
+          source?: string
+          source_ref?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "house_access_grants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "house_access_grants_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "house_access_grants_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      house_access_logs_raw: {
+        Row: {
+          created_at: string
+          credential_type: string
+          credential_value: string | null
+          decision: string
+          device_id: string | null
+          door_id: string | null
+          grant_id: string | null
+          house_event_id: string
+          house_user_id: string | null
+          id: string
+          occurred_at: string
+          person_id: string | null
+          processed_at: string | null
+          provided_event_id: string | null
+          provided_event_name: string | null
+          raw_payload: Json
+          reason: string | null
+          resolution_status: string
+          resolution_strategy: string | null
+          resolved_event_id: string | null
+          resolved_event_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          credential_type?: string
+          credential_value?: string | null
+          decision: string
+          device_id?: string | null
+          door_id?: string | null
+          grant_id?: string | null
+          house_event_id: string
+          house_user_id?: string | null
+          id?: string
+          occurred_at: string
+          person_id?: string | null
+          processed_at?: string | null
+          provided_event_id?: string | null
+          provided_event_name?: string | null
+          raw_payload?: Json
+          reason?: string | null
+          resolution_status?: string
+          resolution_strategy?: string | null
+          resolved_event_id?: string | null
+          resolved_event_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          credential_type?: string
+          credential_value?: string | null
+          decision?: string
+          device_id?: string | null
+          door_id?: string | null
+          grant_id?: string | null
+          house_event_id?: string
+          house_user_id?: string | null
+          id?: string
+          occurred_at?: string
+          person_id?: string | null
+          processed_at?: string | null
+          provided_event_id?: string | null
+          provided_event_name?: string | null
+          raw_payload?: Json
+          reason?: string | null
+          resolution_status?: string
+          resolution_strategy?: string | null
+          resolved_event_id?: string | null
+          resolved_event_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "house_access_logs_raw_grant_id_fkey"
+            columns: ["grant_id"]
+            isOneToOne: false
+            referencedRelation: "house_access_grants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "house_access_logs_raw_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "house_access_logs_raw_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "house_access_logs_raw_resolved_event_id_fkey"
+            columns: ["resolved_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      house_devices: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          label: string | null
+          last_seen_at: string
+          metadata: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          label?: string | null
+          last_seen_at?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          label?: string | null
+          last_seen_at?: string
+          metadata?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      house_sync_state: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      house_user_map: {
+        Row: {
+          created_at: string
+          credential_type: string
+          house_user_id: string
+          id: string
+          is_active: boolean
+          is_resident: boolean
+          notes: string | null
+          person_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credential_type?: string
+          house_user_id: string
+          id?: string
+          is_active?: boolean
+          is_resident?: boolean
+          notes?: string | null
+          person_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credential_type?: string
+          house_user_id?: string
+          id?: string
+          is_active?: boolean
+          is_resident?: boolean
+          notes?: string | null
+          person_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "house_user_map_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "house_user_map_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people: {
         Row: {
           created_at: string
@@ -263,7 +539,10 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      process_house_access_events: {
+        Args: { input_events: Json }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
