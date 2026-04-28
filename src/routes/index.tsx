@@ -701,7 +701,7 @@ function CheckinPage() {
   if (!selectedEvent && eventsLoaded) {
     return (
       <Layout>
-        <div className="space-y-8">
+        <div className="space-y-8 fade-up stagger">
           {/* Page header */}
           <div className="flex items-center justify-between">
             <div>
@@ -981,7 +981,7 @@ function CheckinPage() {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-8 fade-up stagger">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
