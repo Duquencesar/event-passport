@@ -62,17 +62,37 @@ export async function lumaFetch<T>(
       url.searchParams.set(k, v);
     }
   }
-  const res = await fetch(url.toString(), {
-    headers: {
-      "x-luma-api-key": apiKey,
-      Accept: "application/json",
-    },
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Luma API ${res.status}: ${body}`);
+  const MAX_ATTEMPTS = 5;
+  let lastErrBody = "";
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(url.toString(), {
+      headers: {
+        "x-luma-api-key": apiKey,
+        Accept: "application/json",
+      },
+    });
+    if (res.ok) return res.json() as Promise<T>;
+
+    lastStatus = res.status;
+    lastErrBody = await res.text();
+
+    // Retry em 429 (rate limit) e 5xx com backoff exponencial + jitter.
+    const isRetriable = res.status === 429 || (res.status >= 500 && res.status < 600);
+    if (!isRetriable || attempt === MAX_ATTEMPTS - 1) break;
+
+    // Respeita Retry-After se vier, senão backoff: 1s, 2s, 4s, 8s (+ jitter)
+    const retryAfterHeader = res.headers.get("retry-after");
+    const retryAfterMs = retryAfterHeader ? Number(retryAfterHeader) * 1000 : 0;
+    const backoffMs = retryAfterMs > 0
+      ? retryAfterMs
+      : Math.min(8000, 1000 * Math.pow(2, attempt)) + Math.floor(Math.random() * 500);
+    console.warn(
+      `Luma API ${res.status} em ${path} — retry ${attempt + 1}/${MAX_ATTEMPTS - 1} em ${backoffMs}ms`,
+    );
+    await new Promise((r) => setTimeout(r, backoffMs));
   }
-  return res.json() as Promise<T>;
+  throw new Error(`Luma API ${lastStatus}: ${lastErrBody}`);
 }
 
 // ─── Date helpers (America/Sao_Paulo) ────────────────────────────────────────
