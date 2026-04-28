@@ -372,13 +372,13 @@ function EventosPage() {
           )}
         </div>
 
-        {/* Luma sync status bar */}
+        {/* Luma sync status — compact pill */}
         <div
-          className="rounded-xl border border-border bg-card p-4 flex items-center justify-between gap-4 flex-wrap lift-glow group"
+          className="inline-flex items-center gap-3 rounded-full border border-border bg-card/60 pl-3 pr-1 py-1 ml-auto w-fit"
           role="status"
           aria-label={`Status de sincronização com Luma: ${lastSync ? `sincronizado ${formatRelativeTime(lastSync)}` : "nunca sincronizado"}`}
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <span
               className={`h-2 w-2 rounded-full shrink-0 ${
                 syncing
@@ -388,20 +388,13 @@ function EventosPage() {
                     : "bg-emerald-400"
               }`}
             />
-            <div>
-              <span className="text-sm text-muted-foreground">
-                {syncing
-                  ? "Sincronizando..."
-                  : lastSync
-                    ? `Sincronizado ${formatRelativeTime(lastSync)}`
-                    : "Nunca sincronizado"}
-              </span>
-              {lastSync && !syncing && (
-                <span className="text-xs text-muted-foreground/60 ml-2 font-mono">
-                  {new Date(lastSync).toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
-                </span>
-              )}
-            </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {syncing
+                ? "Sincronizando..."
+                : lastSync
+                  ? `Sincronizado ${formatRelativeTime(lastSync)}`
+                  : "Nunca sincronizado"}
+            </span>
           </div>
           <Button
             size="sm"
