@@ -405,12 +405,14 @@ function EventosPage() {
           </div>
           <Button
             size="sm"
-            className="h-9 px-4 rounded-xl gap-2 tap-pop"
+            variant="ghost"
+            className="h-7 px-2 rounded-lg gap-1.5 text-xs text-muted-foreground hover:text-foreground tap-pop"
             onClick={handleSync}
             disabled={syncing}
+            title={syncing ? "Sincronizando..." : "Sincronizar agora"}
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : "icon-spin-hover"}`} />
-            {syncing ? "Sincronizando..." : "Sincronizar agora"}
+            <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : "icon-spin-hover"}`} />
+            <span className="hidden sm:inline">{syncing ? "Sincronizando" : "Sincronizar"}</span>
           </Button>
         </div>
 
