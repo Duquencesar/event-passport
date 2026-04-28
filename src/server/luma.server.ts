@@ -530,3 +530,80 @@ export async function syncEntireCalendar(opts: {
     per_event,
   };
 }
+
+// ─── Sync apenas eventos ATIVOS no momento ───────────────────────────────────
+
+/**
+ * Sincroniza apenas eventos que estão "ativos agora" no fuso de São Paulo.
+ * Janela: hoje, com horário entre (now - 8h) e (now + 1h).
+ *
+ * Usado pelo cron de 30s para manter check-ins em quase tempo real durante eventos
+ * ao vivo, sem detonar o rate limit do Luma com sync completo.
+ */
+export async function syncActiveEvents(opts: {
+  apiKey: string;
+  calendarApiId: string;
+  defaultTag?: string;
+}): Promise<FullSyncResult> {
+  const today = toDateKey(new Date().toISOString());
+
+  // Lista só os eventos de hoje (1 chamada à API do Luma).
+  const afterIso = `${today}T00:00:00.000Z`;
+  const beforeIso = `${today}T23:59:59.999Z`;
+  const todayEvents = await listCalendarEvents(opts.apiKey, opts.calendarApiId, afterIso, beforeIso);
+
+  // Janela de "ativo agora": começou há ≤ 8h e ainda não terminou há mais de 1h.
+  const now = Date.now();
+  const WINDOW_BEFORE_MS = 8 * 60 * 60 * 1000; // 8h depois do início
+  const WINDOW_AFTER_MS = 1 * 60 * 60 * 1000; // até 1h antes do início
+
+  const active = todayEvents.filter((e) => {
+    const start = new Date(e.start_at).getTime();
+    if (Number.isNaN(start)) return false;
+    return start - WINDOW_AFTER_MS <= now && now <= start + WINDOW_BEFORE_MS;
+  });
+
+  const totals = { guests: 0, created: 0, updated: 0, registrations: 0, checkins: 0 };
+  const per_event: FullSyncResult["per_event"] = [];
+
+  for (const event of active) {
+    try {
+      const res = await syncLumaEvent({
+        apiKey: opts.apiKey,
+        lumaEventId: event.api_id,
+        eventName: event.name,
+        eventDate: event.date,
+        eventTime: event.time,
+        eventLocation: event.location,
+        eventOrganizer: event.organizer,
+        eventUrl: event.url,
+        defaultTag: opts.defaultTag,
+      });
+      totals.guests += res.total_guests;
+      totals.created += res.created;
+      totals.updated += res.updated;
+      totals.registrations += res.registrations;
+      totals.checkins += res.checkins;
+      per_event.push({ name: event.name, date: event.date, ...res });
+    } catch (err) {
+      console.error(`Failed to sync active event ${event.name}:`, err);
+      per_event.push({
+        name: event.name,
+        date: event.date,
+        total_guests: -1,
+        created: 0,
+        updated: 0,
+        registrations: 0,
+        checkins: 0,
+        event_id: null,
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    events_processed: active.length,
+    totals,
+    per_event,
+  };
+}
