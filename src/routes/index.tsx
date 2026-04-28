@@ -348,6 +348,24 @@ function CheckinPage() {
     }
   };
 
+  const handleForceRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await router.invalidate();
+      const tasks: Promise<unknown>[] = [loadToday(), refreshLastSync()];
+      const ev = selectedEventRef.current;
+      if (ev && ev.id) tasks.push(refreshSelectedEventData(ev));
+      await Promise.all(tasks);
+      toast.success("Tela atualizada", { description: "Cache invalidado e dados recarregados" });
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Falha ao atualizar";
+      toast.error("Erro ao atualizar", { description: msg });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const refreshSelectedEventData = useCallback(async (event: EventBase) => {
     const [checkins, checkinCount, regCount, firstPage] = await Promise.all([
       getEventCheckins({ data: { event_id: event.id } }),
