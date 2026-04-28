@@ -654,17 +654,20 @@ export async function getHouseHealth(): Promise<{
 
 async function deleteByIds(table: string, column: string, values: string[]): Promise<void> {
   if (values.length === 0) return;
-  const { error } = await (supabaseAdmin.from(table as never) as never).delete().in(column, values);
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic table name
+  const { error } = await (supabaseAdmin as any).from(table).delete().in(column, values);
   if (error) throw new Error(error.message);
 }
 
 async function deleteByValue(table: string, column: string, value: string): Promise<void> {
-  const { error } = await (supabaseAdmin.from(table as never) as never).delete().eq(column, value);
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic table name
+  const { error } = await (supabaseAdmin as any).from(table).delete().eq(column, value);
   if (error) throw new Error(error.message);
 }
 
 async function deleteByLike(table: string, column: string, pattern: string): Promise<void> {
-  const { error } = await (supabaseAdmin.from(table as never) as never).delete().like(column, pattern);
+  // biome-ignore lint/suspicious/noExplicitAny: dynamic table name
+  const { error } = await (supabaseAdmin as any).from(table).delete().like(column, pattern);
   if (error) throw new Error(error.message);
 }
 
