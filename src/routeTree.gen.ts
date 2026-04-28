@@ -21,6 +21,14 @@ import { Route as HooksTelegramDailyReportRouteImport } from './routes/hooks/tel
 import { Route as HooksLumaSyncRouteImport } from './routes/hooks/luma-sync'
 import { Route as ApiPublicHooksLumaSyncFullRouteImport } from './routes/api/public/hooks/luma-sync-full'
 import { Route as ApiPublicHooksLumaSyncActiveRouteImport } from './routes/api/public/hooks/luma-sync-active'
+import { Route as ApiHouseV1LumaGuestRouteImport } from './routes/api/house/v1/luma-guest'
+import { Route as ApiHouseV1HeartbeatRouteImport } from './routes/api/house/v1/heartbeat'
+import { Route as ApiHouseV1HealthRouteImport } from './routes/api/house/v1/health'
+import { Route as ApiHouseV1FeedRouteImport } from './routes/api/house/v1/feed'
+import { Route as ApiHouseV1BootstrapRouteImport } from './routes/api/house/v1/bootstrap'
+import { Route as ApiHouseV1DemoPrepareRouteImport } from './routes/api/house/v1/demo/prepare'
+import { Route as ApiHouseV1AccessGrantsChangesRouteImport } from './routes/api/house/v1/access-grants/changes'
+import { Route as ApiHouseV1AccessEventsBatchRouteImport } from './routes/api/house/v1/access-events/batch'
 
 const PessoasRoute = PessoasRouteImport.update({
   id: '/pessoas',
@@ -85,6 +93,48 @@ const ApiPublicHooksLumaSyncActiveRoute =
     path: '/api/public/hooks/luma-sync-active',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiHouseV1LumaGuestRoute = ApiHouseV1LumaGuestRouteImport.update({
+  id: '/api/house/v1/luma-guest',
+  path: '/api/house/v1/luma-guest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseV1HeartbeatRoute = ApiHouseV1HeartbeatRouteImport.update({
+  id: '/api/house/v1/heartbeat',
+  path: '/api/house/v1/heartbeat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseV1HealthRoute = ApiHouseV1HealthRouteImport.update({
+  id: '/api/house/v1/health',
+  path: '/api/house/v1/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseV1FeedRoute = ApiHouseV1FeedRouteImport.update({
+  id: '/api/house/v1/feed',
+  path: '/api/house/v1/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseV1BootstrapRoute = ApiHouseV1BootstrapRouteImport.update({
+  id: '/api/house/v1/bootstrap',
+  path: '/api/house/v1/bootstrap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseV1DemoPrepareRoute = ApiHouseV1DemoPrepareRouteImport.update({
+  id: '/api/house/v1/demo/prepare',
+  path: '/api/house/v1/demo/prepare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseV1AccessGrantsChangesRoute =
+  ApiHouseV1AccessGrantsChangesRouteImport.update({
+    id: '/api/house/v1/access-grants/changes',
+    path: '/api/house/v1/access-grants/changes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiHouseV1AccessEventsBatchRoute =
+  ApiHouseV1AccessEventsBatchRouteImport.update({
+    id: '/api/house/v1/access-events/batch',
+    path: '/api/house/v1/access-events/batch',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -97,8 +147,16 @@ export interface FileRoutesByFullPath {
   '/hooks/luma-sync': typeof HooksLumaSyncRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
+  '/api/house/v1/bootstrap': typeof ApiHouseV1BootstrapRoute
+  '/api/house/v1/feed': typeof ApiHouseV1FeedRoute
+  '/api/house/v1/health': typeof ApiHouseV1HealthRoute
+  '/api/house/v1/heartbeat': typeof ApiHouseV1HeartbeatRoute
+  '/api/house/v1/luma-guest': typeof ApiHouseV1LumaGuestRoute
   '/api/public/hooks/luma-sync-active': typeof ApiPublicHooksLumaSyncActiveRoute
   '/api/public/hooks/luma-sync-full': typeof ApiPublicHooksLumaSyncFullRoute
+  '/api/house/v1/access-events/batch': typeof ApiHouseV1AccessEventsBatchRoute
+  '/api/house/v1/access-grants/changes': typeof ApiHouseV1AccessGrantsChangesRoute
+  '/api/house/v1/demo/prepare': typeof ApiHouseV1DemoPrepareRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -111,8 +169,16 @@ export interface FileRoutesByTo {
   '/hooks/luma-sync': typeof HooksLumaSyncRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
+  '/api/house/v1/bootstrap': typeof ApiHouseV1BootstrapRoute
+  '/api/house/v1/feed': typeof ApiHouseV1FeedRoute
+  '/api/house/v1/health': typeof ApiHouseV1HealthRoute
+  '/api/house/v1/heartbeat': typeof ApiHouseV1HeartbeatRoute
+  '/api/house/v1/luma-guest': typeof ApiHouseV1LumaGuestRoute
   '/api/public/hooks/luma-sync-active': typeof ApiPublicHooksLumaSyncActiveRoute
   '/api/public/hooks/luma-sync-full': typeof ApiPublicHooksLumaSyncFullRoute
+  '/api/house/v1/access-events/batch': typeof ApiHouseV1AccessEventsBatchRoute
+  '/api/house/v1/access-grants/changes': typeof ApiHouseV1AccessGrantsChangesRoute
+  '/api/house/v1/demo/prepare': typeof ApiHouseV1DemoPrepareRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -126,8 +192,16 @@ export interface FileRoutesById {
   '/hooks/luma-sync': typeof HooksLumaSyncRoute
   '/hooks/telegram-daily-report': typeof HooksTelegramDailyReportRoute
   '/hooks/telegram-poll': typeof HooksTelegramPollRoute
+  '/api/house/v1/bootstrap': typeof ApiHouseV1BootstrapRoute
+  '/api/house/v1/feed': typeof ApiHouseV1FeedRoute
+  '/api/house/v1/health': typeof ApiHouseV1HealthRoute
+  '/api/house/v1/heartbeat': typeof ApiHouseV1HeartbeatRoute
+  '/api/house/v1/luma-guest': typeof ApiHouseV1LumaGuestRoute
   '/api/public/hooks/luma-sync-active': typeof ApiPublicHooksLumaSyncActiveRoute
   '/api/public/hooks/luma-sync-full': typeof ApiPublicHooksLumaSyncFullRoute
+  '/api/house/v1/access-events/batch': typeof ApiHouseV1AccessEventsBatchRoute
+  '/api/house/v1/access-grants/changes': typeof ApiHouseV1AccessGrantsChangesRoute
+  '/api/house/v1/demo/prepare': typeof ApiHouseV1DemoPrepareRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,8 +216,16 @@ export interface FileRouteTypes {
     | '/hooks/luma-sync'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
+    | '/api/house/v1/bootstrap'
+    | '/api/house/v1/feed'
+    | '/api/house/v1/health'
+    | '/api/house/v1/heartbeat'
+    | '/api/house/v1/luma-guest'
     | '/api/public/hooks/luma-sync-active'
     | '/api/public/hooks/luma-sync-full'
+    | '/api/house/v1/access-events/batch'
+    | '/api/house/v1/access-grants/changes'
+    | '/api/house/v1/demo/prepare'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -156,8 +238,16 @@ export interface FileRouteTypes {
     | '/hooks/luma-sync'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
+    | '/api/house/v1/bootstrap'
+    | '/api/house/v1/feed'
+    | '/api/house/v1/health'
+    | '/api/house/v1/heartbeat'
+    | '/api/house/v1/luma-guest'
     | '/api/public/hooks/luma-sync-active'
     | '/api/public/hooks/luma-sync-full'
+    | '/api/house/v1/access-events/batch'
+    | '/api/house/v1/access-grants/changes'
+    | '/api/house/v1/demo/prepare'
   id:
     | '__root__'
     | '/'
@@ -170,8 +260,16 @@ export interface FileRouteTypes {
     | '/hooks/luma-sync'
     | '/hooks/telegram-daily-report'
     | '/hooks/telegram-poll'
+    | '/api/house/v1/bootstrap'
+    | '/api/house/v1/feed'
+    | '/api/house/v1/health'
+    | '/api/house/v1/heartbeat'
+    | '/api/house/v1/luma-guest'
     | '/api/public/hooks/luma-sync-active'
     | '/api/public/hooks/luma-sync-full'
+    | '/api/house/v1/access-events/batch'
+    | '/api/house/v1/access-grants/changes'
+    | '/api/house/v1/demo/prepare'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -185,8 +283,16 @@ export interface RootRouteChildren {
   HooksLumaSyncRoute: typeof HooksLumaSyncRoute
   HooksTelegramDailyReportRoute: typeof HooksTelegramDailyReportRoute
   HooksTelegramPollRoute: typeof HooksTelegramPollRoute
+  ApiHouseV1BootstrapRoute: typeof ApiHouseV1BootstrapRoute
+  ApiHouseV1FeedRoute: typeof ApiHouseV1FeedRoute
+  ApiHouseV1HealthRoute: typeof ApiHouseV1HealthRoute
+  ApiHouseV1HeartbeatRoute: typeof ApiHouseV1HeartbeatRoute
+  ApiHouseV1LumaGuestRoute: typeof ApiHouseV1LumaGuestRoute
   ApiPublicHooksLumaSyncActiveRoute: typeof ApiPublicHooksLumaSyncActiveRoute
   ApiPublicHooksLumaSyncFullRoute: typeof ApiPublicHooksLumaSyncFullRoute
+  ApiHouseV1AccessEventsBatchRoute: typeof ApiHouseV1AccessEventsBatchRoute
+  ApiHouseV1AccessGrantsChangesRoute: typeof ApiHouseV1AccessGrantsChangesRoute
+  ApiHouseV1DemoPrepareRoute: typeof ApiHouseV1DemoPrepareRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -275,6 +381,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLumaSyncActiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/house/v1/luma-guest': {
+      id: '/api/house/v1/luma-guest'
+      path: '/api/house/v1/luma-guest'
+      fullPath: '/api/house/v1/luma-guest'
+      preLoaderRoute: typeof ApiHouseV1LumaGuestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/v1/heartbeat': {
+      id: '/api/house/v1/heartbeat'
+      path: '/api/house/v1/heartbeat'
+      fullPath: '/api/house/v1/heartbeat'
+      preLoaderRoute: typeof ApiHouseV1HeartbeatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/v1/health': {
+      id: '/api/house/v1/health'
+      path: '/api/house/v1/health'
+      fullPath: '/api/house/v1/health'
+      preLoaderRoute: typeof ApiHouseV1HealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/v1/feed': {
+      id: '/api/house/v1/feed'
+      path: '/api/house/v1/feed'
+      fullPath: '/api/house/v1/feed'
+      preLoaderRoute: typeof ApiHouseV1FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/v1/bootstrap': {
+      id: '/api/house/v1/bootstrap'
+      path: '/api/house/v1/bootstrap'
+      fullPath: '/api/house/v1/bootstrap'
+      preLoaderRoute: typeof ApiHouseV1BootstrapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/v1/demo/prepare': {
+      id: '/api/house/v1/demo/prepare'
+      path: '/api/house/v1/demo/prepare'
+      fullPath: '/api/house/v1/demo/prepare'
+      preLoaderRoute: typeof ApiHouseV1DemoPrepareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/v1/access-grants/changes': {
+      id: '/api/house/v1/access-grants/changes'
+      path: '/api/house/v1/access-grants/changes'
+      fullPath: '/api/house/v1/access-grants/changes'
+      preLoaderRoute: typeof ApiHouseV1AccessGrantsChangesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/v1/access-events/batch': {
+      id: '/api/house/v1/access-events/batch'
+      path: '/api/house/v1/access-events/batch'
+      fullPath: '/api/house/v1/access-events/batch'
+      preLoaderRoute: typeof ApiHouseV1AccessEventsBatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -289,8 +451,16 @@ const rootRouteChildren: RootRouteChildren = {
   HooksLumaSyncRoute: HooksLumaSyncRoute,
   HooksTelegramDailyReportRoute: HooksTelegramDailyReportRoute,
   HooksTelegramPollRoute: HooksTelegramPollRoute,
+  ApiHouseV1BootstrapRoute: ApiHouseV1BootstrapRoute,
+  ApiHouseV1FeedRoute: ApiHouseV1FeedRoute,
+  ApiHouseV1HealthRoute: ApiHouseV1HealthRoute,
+  ApiHouseV1HeartbeatRoute: ApiHouseV1HeartbeatRoute,
+  ApiHouseV1LumaGuestRoute: ApiHouseV1LumaGuestRoute,
   ApiPublicHooksLumaSyncActiveRoute: ApiPublicHooksLumaSyncActiveRoute,
   ApiPublicHooksLumaSyncFullRoute: ApiPublicHooksLumaSyncFullRoute,
+  ApiHouseV1AccessEventsBatchRoute: ApiHouseV1AccessEventsBatchRoute,
+  ApiHouseV1AccessGrantsChangesRoute: ApiHouseV1AccessGrantsChangesRoute,
+  ApiHouseV1DemoPrepareRoute: ApiHouseV1DemoPrepareRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
