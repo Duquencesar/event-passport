@@ -1,17 +1,19 @@
 const BRASILIA_TIME_ZONE = "America/Sao_Paulo";
 
+/**
+ * Brasília é UTC-3 (sem horário de verão desde 2019).
+ * Calculamos manualmente para evitar dependência de dados ICU
+ * que podem estar ausentes em runtimes serverless (Cloudflare Workers),
+ * onde Intl.DateTimeFormat com timeZone:"America/Sao_Paulo" pode
+ * silenciosamente cair pra UTC.
+ */
+const BRASILIA_OFFSET_MS = -3 * 60 * 60 * 1000;
+
 function extractDateParts(date: Date) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: BRASILIA_TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(date);
-
-  const year = parts.find((part) => part.type === "year")?.value ?? "";
-  const month = parts.find((part) => part.type === "month")?.value ?? "";
-  const day = parts.find((part) => part.type === "day")?.value ?? "";
-
+  const shifted = new Date(date.getTime() + BRASILIA_OFFSET_MS);
+  const year = String(shifted.getUTCFullYear());
+  const month = String(shifted.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(shifted.getUTCDate()).padStart(2, "0");
   return { year, month, day };
 }
 
