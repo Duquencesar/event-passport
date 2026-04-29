@@ -367,6 +367,13 @@ function EventosPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handleGoCheckin = (event: EventWithStats) => {
+    try {
+      localStorage.setItem("ipe-last-event-id", event.id);
+    } catch {}
+    navigate({ to: "/checkin" });
+  };
+
   const syncStale = !lastSync || (Date.now() - new Date(lastSync).getTime()) > 4 * 3600 * 1000;
 
   return (
@@ -480,7 +487,7 @@ function EventosPage() {
                   </span>
                 </div>
                 {todayEvents.map((event) => (
-                  <EventCard key={event.id} event={event} today={today} onExport={handleExportEventCheckins} />
+                  <EventCard key={event.id} event={event} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
                 ))}
               </TabsContent>
             )}
@@ -491,7 +498,7 @@ function EventosPage() {
                 <EmptyState label="Nenhum evento futuro agendado" />
               ) : (
                 Object.entries(upcomingByDate).map(([date, events]) => (
-                  <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
+                  <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
                 ))
               )}
             </TabsContent>
@@ -529,7 +536,7 @@ function EventosPage() {
                     </div>
                   </div>
                   {Object.entries(pastByDate).map(([date, events]) => (
-                    <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
+                    <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
                   ))}
                 </>
               )}
@@ -538,7 +545,7 @@ function EventosPage() {
             {/* Todos */}
             <TabsContent value="todos" className="mt-6 space-y-8">
               {Object.entries(groupByDate(allEvents)).map(([date, events]) => (
-                <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
+                <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
               ))}
             </TabsContent>
           </Tabs>
