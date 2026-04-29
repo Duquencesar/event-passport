@@ -148,6 +148,7 @@ export type NormalizedLumaEvent = {
   organizer: string | null;
   url: string | null;
   start_at: string;
+  end_at: string | null;
 };
 
 export async function listCalendarEvents(
@@ -202,6 +203,7 @@ export async function listCalendarEvents(
         organizer: ev.hosts?.[0]?.name || null,
         url: ev.url || null,
         start_at: ev.start_at,
+        end_at: ev.end_at || null,
       };
     })
     .filter((e): e is NormalizedLumaEvent => e !== null);
