@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Layout } from "@/components/Layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
   History,
   Download,
   RefreshCw,
+  UserPlus,
 } from "lucide-react";
 import { getAllEventsWithStats, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
@@ -90,11 +92,13 @@ function EventCard({
   today,
   showStats = true,
   onExport,
+  onCheckin,
 }: {
   event: EventWithStats;
   today: string;
   showStats?: boolean;
   onExport: (event: EventWithStats) => void;
+  onCheckin: (event: EventWithStats) => void;
 }) {
   const isToday = event.date === today;
   const isPast = event.date < today;
@@ -131,6 +135,15 @@ function EventCard({
           <h4 className="font-bold text-foreground leading-tight">{event.name}</h4>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {isToday && (
+            <button
+              onClick={() => onCheckin(event)}
+              className="text-[#84E400] hover:text-[#84E400] tap-pop p-1.5 rounded-lg hover:bg-[#84E400]/10"
+              title="Fazer check-in neste evento"
+            >
+              <UserPlus className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={() => onExport(event)}
             className="text-muted-foreground hover:text-primary tap-pop p-1.5 rounded-lg hover:bg-primary/10"
@@ -204,6 +217,15 @@ function EventCard({
           )}
         </div>
       )}
+      {isToday && (
+        <Button
+          onClick={() => onCheckin(event)}
+          className="w-full bg-[#84E400] hover:bg-[#84E400]/90 text-[#0F1729] font-semibold gap-2 rounded-xl"
+        >
+          <UserCheck className="w-4 h-4" />
+          Fazer check-in
+        </Button>
+      )}
     </div>
   );
 }
@@ -213,11 +235,13 @@ function DateGroup({
   events,
   today,
   onExport,
+  onCheckin,
 }: {
   date: string;
   events: EventWithStats[];
   today: string;
   onExport: (event: EventWithStats) => void;
+  onCheckin: (event: EventWithStats) => void;
 }) {
   return (
     <div className="space-y-3">
@@ -227,7 +251,7 @@ function DateGroup({
       </h3>
       <div className="space-y-3">
         {events.map((event) => (
-          <EventCard key={event.id} event={event} today={today} onExport={onExport} />
+          <EventCard key={event.id} event={event} today={today} onExport={onExport} onCheckin={onCheckin} />
         ))}
       </div>
     </div>
@@ -261,6 +285,7 @@ function formatRelativeTime(iso: string | null): string {
 }
 
 function EventosPage() {
+  const navigate = useNavigate();
   const [allEvents, setAllEvents] = useState<EventWithStats[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -340,6 +365,13 @@ function EventosPage() {
     a.download = `${event.date}-${event.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")}-checkins.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleGoCheckin = (event: EventWithStats) => {
+    try {
+      localStorage.setItem("ipe-last-event-id", event.id);
+    } catch {}
+    navigate({ to: "/checkin" });
   };
 
   const syncStale = !lastSync || (Date.now() - new Date(lastSync).getTime()) > 4 * 3600 * 1000;
@@ -455,7 +487,7 @@ function EventosPage() {
                   </span>
                 </div>
                 {todayEvents.map((event) => (
-                  <EventCard key={event.id} event={event} today={today} onExport={handleExportEventCheckins} />
+                  <EventCard key={event.id} event={event} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
                 ))}
               </TabsContent>
             )}
@@ -466,7 +498,7 @@ function EventosPage() {
                 <EmptyState label="Nenhum evento futuro agendado" />
               ) : (
                 Object.entries(upcomingByDate).map(([date, events]) => (
-                  <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
+                  <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
                 ))
               )}
             </TabsContent>
@@ -504,7 +536,7 @@ function EventosPage() {
                     </div>
                   </div>
                   {Object.entries(pastByDate).map(([date, events]) => (
-                    <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
+                    <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
                   ))}
                 </>
               )}
@@ -513,7 +545,7 @@ function EventosPage() {
             {/* Todos */}
             <TabsContent value="todos" className="mt-6 space-y-8">
               {Object.entries(groupByDate(allEvents)).map(([date, events]) => (
-                <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} />
+                <DateGroup key={date} date={date} events={events} today={today} onExport={handleExportEventCheckins} onCheckin={handleGoCheckin} />
               ))}
             </TabsContent>
           </Tabs>
