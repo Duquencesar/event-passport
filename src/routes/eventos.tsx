@@ -18,7 +18,6 @@ import {
   History,
   Download,
   RefreshCw,
-  UserPlus,
 } from "lucide-react";
 import { getAllEventsWithStats, getEventCheckedInParticipantsForExport } from "@/server/event.functions";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
@@ -110,7 +109,11 @@ function EventCard({
 
   return (
     <div
-      className={`glass lift-glow rounded-2xl p-5 space-y-4 ${isPast && !isToday ? "opacity-70 hover:opacity-100" : ""} ${isToday ? "border-primary/30" : ""}`}
+      onClick={isToday ? () => onCheckin(event) : undefined}
+      role={isToday ? "button" : undefined}
+      tabIndex={isToday ? 0 : undefined}
+      onKeyDown={isToday ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onCheckin(event); } } : undefined}
+      className={`glass lift-glow rounded-2xl p-5 space-y-4 ${isPast && !isToday ? "opacity-70 hover:opacity-100" : ""} ${isToday ? "border-primary/30 cursor-pointer hover:border-primary/60 transition-colors" : ""}`}
     >
       {/* Top row */}
       <div className="flex items-start justify-between gap-3">
@@ -135,17 +138,8 @@ function EventCard({
           <h4 className="font-bold text-foreground leading-tight">{event.name}</h4>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          {isToday && (
-            <button
-              onClick={() => onCheckin(event)}
-              className="text-[#84E400] hover:text-[#84E400] tap-pop p-1.5 rounded-lg hover:bg-[#84E400]/10"
-              title="Fazer check-in neste evento"
-            >
-              <UserPlus className="w-4 h-4" />
-            </button>
-          )}
           <button
-            onClick={() => onExport(event)}
+            onClick={(e) => { e.stopPropagation(); onExport(event); }}
             className="text-muted-foreground hover:text-primary tap-pop p-1.5 rounded-lg hover:bg-primary/10"
             title="Baixar check-ins"
           >
@@ -216,15 +210,6 @@ function EventCard({
             </div>
           )}
         </div>
-      )}
-      {isToday && (
-        <Button
-          onClick={() => onCheckin(event)}
-          className="w-full bg-[#84E400] hover:bg-[#84E400]/90 text-[#0F1729] font-semibold gap-2 rounded-xl"
-        >
-          <UserCheck className="w-4 h-4" />
-          Fazer check-in
-        </Button>
       )}
     </div>
   );
