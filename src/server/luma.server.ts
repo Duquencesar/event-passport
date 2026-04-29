@@ -481,12 +481,34 @@ export async function syncEntireCalendar(opts: {
       return toDateKey(d.toISOString());
     })();
 
-  // Passa filtros direto pra API do Luma (evita paginar milhares de eventos antigos)
-  const afterIso = `${cutoff}T00:00:00.000Z`;
+  // Buscamos eventos cujo TÉRMINO ainda está no futuro (cutoff). Isso garante
+  // que eventos longos (ex.: "Ipê Village Floripa 2026" 06/04 → 30/04) continuem
+  // sendo sincronizados mesmo quando seu start_at já saiu da janela de 7 dias.
+  // O parâmetro `after` da API do Luma filtra por start_at, então usamos um
+  // cutoff bem mais permissivo (60 dias) e re-filtramos abaixo por end_at.
+  const widerCutoff = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 60);
+    const cutoffKey = toDateKey(d.toISOString());
+    return cutoffKey < cutoff ? cutoffKey : cutoff;
+  })();
+  const afterIso = `${widerCutoff}T00:00:00.000Z`;
   const beforeIso = opts.untilDate ? `${opts.untilDate}T23:59:59.999Z` : undefined;
   const events = await listCalendarEvents(opts.apiKey, opts.calendarApiId, afterIso, beforeIso);
 
-  const upcoming = events.filter((e) => e.date >= cutoff && (!opts.untilDate || e.date <= opts.untilDate));
+  const nowMs = Date.now();
+  const upcoming = events.filter((e) => {
+    if (opts.untilDate && e.date > opts.untilDate) return false;
+    // Inclui se começa dentro da janela…
+    if (e.date >= cutoff) return true;
+    // …ou se ainda está em andamento (end_at no futuro). Cobre eventos longos
+    // como Ipê Village (várias semanas) que continuam recebendo inscrições.
+    if (e.end_at) {
+      const endMs = new Date(e.end_at).getTime();
+      if (!Number.isNaN(endMs) && endMs >= nowMs) return true;
+    }
+    return false;
+  });
 
   const totals = { guests: 0, created: 0, updated: 0, registrations: 0, checkins: 0 };
   const per_event: FullSyncResult["per_event"] = [];
