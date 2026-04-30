@@ -768,180 +768,26 @@ function CheckinPage() {
           </div>
 
           {events.length > 0 ? (
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                Eventos de hoje — {events.length} evento{events.length !== 1 ? "s" : ""}
-              </h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-              {events.map((event) => {
-                const pct = event.registration_count > 0
-                  ? Math.min(100, Math.round((event.checkin_count / event.registration_count) * 100))
-                  : 0;
-                return (
-                  <button
-                    key={event.id}
-                    onClick={() => selectEvent(event)}
-                    className="w-full rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group text-left"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#84E400]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
-                    <div className="space-y-3 relative">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <SectionBadge label="ATIVO" pulse={true} className="text-[10px] px-2 py-0.5" />
-                          </div>
-                          <h4 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">
-                            {event.name}
-                          </h4>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5" />
-                      </div>
-
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        {event.time && (
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
-                            {event.time}
-                          </span>
-                        )}
-                        {event.location && (
-                          <span className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {event.location}
-                          </span>
-                        )}
-                        {event.organizer && (
-                          <span className="flex items-center gap-1.5 truncate">
-                            <Users className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{event.organizer}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Stats row */}
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Users className="w-3 h-3" />
-                            {event.registration_count} inscritos
-                          </span>
-                          <span className="flex items-center gap-1 text-primary font-medium">
-                            <UserCheck className="w-3 h-3" />
-                            {event.checkin_count} check-ins
-                          </span>
-                        </div>
-                        {event.registration_count > 0 && (
-                          <span className="text-muted-foreground font-medium">{pct}%</span>
-                        )}
-                      </div>
-
-                      {/* Progress bar */}
-                      {event.registration_count > 0 && (
-                        <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-primary/70 transition-all duration-500"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-              </div>
-            </div>
+            <EventGrid
+              title={`Eventos de hoje — ${events.length} evento${events.length !== 1 ? "s" : ""}`}
+              events={events}
+              variant="active"
+              onSelect={selectEvent}
+            />
           ) : upcomingEvents.length > 0 ? (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                  Em breve
-                </h3>
-                <Badge className="bg-amber-500/15 text-amber-400 border-0 rounded-lg text-[10px]">
-                  Nenhum evento hoje
-                </Badge>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-              {upcomingEvents.map((event) => {
-                const pct = event.registration_count > 0
-                  ? Math.min(100, Math.round((event.checkin_count / event.registration_count) * 100))
-                  : 0;
-                return (
-                  <button
-                    key={event.id}
-                    onClick={() => selectEvent(event)}
-                    className="w-full rounded-xl border border-border bg-card p-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_25px_rgba(0,0,0,0.2)] relative overflow-hidden group text-left opacity-80 hover:opacity-100"
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#84E400]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
-                    <div className="space-y-3 relative">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-amber-500/15 text-amber-400 border-0 rounded-lg text-[10px]">
-                              {event.date}
-                            </Badge>
-                          </div>
-                          <h4 className="font-bold text-foreground group-hover:text-primary transition-colors leading-tight line-clamp-2">
-                            {event.name}
-                          </h4>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0 mt-0.5" />
-                      </div>
-
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        {event.time && (
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" />
-                            {event.time}
-                          </span>
-                        )}
-                        {event.location && (
-                          <span className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {event.location}
-                          </span>
-                        )}
-                        {event.organizer && (
-                          <span className="flex items-center gap-1.5 truncate">
-                            <Users className="w-3.5 h-3.5 shrink-0" />
-                            <span className="truncate">{event.organizer}</span>
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Users className="w-3 h-3" />
-                            {event.registration_count} inscritos
-                          </span>
-                          <span className="flex items-center gap-1 text-primary font-medium">
-                            <UserCheck className="w-3 h-3" />
-                            {event.checkin_count} check-ins
-                          </span>
-                        </div>
-                        {event.registration_count > 0 && (
-                          <span className="text-muted-foreground font-medium">{pct}%</span>
-                        )}
-                      </div>
-
-                      {event.registration_count > 0 && (
-                        <div className="w-full h-1.5 rounded-full bg-border/40 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-amber-400/60 transition-all duration-500"
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-              </div>
-            </div>
+            <EventGrid
+              title="Sem eventos hoje — próximos:"
+              events={upcomingEvents}
+              variant="upcoming"
+              onSelect={selectEvent}
+            />
           ) : (
             <div className="glass rounded-3xl py-16 text-center">
               <CalendarDays className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
-              <p className="text-muted-foreground">Nenhum evento programado para hoje</p>
+              <p className="text-muted-foreground">Nenhum evento programado</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                Aguardando próximos eventos no calendário do Luma.
+              </p>
             </div>
           )}
 
