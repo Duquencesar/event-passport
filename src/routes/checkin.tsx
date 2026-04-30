@@ -70,6 +70,17 @@ type EventWithStats = EventBase & { registration_count: number; checkin_count: n
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null };
 type EventParticipant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
 
+type CheckinRecord = {
+  id: string;
+  period: string;
+  access_type: string;
+  event_name: string | null;
+  checked_in_at: string;
+  person_id: string;
+  event_id?: string | null;
+  people: { name: string; tag: string | null } | null;
+};
+
 function csvCell(value: unknown) {
   const text = value == null ? "" : String(value);
   return `"${text.replace(/"/g, '""')}"`;
@@ -217,7 +228,7 @@ function CheckinPage() {
   const [selected, setSelected] = useState<Person | null>(null);
   const [period, setPeriod] = useState<"Manhã" | "Tarde">("Manhã");
   const [accessType, setAccessType] = useState("IP Village");
-  const [todayCheckins, setTodayCheckins] = useState<any[]>([]);
+  const [todayCheckins, setTodayCheckins] = useState<CheckinRecord[]>([]);
   const [todayCount, setTodayCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -230,7 +241,7 @@ function CheckinPage() {
   const [events, setEvents] = useState<EventWithStats[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<EventWithStats[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
-  const [eventCheckins, setEventCheckins] = useState<any[]>([]);
+  const [eventCheckins, setEventCheckins] = useState<CheckinRecord[]>([]);
   const [eventParticipants, setEventParticipants] = useState<EventParticipant[]>([]);
   const [participantsTotal, setParticipantsTotal] = useState(0);
   const [participantsHasMore, setParticipantsHasMore] = useState(false);
