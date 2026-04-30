@@ -70,6 +70,17 @@ type EventWithStats = EventBase & { registration_count: number; checkin_count: n
 type Registration = { id: string; event_name: string; ticket_type: string; day_pass_date: string | null; week_pass_start_date: string | null; event_id: string | null };
 type EventParticipant = { id: string; name: string; tag: string | null; ticket_type: string; access_type: string };
 
+type CheckinRecord = {
+  id: string;
+  period: string;
+  access_type: string;
+  event_name: string | null;
+  checked_in_at: string;
+  person_id: string;
+  event_id?: string | null;
+  people: { name: string; tag: string | null } | null;
+};
+
 function csvCell(value: unknown) {
   const text = value == null ? "" : String(value);
   return `"${text.replace(/"/g, '""')}"`;
@@ -217,7 +228,7 @@ function CheckinPage() {
   const [selected, setSelected] = useState<Person | null>(null);
   const [period, setPeriod] = useState<"Manhã" | "Tarde">("Manhã");
   const [accessType, setAccessType] = useState("IP Village");
-  const [todayCheckins, setTodayCheckins] = useState<any[]>([]);
+  const [todayCheckins, setTodayCheckins] = useState<CheckinRecord[]>([]);
   const [todayCount, setTodayCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -230,7 +241,7 @@ function CheckinPage() {
   const [events, setEvents] = useState<EventWithStats[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<EventWithStats[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<EventBase | null>(null);
-  const [eventCheckins, setEventCheckins] = useState<any[]>([]);
+  const [eventCheckins, setEventCheckins] = useState<CheckinRecord[]>([]);
   const [eventParticipants, setEventParticipants] = useState<EventParticipant[]>([]);
   const [participantsTotal, setParticipantsTotal] = useState(0);
   const [participantsHasMore, setParticipantsHasMore] = useState(false);
@@ -643,7 +654,7 @@ function CheckinPage() {
   const handleBulkParticipantCheckin = async () => {
     if (!selectedEvent || selectedParticipantIds.size === 0) return;
     const selectedParticipants = eventParticipants.filter(
-      (participant) => selectedParticipantIds.has(participant.id) && !eventCheckins.some((c: any) => c.person_id === participant.id),
+      (participant) => selectedParticipantIds.has(participant.id) && !eventCheckins.some((c) => c.person_id === participant.id),
     );
     if (selectedParticipants.length === 0) return;
 
@@ -798,7 +809,7 @@ function CheckinPage() {
               <SectionBadge label="ATIVIDADE RECENTE" pulse={true} className="mb-3" />
               <div className="inverted-section rounded-2xl mt-4">
                 <div className="space-y-0 divide-y divide-white/5">
-                  {todayCheckins.slice(0, 10).map((c: any) => (
+                  {todayCheckins.slice(0, 10).map((c) => (
                     <div
                       key={c.id}
                       className="flex items-center justify-between px-5 py-3"
@@ -838,7 +849,7 @@ function CheckinPage() {
 
   const isEventMode = selectedEvent && selectedEvent.id !== "";
   const currentCheckins = isEventMode ? eventCheckins : todayCheckins;
-  const checkedInPersonIds = new Set(eventCheckins.map((c: any) => c.person_id));
+  const checkedInPersonIds = new Set(eventCheckins.map((c) => c.person_id));
   const availableParticipants = eventParticipants.filter((participant) => !checkedInPersonIds.has(participant.id));
   const selectedAvailableCount = availableParticipants.filter((participant) => selectedParticipantIds.has(participant.id)).length;
   const allAvailableSelected = availableParticipants.length > 0 && selectedAvailableCount === availableParticipants.length;
@@ -1180,7 +1191,7 @@ function CheckinPage() {
               </div>
             )}
             <div className="divide-y divide-white/5">
-              {currentCheckins.map((c: any) => (
+              {currentCheckins.map((c) => (
                 <div
                   key={c.id}
                   className="px-5 py-3.5"
