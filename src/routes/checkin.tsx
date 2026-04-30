@@ -49,6 +49,7 @@ import {
 } from "@/server/event.functions";
 import { ParticipantsVirtualList } from "@/components/ParticipantsVirtualList";
 import { getLastLumaSync, triggerLumaSync } from "@/server/luma-status.functions";
+import { EventGrid } from "@/components/events/EventGrid";
 import { RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
