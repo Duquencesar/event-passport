@@ -143,6 +143,17 @@
   line-height: 1.15;
   letter-spacing: -0.005em;
 }
+.font-display {
+  font-family: var(--font-display);
+}
+/* Caption mono — rótulos de métricas, tags, micro-labels */
+.caption {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted-foreground);
+}
 
 /* Atalho de teclado — kbd discreto */
 .kbd {
