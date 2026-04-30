@@ -211,7 +211,6 @@ function ConfiguracoesPage() {
           <SectionBadge label="ADMINISTRAÇÃO" pulse={false} className="mb-3" />
           <h1
             className="gradient-text"
-            style={{ fontSize: "2rem", lineHeight: "1.1" }}
           >
             Configurações
           </h1>
