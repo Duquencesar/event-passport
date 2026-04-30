@@ -52,7 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Logo — always visible */}
           <div className="flex items-center gap-8">
             <h1 className="text-lg font-semibold tracking-tight shrink-0">
-              <span className="text-primary" style={{ fontFamily: "var(--font-display)" }}>Ipê</span>{" "}
+              <span className="text-primary">Ipê</span>{" "}
               <span className="text-foreground/80 tracking-tight">Village</span>
               <span className="text-muted-foreground text-sm font-normal ml-2 hidden sm:inline">
                 Check-In
@@ -108,7 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {/* Drawer header */}
                 <div className="px-6 py-5 border-b border-border/30 flex items-center justify-between">
                   <h2 className="font-semibold">
-                    <span className="text-primary" style={{ fontFamily: "var(--font-display)" }}>Ipê</span>{" "}
+                    <span className="text-primary">Ipê</span>{" "}
                     <span className="text-foreground/80 tracking-tight">Village</span>
                   </h2>
                   <span className="text-xs text-muted-foreground capitalize">{today}</span>

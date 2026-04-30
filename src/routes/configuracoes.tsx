@@ -211,7 +211,7 @@ function ConfiguracoesPage() {
           <SectionBadge label="ADMINISTRAÇÃO" pulse={false} className="mb-3" />
           <h1
             className="gradient-text"
-            style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}
+            style={{ fontSize: "2rem", lineHeight: "1.1" }}
           >
             Configurações
           </h1>
@@ -315,7 +315,7 @@ function ConfiguracoesPage() {
             <SectionBadge label="TELEGRAM" pulse={false} />
             <h2
               className="mt-3 text-xl text-foreground"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Relatório automático
             </h2>
@@ -456,7 +456,7 @@ function ConfiguracoesPage() {
             <SectionBadge label="TESTE" pulse={false} />
             <h2
               className="mt-3 text-xl text-foreground"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Testar relatório agora
             </h2>
@@ -536,7 +536,7 @@ function ConfiguracoesPage() {
             <SectionBadge label="TIPOS DE ACESSO" pulse={false} />
             <h2
               className="mt-3 text-xl text-foreground"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Referência de tipos de acesso
             </h2>

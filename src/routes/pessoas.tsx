@@ -228,7 +228,7 @@ function PessoasPage() {
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <SectionBadge label="MEMBROS E VISITANTES" pulse={false} className="mb-3" />
-            <h1 className="mb-0" style={{fontFamily: 'var(--font-display)', fontSize: '2rem', lineHeight: '1.1'}}>
+            <h1 className="mb-0" style={{fontSize: '2rem', lineHeight: '1.1'}}>
               <span className="gradient-text">Pessoas</span>
             </h1>
             <p className="text-muted-foreground text-sm mt-2">Pessoas cadastradas no sistema</p>
@@ -268,10 +268,10 @@ function PessoasPage() {
                   <Clock className="h-5 w-5 text-amber-400" />
                 </div>
               </div>
-              <p className="text-3xl text-white tabular-nums" style={{fontFamily: 'var(--font-display)'}}>
+              <p className="text-3xl text-white tabular-nums">
                 {tagStats["__none__"] ?? 0}
               </p>
-              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-[#94A3B8]">SEM TAG</p>
+              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-muted-foreground">SEM TAG</p>
             </div>
             {/* Passaram — red-ish fallback / uses checkedIn */}
             <div
@@ -287,10 +287,10 @@ function PessoasPage() {
                   <UserX className="h-5 w-5 text-red-400" />
                 </div>
               </div>
-              <p className="text-3xl text-white tabular-nums" style={{fontFamily: 'var(--font-display)'}}>
+              <p className="text-3xl text-white tabular-nums">
                 {totalCount.checkedIn ?? 0}
               </p>
-              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-[#94A3B8]">CHECK-INS</p>
+              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-muted-foreground">CHECK-INS</p>
             </div>
           </div>
         )}

@@ -66,7 +66,7 @@ function LoginPage() {
 
           <h1
             className="text-[3rem] sm:text-[3.5rem] md:text-[5.25rem] leading-[1.05] tracking-[-0.02em] fade-up"
-            style={{ fontFamily: "var(--font-display)", animationDelay: "0.2s" }}
+            style={{ animationDelay: "0.2s" }}
           >
             Bem-vindo ao{" "}
             <span className="gradient-text">Ipê Village</span>
@@ -142,7 +142,7 @@ function LoginPage() {
             <SectionBadge label="ACESSO" pulse={false} />
             <h1
               className="mt-4 text-[2rem] leading-tight"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Bem-vindo ao <span className="gradient-text">Ipê Village</span>
             </h1>
