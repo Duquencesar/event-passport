@@ -1,9 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { SectionBadge } from "@/components/SectionBadge";
 import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/login")({
@@ -41,182 +37,250 @@ function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-[100dvh] bg-background flex items-center justify-center overflow-hidden px-6 py-8">
-      {/* Bottom-right radial glow */}
+    <div
+      className="grid-bg relative min-h-[100dvh] flex items-center justify-center overflow-hidden"
+      style={{ background: "#05080f" }}
+    >
+      {/* Center lime radial glow */}
       <div
-        className="absolute bottom-[-150px] right-[-150px] w-[400px] h-[400px] rounded-full bg-secondary/[0.04] blur-[80px] pointer-events-none"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center"
         aria-hidden="true"
-      />
+      >
+        <div
+          style={{
+            width: "60vw",
+            height: "60vw",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(132,228,0,0.05), transparent 65%)",
+            filter: "blur(80px)",
+          }}
+        />
+      </div>
 
-      <div className="relative z-10 w-full max-w-5xl grid md:grid-cols-[55fr_45fr] gap-12 items-center">
-        {/* Left column — hero */}
-        <div className="hidden md:flex flex-col justify-center gap-8 relative">
-          {/* Radial glow accent */}
-          <div
-            className="absolute top-[-150px] left-[-150px] w-[400px] h-[400px] rounded-full bg-primary/[0.06] blur-[60px] pointer-events-none"
-            aria-hidden="true"
+      {/* Form container */}
+      <div className="relative z-10 w-full max-w-[360px] px-6">
+        {/* Logo + subtitle */}
+        <div className="mb-8 flex flex-col items-center text-center gap-5">
+          <img
+            src="/brand/ipe-city-logo.png"
+            alt="Ipê City"
+            style={{
+              height: 22,
+              opacity: 0.92,
+              filter: "drop-shadow(0 0 12px rgba(132,228,0,0.35))",
+            }}
           />
-
-          <SectionBadge
-            label="ACESSO"
-            pulse={false}
-            className="fade-up self-start"
-            style={{ animationDelay: "0.1s" }}
-          />
-
-          <h1
-            className="text-[3rem] sm:text-[3.5rem] md:text-[5.25rem] leading-[1.05] tracking-[-0.02em] fade-up"
-            style={{ animationDelay: "0.2s" }}
-          >
-            Bem-vindo ao{" "}
-            <span className="gradient-text">Ipê Village</span>
-          </h1>
-
           <p
-            className="text-base md:text-lg text-muted-foreground max-w-sm fade-up"
-            style={{ animationDelay: "0.3s" }}
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "0.8125rem",
+              fontWeight: 400,
+              color: "oklch(0.38 0.04 255)",
+              letterSpacing: "0.02em",
+            }}
           >
-            Gerencie check-ins com velocidade e elegância.
+            Sistema interno de check-in
           </p>
-
-          {/* Animated graphic */}
-          <div
-            className="relative flex items-center justify-center fade-up"
-            style={{ animationDelay: "0.4s" }}
-          >
-            {/* Spinning dashed ring */}
-            <div
-              className="absolute w-72 h-72 rounded-full border-2 border-dashed border-primary/25 slow-spin dashed-ring"
-              aria-hidden="true"
-            />
-
-            {/* 3x3 dot grid - top right */}
-            <div
-              className="absolute top-0 right-4 grid grid-cols-3 gap-2"
-              aria-hidden="true"
-            >
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/20" />
-              ))}
-            </div>
-
-            {/* Float card 1 */}
-            <div
-              className="absolute top-4 left-4 glass-strong rounded-xl shadow-lg px-4 py-3 float-card-1 flex items-center gap-2"
-              aria-hidden="true"
-            >
-              <span className="h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-foreground">Carlos Mendes</p>
-                <p className="text-[10px] text-muted-foreground">Check-in registrado</p>
-              </div>
-            </div>
-
-            {/* Float card 2 */}
-            <div
-              className="absolute bottom-4 right-4 glass-strong rounded-xl shadow-lg px-4 py-3 float-card-2 flex items-center gap-2"
-              aria-hidden="true"
-            >
-              <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-foreground">47 presentes</p>
-                <p className="text-[10px] text-muted-foreground">Evento Ativo</p>
-              </div>
-            </div>
-
-            {/* Corner accent block */}
-            <div
-              className="absolute bottom-0 left-4 w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-[var(--shadow-accent)]"
-              aria-hidden="true"
-            />
-
-            {/* Center spacer for the ring */}
-            <div className="w-72 h-72" />
-          </div>
         </div>
 
-        {/* Right column — card */}
-        <div className="w-full max-w-sm mx-auto">
-          {/* Mobile-only header text */}
-          <div className="md:hidden text-center mb-6">
-            <SectionBadge label="ACESSO" pulse={false} />
-            <h1
-              className="mt-4 text-[2rem] leading-tight"
-             
+        {/* Glass card */}
+        <form
+          onSubmit={handleSubmit}
+          className="glass-strong rounded-[18px] flex flex-col gap-4"
+          style={{
+            padding: 28,
+            boxShadow:
+              "0 0 0 1px rgba(132,228,0,0.05), 0 32px 80px rgba(0,0,0,0.55)",
+          }}
+        >
+          {/* Error */}
+          {error && (
+            <div
+              aria-live="polite"
+              style={{
+                background: "rgba(224,87,87,0.08)",
+                border: "1px solid rgba(224,87,87,0.2)",
+                borderRadius: 9,
+                padding: "9px 12px",
+                fontFamily: "var(--font-body)",
+                fontSize: 12,
+                color: "#E05757",
+              }}
             >
-              Bem-vindo ao <span className="gradient-text">Ipê Village</span>
-            </h1>
+              ⚠ E-mail ou senha incorretos. Tente novamente.
+            </div>
+          )}
+
+          {/* E-mail */}
+          <div className="flex flex-col gap-[5px]">
+            <label
+              htmlFor="email"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 9,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "oklch(0.38 0.04 255)",
+              }}
+            >
+              E-mail
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email@ipe.city"
+              autoComplete="email"
+              required
+              className="ipe-login-input"
+              style={{
+                height: 42,
+                background: "rgba(5,8,15,0.85)",
+                border: "1px solid rgba(238,242,255,0.07)",
+                borderRadius: 10,
+                padding: "0 14px",
+                color: "#eef2ff",
+                fontSize: 13,
+                fontFamily: "var(--font-body)",
+                outline: "none",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "rgba(132,228,0,0.35)";
+                e.target.style.boxShadow = "0 0 0 3px rgba(132,228,0,0.06)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(238,242,255,0.07)";
+                e.target.style.boxShadow = "none";
+              }}
+            />
           </div>
 
-          {/* Login card */}
-          <form
-            onSubmit={handleSubmit}
-            className="glass-strong rounded-2xl p-8 space-y-5 border border-border shadow-[0_8px_32px_rgba(0,0,0,0.3)]"
-          >
-            {error && (
-              <div
-                aria-live="polite"
-                className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-xl px-4 py-3 flex items-center gap-2"
+          {/* Senha */}
+          <div className="flex flex-col gap-[5px]">
+            <label
+              htmlFor="password"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 9,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "oklch(0.38 0.04 255)",
+              }}
+            >
+              Senha
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete="current-password"
+              required
+              style={{
+                height: 42,
+                background: "rgba(5,8,15,0.85)",
+                border: "1px solid rgba(238,242,255,0.07)",
+                borderRadius: 10,
+                padding: "0 14px",
+                color: "#eef2ff",
+                fontSize: 13,
+                fontFamily: "var(--font-body)",
+                outline: "none",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "rgba(132,228,0,0.35)";
+                e.target.style.boxShadow = "0 0 0 3px rgba(132,228,0,0.06)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(238,242,255,0.07)";
+                e.target.style.boxShadow = "none";
+              }}
+            />
+            <div className="flex justify-end mt-0.5">
+              <a
+                href="mailto:admin@ipe.city?subject=Reset de senha"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 9,
+                  color: "#84E400",
+                  textDecoration: "none",
+                  letterSpacing: "0.05em",
+                }}
               >
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                E-mail ou senha incorretos. Tente novamente.
-              </div>
+                Esqueceu a senha?
+              </a>
+            </div>
+          </div>
+
+          {/* Botão */}
+          <button
+            type="submit"
+            disabled={loading}
+            aria-label="Entrar no sistema"
+            style={{
+              height: 44,
+              background: loading ? "rgba(132,228,0,0.6)" : "#84E400",
+              color: "#04080e",
+              border: "none",
+              borderRadius: 11,
+              fontSize: 13,
+              fontWeight: 700,
+              fontFamily: "var(--font-body)",
+              cursor: loading ? "not-allowed" : "pointer",
+              boxShadow: "0 6px 24px rgba(132,228,0,0.28)",
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              marginTop: 4,
+              width: "100%",
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                (e.currentTarget as HTMLButtonElement).style.background =
+                  "#96f200";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 8px 32px rgba(132,228,0,0.42)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                (e.currentTarget as HTMLButtonElement).style.background =
+                  "#84E400";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow =
+                  "0 6px 24px rgba(132,228,0,0.28)";
+              }
+            }}
+          >
+            {loading ? (
+              <>
+                <span
+                  style={{
+                    width: 13,
+                    height: 13,
+                    border: "2px solid rgba(4,8,14,0.3)",
+                    borderTopColor: "#04080e",
+                    borderRadius: "50%",
+                    display: "inline-block",
+                    animation: "slow-spin 0.7s linear infinite",
+                  }}
+                />
+                Entrando...
+              </>
+            ) : (
+              "Acessar →"
             )}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground" htmlFor="email">
-                E-mail
-              </label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                className="h-12 rounded-xl"
-                autoComplete="email"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground" htmlFor="password">
-                Senha
-              </label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="h-12 rounded-xl"
-                autoComplete="current-password"
-                required
-              />
-              <div className="flex justify-end mt-1">
-                <a
-                  href="mailto:admin@ipe.city?subject=Reset de senha"
-                  className="text-xs text-primary hover:underline"
-                >
-                  Esqueceu a senha?
-                </a>
-              </div>
-            </div>
-            <Button
-              type="submit"
-              disabled={loading}
-              aria-label="Entrar no sistema"
-              className="w-full h-12 rounded-xl text-base font-medium"
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Entrando...
-                </span>
-              ) : (
-                "Entrar →"
-              )}
-            </Button>
-          </form>
-        </div>
+          </button>
+        </form>
       </div>
     </div>
   );
