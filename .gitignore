@@ -31,3 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 .claude/settings.local.json
+
+# Presentation (local only)
+design-system/presentation/
