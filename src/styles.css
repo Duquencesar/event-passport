@@ -173,6 +173,13 @@
   box-shadow: 0 1px 0 oklch(from var(--background) l c h / 40%);
 }
 
+/* Stat card surface — fundo escuro com leve dot grid */
+.stat-card {
+  background-color: oklch(0.10 0.02 265);
+  background-image: radial-gradient(circle, oklch(1 0 0 / 6%) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
 /* Glass utilities — token-relative (dark-mode safe) */
 .glass {
   background: oklch(from var(--card) l c h / 72%);
