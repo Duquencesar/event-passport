@@ -14,7 +14,7 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",
-        "saas-label": "rounded-full border border-[#84E400]/30 bg-[#84E400]/5 text-[#84E400] font-mono text-xs uppercase tracking-[0.15em] px-3 py-1",
+        "saas-label": "rounded-full border border-primary/30 bg-primary/5 text-primary font-mono text-xs uppercase tracking-[0.15em] px-3 py-1",
       },
     },
     defaultVariants: {
