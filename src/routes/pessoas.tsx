@@ -228,7 +228,7 @@ function PessoasPage() {
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <SectionBadge label="MEMBROS E VISITANTES" pulse={false} className="mb-3" />
-            <h1 className="mb-0">
+            <h1 className="display-h1 mb-0">
               <span className="gradient-text">Pessoas</span>
             </h1>
             <p className="text-muted-foreground text-sm mt-2">Pessoas cadastradas no sistema</p>

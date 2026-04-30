@@ -209,11 +209,7 @@ function ConfiguracoesPage() {
         {/* Page header */}
         <div>
           <SectionBadge label="ADMINISTRAÇÃO" pulse={false} className="mb-3" />
-          <h1
-            className="gradient-text"
-          >
-            Configurações
-          </h1>
+          <h1 className="display-h1 gradient-text">Configurações</h1>
           <p className="text-muted-foreground text-sm mt-2">Integrações e automações do sistema</p>
         </div>
 
