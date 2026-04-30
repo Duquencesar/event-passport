@@ -44,7 +44,7 @@ function LoginPage() {
     <div className="relative min-h-[100dvh] bg-background flex items-center justify-center overflow-hidden px-6 py-8">
       {/* Bottom-right radial glow */}
       <div
-        className="absolute bottom-[-150px] right-[-150px] w-[400px] h-[400px] rounded-full bg-[#29B6F6]/[0.04] blur-[80px] pointer-events-none"
+        className="absolute bottom-[-150px] right-[-150px] w-[400px] h-[400px] rounded-full bg-secondary/[0.04] blur-[80px] pointer-events-none"
         aria-hidden="true"
       />
 
@@ -66,7 +66,7 @@ function LoginPage() {
 
           <h1
             className="text-[3rem] sm:text-[3.5rem] md:text-[5.25rem] leading-[1.05] tracking-[-0.02em] fade-up"
-            style={{ fontFamily: "var(--font-display)", animationDelay: "0.2s" }}
+            style={{ animationDelay: "0.2s" }}
           >
             Bem-vindo ao{" "}
             <span className="gradient-text">Ipê Village</span>
@@ -142,7 +142,7 @@ function LoginPage() {
             <SectionBadge label="ACESSO" pulse={false} />
             <h1
               className="mt-4 text-[2rem] leading-tight"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Bem-vindo ao <span className="gradient-text">Ipê Village</span>
             </h1>

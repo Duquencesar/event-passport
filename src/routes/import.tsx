@@ -369,9 +369,7 @@ function ImportPage() {
       <div className="space-y-8 max-w-2xl fade-up stagger">
         <div>
           <SectionBadge label="IMPORTAÇÃO" pulse={false} className="mb-3" />
-          <h1
-            style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}
-          >
+          <h1 className="display-h1">
             Importar <span className="gradient-text">Pessoas</span>
           </h1>
           <p className="text-muted-foreground text-sm mt-2">

@@ -209,12 +209,7 @@ function ConfiguracoesPage() {
         {/* Page header */}
         <div>
           <SectionBadge label="ADMINISTRAÇÃO" pulse={false} className="mb-3" />
-          <h1
-            className="gradient-text"
-            style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}
-          >
-            Configurações
-          </h1>
+          <h1 className="display-h1 gradient-text">Configurações</h1>
           <p className="text-muted-foreground text-sm mt-2">Integrações e automações do sistema</p>
         </div>
 
@@ -315,7 +310,7 @@ function ConfiguracoesPage() {
             <SectionBadge label="TELEGRAM" pulse={false} />
             <h2
               className="mt-3 text-xl text-foreground"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Relatório automático
             </h2>
@@ -456,7 +451,7 @@ function ConfiguracoesPage() {
             <SectionBadge label="TESTE" pulse={false} />
             <h2
               className="mt-3 text-xl text-foreground"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Testar relatório agora
             </h2>
@@ -536,7 +531,7 @@ function ConfiguracoesPage() {
             <SectionBadge label="TIPOS DE ACESSO" pulse={false} />
             <h2
               className="mt-3 text-xl text-foreground"
-              style={{ fontFamily: "var(--font-display)" }}
+             
             >
               Referência de tipos de acesso
             </h2>
@@ -545,7 +540,7 @@ function ConfiguracoesPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-border hover:bg-transparent" style={{ backgroundColor: "oklch(0.10 0.02 265)" }}>
+                <TableRow className="stat-card border-border hover:bg-transparent">
                   <TableHead className="text-xs font-mono uppercase tracking-[0.12em] text-muted-foreground">Tipo</TableHead>
                   <TableHead className="text-xs font-mono uppercase tracking-[0.12em] text-muted-foreground">Descrição</TableHead>
                   <TableHead className="text-xs font-mono uppercase tracking-[0.12em] text-muted-foreground">Acesso check-in</TableHead>

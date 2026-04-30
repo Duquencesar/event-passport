@@ -17,14 +17,9 @@ export function StatCard({ icon: Icon, label, value, delta, deltaLabel, classNam
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-border p-5",
+        "stat-card relative overflow-hidden rounded-xl border border-border p-5",
         className
       )}
-      style={{
-        backgroundColor: "oklch(0.10 0.02 265)",
-        backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
-      }}
     >
       {/* Top row: icon + delta */}
       <div className="flex items-start justify-between mb-4">
@@ -47,17 +42,12 @@ export function StatCard({ icon: Icon, label, value, delta, deltaLabel, classNam
       </div>
 
       {/* Value */}
-      <p
-        className="text-3xl text-white tabular-nums"
-        style={{ fontFamily: "var(--font-display)" }}
-      >
+      <p className="font-display text-3xl text-foreground tabular-nums">
         {value}
       </p>
 
       {/* Label */}
-      <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-[#94A3B8]">
-        {label}
-      </p>
+      <p className="caption mt-1">{label}</p>
     </div>
   );
 }

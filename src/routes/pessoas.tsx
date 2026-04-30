@@ -228,7 +228,7 @@ function PessoasPage() {
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <SectionBadge label="MEMBROS E VISITANTES" pulse={false} className="mb-3" />
-            <h1 className="mb-0" style={{fontFamily: 'var(--font-display)', fontSize: '2rem', lineHeight: '1.1'}}>
+            <h1 className="display-h1 mb-0">
               <span className="gradient-text">Pessoas</span>
             </h1>
             <p className="text-muted-foreground text-sm mt-2">Pessoas cadastradas no sistema</p>
@@ -255,42 +255,28 @@ function PessoasPage() {
             <StatCard icon={Users} label="TOTAL" value={people.length} />
             <StatCard icon={UserCheck} label="COM TAG" value={people.length - (tagStats["__none__"] || 0)} />
             {/* Sem tag — amber icon override */}
-            <div
-              className="relative overflow-hidden rounded-xl border border-border p-5"
-              style={{
-                backgroundColor: "oklch(0.10 0.02 265)",
-                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}
-            >
+            <div className="stat-card relative overflow-hidden rounded-xl border border-border p-5">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
                   <Clock className="h-5 w-5 text-amber-400" />
                 </div>
               </div>
-              <p className="text-3xl text-white tabular-nums" style={{fontFamily: 'var(--font-display)'}}>
+              <p className="font-display text-3xl text-foreground tabular-nums">
                 {tagStats["__none__"] ?? 0}
               </p>
-              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-[#94A3B8]">SEM TAG</p>
+              <p className="caption mt-1">SEM TAG</p>
             </div>
             {/* Passaram — red-ish fallback / uses checkedIn */}
-            <div
-              className="relative overflow-hidden rounded-xl border border-border p-5"
-              style={{
-                backgroundColor: "oklch(0.10 0.02 265)",
-                backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}
-            >
+            <div className="stat-card relative overflow-hidden rounded-xl border border-border p-5">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
                   <UserX className="h-5 w-5 text-red-400" />
                 </div>
               </div>
-              <p className="text-3xl text-white tabular-nums" style={{fontFamily: 'var(--font-display)'}}>
+              <p className="font-display text-3xl text-foreground tabular-nums">
                 {totalCount.checkedIn ?? 0}
               </p>
-              <p className="mt-1 text-xs font-mono uppercase tracking-[0.15em] text-[#94A3B8]">CHECK-INS</p>
+              <p className="caption mt-1">CHECK-INS</p>
             </div>
           </div>
         )}
