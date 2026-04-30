@@ -1,0 +1,376 @@
+/* ============================================================
+   FONT FACES — Cormorant Garamond (brand display font)
+   ============================================================ */
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("fonts/CormorantGaramond-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("fonts/CormorantGaramond-Italic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("fonts/PlayfairDisplay-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("fonts/PlayfairDisplay-Italic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DM Sans";
+  src: url("fonts/DMSans-VariableFont.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DM Sans";
+  src: url("fonts/DMSans-Italic-VariableFont.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-Light.ttf") format("truetype");
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-LightItalic.ttf") format("truetype");
+  font-weight: 300; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-Italic.ttf") format("truetype");
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-Medium.ttf") format("truetype");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-MediumItalic.ttf") format("truetype");
+  font-weight: 500; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-SemiBold.ttf") format("truetype");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-SemiBoldItalic.ttf") format("truetype");
+  font-weight: 600; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-Bold.ttf") format("truetype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("fonts/ChakraPetch-BoldItalic.ttf") format("truetype");
+  font-weight: 700; font-style: italic; font-display: swap;
+}
+
+/**
+ * Ipê Village Design System — Colors & Typography
+ * Source of truth: src/styles.css in the codebase
+ * Color model: OKLCH throughout
+ * Font stack: Calistoga (display) + Inter (body) + JetBrains Mono (mono)
+ *
+ * Font loading: @font-face blocks below load Cormorant Garamond (brand display font).
+ * Inter and JetBrains Mono loaded from Google Fonts (add to <head>):
+ * <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+ *
+ * NOTE: Cormorant Garamond replaces the Calistoga/SF Pro Display substitute.
+ * The production codebase originally declared "SF Pro Display" — Cormorant Garamond
+ * is the confirmed brand font supplied by the Ipê team.
+ */
+
+/* ============================================================
+   BASE TOKENS — COLORS
+   ============================================================ */
+:root {
+  /* --- Backgrounds --- */
+  --ipe-bg:             oklch(0.11 0.05 250);   /* #0B1929 — deep navy page bg */
+  --ipe-bg-card:        oklch(0.16 0.05 250);   /* #0F2035 — card surface */
+  --ipe-bg-muted:       oklch(0.26 0.05 250);   /* #1E3352 — muted/hover bg */
+  --ipe-bg-accent:      oklch(0.20 0.05 250);   /* #162840 — accent hover */
+  --ipe-bg-inverted:    oklch(0.10 0.02 265);   /* dot-pattern inverted sections */
+
+  /* --- Foregrounds --- */
+  --ipe-fg:             oklch(0.95 0.005 265);  /* #EEF2FF — primary text */
+  --ipe-fg-muted:       oklch(0.58 0.05 250);   /* #94A3B8 — secondary text */
+  --ipe-fg-subtle:      oklch(0.40 0.04 250);   /* very dim labels */
+
+  /* --- Brand Accents --- */
+  --ipe-lime:           oklch(0.82 0.24 130);   /* #84E400 — primary lime */
+  --ipe-lime-fg:        oklch(0.11 0.05 250);   /* dark navy on lime bg */
+  --ipe-lime-10:        color-mix(in oklch, oklch(0.82 0.24 130) 10%, transparent);
+  --ipe-lime-20:        color-mix(in oklch, oklch(0.82 0.24 130) 20%, transparent);
+
+  --ipe-blue:           oklch(0.72 0.13 210);   /* #29B6F6 — secondary sky blue */
+  --ipe-blue-fg:        oklch(1 0 0);            /* white on blue bg */
+  --ipe-blue-10:        color-mix(in oklch, oklch(0.72 0.13 210) 10%, transparent);
+
+  /* --- Borders & Inputs --- */
+  --ipe-border:         oklch(0.23 0.06 250);   /* #1A2E44 */
+  --ipe-input:          oklch(0.23 0.06 250);
+
+  /* --- State Colors --- */
+  --ipe-destructive:    oklch(0.58 0.22 25);    /* #E05757 — error/danger */
+  --ipe-destructive-fg: oklch(0.98 0.005 25);
+  --ipe-amber:          oklch(0.75 0.17 82);    /* upcoming/warning */
+  --ipe-emerald:        oklch(0.72 0.18 155);   /* success/ok */
+
+  /* --- Chart Colors --- */
+  --ipe-chart-1:        oklch(0.82 0.24 130);   /* lime */
+  --ipe-chart-2:        oklch(0.72 0.13 210);   /* sky blue */
+  --ipe-chart-3:        oklch(0.75 0.17 82);    /* amber */
+  --ipe-chart-4:        oklch(0.57 0.22 295);   /* violet */
+  --ipe-chart-5:        oklch(0.58 0.22 25);    /* red */
+
+  /* --- Ring --- */
+  --ipe-ring:           oklch(0.82 0.24 130);   /* lime focus ring */
+
+  /* ============================================================
+     SEMANTIC TOKENS — map to raw tokens above
+     ============================================================ */
+  --background:         var(--ipe-bg);
+  --foreground:         var(--ipe-fg);
+  --card:               var(--ipe-bg-card);
+  --card-foreground:    var(--ipe-fg);
+  --popover:            var(--ipe-bg-card);
+  --popover-foreground: var(--ipe-fg);
+  --primary:            var(--ipe-lime);
+  --primary-foreground: var(--ipe-lime-fg);
+  --secondary:          var(--ipe-blue);
+  --secondary-foreground: var(--ipe-blue-fg);
+  --muted:              var(--ipe-bg-muted);
+  --muted-foreground:   var(--ipe-fg-muted);
+  --accent:             var(--ipe-bg-accent);
+  --accent-foreground:  var(--ipe-fg);
+  --destructive:        var(--ipe-destructive);
+  --destructive-foreground: var(--ipe-destructive-fg);
+  --border:             var(--ipe-border);
+  --input:              var(--ipe-input);
+  --ring:               var(--ipe-ring);
+
+  /* ============================================================
+     GRADIENTS
+     ============================================================ */
+  --ipe-gradient:        linear-gradient(135deg, #84E400, #29B6F6);
+  --ipe-gradient-subtle: linear-gradient(135deg, oklch(0.82 0.24 130 / 0.08), oklch(0.72 0.13 210 / 0.05));
+  --ipe-gradient-icon:   linear-gradient(135deg, #0884c7, #29B6F6);
+  --ipe-gradient-avatar: linear-gradient(135deg, #0d2a54, #29B6F6);
+
+  /* ============================================================
+     SHADOWS
+     ============================================================ */
+  --ipe-shadow-accent:    0 4px 14px rgba(132, 228, 0, 0.25);
+  --ipe-shadow-accent-lg: 0 8px 28px rgba(132, 228, 0, 0.35);
+  --ipe-shadow-blue:      0 4px 14px rgba(41, 182, 246, 0.30);
+  --ipe-shadow-card:      0 10px 25px rgba(0, 0, 0, 0.20);
+  --ipe-shadow-deep:      0 8px 32px rgba(0, 0, 0, 0.30);
+
+  /* ============================================================
+     RADIUS
+     ============================================================ */
+  --ipe-radius:     0.75rem;   /* 12px — base */
+  --ipe-radius-sm:  0.5rem;    /* 8px */
+  --ipe-radius-md:  0.625rem;  /* 10px */
+  --ipe-radius-lg:  0.75rem;   /* 12px */
+  --ipe-radius-xl:  1rem;      /* 16px — inputs, buttons */
+  --ipe-radius-2xl: 1.25rem;   /* 20px — panels, banners */
+  --ipe-radius-3xl: 1.5rem;    /* 24px — hero cards */
+  --ipe-radius-4xl: 1.75rem;   /* 28px */
+  --ipe-radius-full: 9999px;   /* pills */
+
+  /* ============================================================
+     TYPOGRAPHY
+     ============================================================ */
+  --ipe-font-display: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --ipe-font-body:    "DM Sans", "Inter", system-ui, -apple-system, sans-serif;
+  --ipe-font-mono:    "Chakra Petch", "JetBrains Mono", "Fira Code", monospace;
+
+  /* Type scale */
+  --ipe-text-xs:   0.75rem;    /* 12px */
+  --ipe-text-sm:   0.875rem;   /* 14px */
+  --ipe-text-base: 1rem;       /* 16px */
+  --ipe-text-lg:   1.125rem;   /* 18px */
+  --ipe-text-xl:   1.25rem;    /* 20px */
+  --ipe-text-2xl:  1.5rem;     /* 24px */
+  --ipe-text-3xl:  1.875rem;   /* 30px */
+  --ipe-text-4xl:  2.25rem;    /* 36px */
+  --ipe-text-5xl:  3rem;       /* 48px */
+  --ipe-text-hero: 5.25rem;    /* 84px — login hero */
+
+  /* Line heights */
+  --ipe-leading-tight:  1.05;
+  --ipe-leading-snug:   1.25;
+  --ipe-leading-normal: 1.5;
+
+  /* Letter spacing */
+  --ipe-tracking-tight:  -0.02em;
+  --ipe-tracking-normal: 0;
+  --ipe-tracking-badge:  0.15em;  /* ALL CAPS section badges */
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT STYLES
+   ============================================================ */
+
+body {
+  background-color: var(--ipe-bg);
+  color: var(--ipe-fg);
+  font-family: var(--ipe-font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2 {
+  font-family: var(--ipe-font-display);
+  line-height: var(--ipe-leading-tight);
+  letter-spacing: var(--ipe-tracking-tight);
+  color: var(--ipe-fg);
+}
+
+h1 { font-size: var(--ipe-text-4xl); }
+h2 { font-size: var(--ipe-text-2xl); }
+h3 { font-size: var(--ipe-text-xl); font-family: var(--ipe-font-body); font-weight: 700; }
+h4 { font-size: var(--ipe-text-base); font-family: var(--ipe-font-body); font-weight: 700; }
+
+p  { font-size: var(--ipe-text-base); line-height: var(--ipe-leading-normal); color: var(--ipe-fg-muted); }
+small { font-size: var(--ipe-text-xs); color: var(--ipe-fg-muted); }
+
+code, .mono {
+  font-family: var(--ipe-font-mono);
+  font-size: 0.875em;
+}
+
+/* Section badge label style */
+.ipe-badge-label {
+  font-family: var(--ipe-font-mono);
+  font-size: var(--ipe-text-xs);
+  letter-spacing: var(--ipe-tracking-badge);
+  text-transform: uppercase;
+  color: var(--ipe-lime);
+}
+
+/* Gradient text utility */
+.ipe-gradient-text {
+  background: var(--ipe-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============================================================
+   GLASS UTILITIES
+   ============================================================ */
+
+.ipe-glass {
+  background: oklch(from var(--card) l c h / 72%);
+  backdrop-filter: blur(12px) saturate(1.5);
+  -webkit-backdrop-filter: blur(12px) saturate(1.5);
+  border: 1px solid oklch(from var(--border) l c h / 60%);
+  box-shadow:
+    0 1px 3px oklch(from var(--background) l c h / 20%),
+    0 8px 32px oklch(from var(--background) l c h / 30%),
+    inset 0 1px 0 oklch(from var(--foreground) l c h / 8%);
+}
+
+.ipe-glass-strong {
+  background: oklch(from var(--card) l c h / 85%);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid oklch(from var(--border) l c h / 70%);
+  box-shadow:
+    0 1px 2px oklch(from var(--background) l c h / 15%),
+    0 4px 16px oklch(from var(--background) l c h / 25%),
+    inset 0 1px 0 oklch(from var(--foreground) l c h / 8%);
+}
+
+.ipe-glass-subtle {
+  background: oklch(from var(--card) l c h / 45%);
+  backdrop-filter: blur(8px) saturate(1.4);
+  -webkit-backdrop-filter: blur(8px) saturate(1.4);
+  border: 1px solid oklch(from var(--border) l c h / 45%);
+}
+
+/* ============================================================
+   ANIMATION KEYFRAMES
+   ============================================================ */
+
+@keyframes ipe-float-bob {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes ipe-pulse-dot {
+  0%, 100% { transform: scale(1);   opacity: 1; }
+  50%       { transform: scale(1.3); opacity: 0.7; }
+}
+
+@keyframes ipe-slow-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ipe-fade-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ipe-float-1 { animation: ipe-float-bob 5s ease-in-out infinite; }
+.ipe-float-2 { animation: ipe-float-bob 4s ease-in-out infinite 0.5s; }
+.ipe-pulse-dot { animation: ipe-pulse-dot 2s ease-in-out infinite; }
+.ipe-slow-spin { animation: ipe-slow-spin 60s linear infinite; }
+.ipe-fade-up {
+  animation: ipe-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Hover lift */
+.ipe-lift {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+.ipe-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ipe-shadow-card);
+}
+.ipe-lift:active { transform: scale(0.98); }
+
+/* Dot pattern texture */
+.ipe-dot-pattern {
+  background-color: var(--ipe-bg-inverted);
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+}

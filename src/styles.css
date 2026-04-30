@@ -2,6 +2,110 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* ============================================================
+   SELF-HOSTED FONTS — Ipê Village Design System
+   ============================================================ */
+
+/* Playfair Display — display/heading serif */
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/fonts/PlayfairDisplay-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/fonts/PlayfairDisplay-Italic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 400 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Cormorant Garamond — brand display fallback */
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/CormorantGaramond-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/CormorantGaramond-Italic-VariableFont_wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* DM Sans — body / UI text */
+@font-face {
+  font-family: "DM Sans";
+  src: url("/fonts/DMSans-VariableFont.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "DM Sans";
+  src: url("/fonts/DMSans-Italic-VariableFont.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Chakra Petch — badges / mono / labels */
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Light.ttf") format("truetype");
+  font-weight: 300; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-LightItalic.ttf") format("truetype");
+  font-weight: 300; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Regular.ttf") format("truetype");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Italic.ttf") format("truetype");
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Medium.ttf") format("truetype");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-MediumItalic.ttf") format("truetype");
+  font-weight: 500; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-SemiBold.ttf") format("truetype");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-SemiBoldItalic.ttf") format("truetype");
+  font-weight: 600; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-Bold.ttf") format("truetype");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Chakra Petch";
+  src: url("/fonts/ChakraPetch-BoldItalic.ttf") format("truetype");
+  font-weight: 700; font-style: italic; font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -45,7 +149,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --font-sans: "SF Pro Display", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "DM Sans", "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
 
 :root {
@@ -91,10 +195,10 @@
   --sidebar-border: oklch(0.32 0.012 255 / 60%);
   --sidebar-ring: oklch(0.74 0.18 128 / 70%);
 
-  /* Typography */
-  --font-display: "Calistoga", Georgia, serif;
-  --font-body: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  /* Typography — Ipê official typefaces */
+  --font-display: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-body: "DM Sans", "Inter", system-ui, sans-serif;
+  --font-mono: "Chakra Petch", "JetBrains Mono", monospace;
 
   /* Shadows — mais discretas */
   --shadow-accent: 0 4px 14px rgba(137, 189, 0, 0.18);

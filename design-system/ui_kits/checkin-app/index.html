@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ipê Village — Check-In</title>
+<style>
+  @font-face { font-family:"Playfair Display"; src:url("../../fonts/PlayfairDisplay-VariableFont_wght.ttf") format("truetype"); font-weight:400 900; font-style:normal; font-display:block; }
+  @font-face { font-family:"DM Sans"; src:url("../../fonts/DMSans-VariableFont.ttf") format("truetype"); font-weight:100 900; font-style:normal; font-display:block; }
+  @font-face { font-family:"DM Sans"; src:url("../../fonts/DMSans-Italic-VariableFont.ttf") format("truetype"); font-weight:100 900; font-style:italic; font-display:block; }
+  @font-face { font-family:"Chakra Petch"; src:url("../../fonts/ChakraPetch-Regular.ttf") format("truetype"); font-weight:400; font-display:block; }
+  @font-face { font-family:"Chakra Petch"; src:url("../../fonts/ChakraPetch-Medium.ttf") format("truetype"); font-weight:500; font-display:block; }
+  @font-face { font-family:"Chakra Petch"; src:url("../../fonts/ChakraPetch-SemiBold.ttf") format("truetype"); font-weight:600; font-display:block; }
+  @font-face { font-family:"Chakra Petch"; src:url("../../fonts/ChakraPetch-Bold.ttf") format("truetype"); font-weight:700; font-display:block; }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; }
+  body { background: #05080f; color: #eef2ff; font-family: 'DM Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  input, button { font-family: inherit; }
+  input { color: #eef2ff; }
+  input::placeholder { color: #3d5470; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: rgba(132,228,0,0.15); border-radius: 4px; }
+
+  @keyframes pulse    { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.6);opacity:0.5} }
+  @keyframes spin     { to{transform:rotate(360deg)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes slideIn  { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+  @keyframes popIn    { from{opacity:0;transform:scale(0.92)} to{opacity:1;transform:scale(1)} }
+  @keyframes glowPulse{ 0%,100%{box-shadow:0 0 20px rgba(132,228,0,0.2)} 50%{box-shadow:0 0 40px rgba(132,228,0,0.45)} }
+  @keyframes countUp  { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .page { animation: fadeUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Components and screens load first, export everything to window -->
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="screens.jsx"></script>
+
+<!-- App shell — all components are already on window by the time this runs -->
+<script type="text/babel">
+const { useState } = React;
+
+function App() {
+  const [page,  setPage]  = useState('login');
+  const [event, setEvent] = useState(null);
+  const [key,   setKey]   = useState(0);
+
+  const go = p => { setPage(p); setKey(k => k + 1); };
+
+  if (page === 'login') return <LoginScreen onLogin={() => go('events')} />;
+
+  const active = (page === 'events' || page === 'checkin') ? 'checkin' : page;
+
+  return (
+    <div style={{ height:'100vh', display:'flex', background:'#05080f', overflow:'hidden', position:'relative' }}>
+      {/* Subtle grid bg */}
+      <div style={{ position:'fixed', inset:0, backgroundImage:'linear-gradient(rgba(238,242,255,0.016) 1px,transparent 1px),linear-gradient(90deg,rgba(238,242,255,0.016) 1px,transparent 1px)', backgroundSize:'80px 80px', pointerEvents:'none', zIndex:0 }} />
+
+      <Sidebar active={active} onNav={id => { if(id==='checkin') go('events'); else go(id); }} />
+
+      <main key={key} className="page" style={{ flex:1, overflowY:'auto', padding:'32px 36px', position:'relative', zIndex:1 }}>
+        {page === 'events'    && <EventSelection onSelect={e => { setEvent(e); go('checkin'); }} totalToday={247} />}
+        {page === 'checkin'   && event && <CheckInFlow event={event} onBack={() => go('events')} />}
+        {page === 'dashboard' && <DashboardPage />}
+        {page === 'pessoas'   && <PessoasPage />}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
