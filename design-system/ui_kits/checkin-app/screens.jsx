@@ -458,7 +458,7 @@ function DashboardPage() {
         <div style={{ ...glass, borderRadius:16, padding:24 }}>
           <div style={{ fontFamily:'Chakra Petch,monospace', fontSize:9, letterSpacing:'0.16em', color:fgm, marginBottom:20 }}>TIPO DE ACESSO</div>
           <svg viewBox="-5 0 130 110" style={{ width:'100%', maxHeight:110, display:'block' }}>
-            {(()=>{ let a=-Math.PI/2; return PIE.map((s,i)=>{ const ang=(s.v/ptot)*2*Math.PI,x1=60+42*Math.cos(a),y1=55+42*Math.sin(a); a+=ang; const x2=60+42*Math.cos(a),y2=55+42*Math.sin(a); return <path key={i} d={`M60,55 L${x1},${y1} A42,42,0,${ang>Math.PI?1:0},1,${x2},${y2} Z`} fill={s.c} opacity="0.88" />;})();}
+            {(()=>{ let a=-Math.PI/2; return PIE.map((s,i)=>{ const ang=(s.v/ptot)*2*Math.PI,x1=60+42*Math.cos(a),y1=55+42*Math.sin(a); a+=ang; const x2=60+42*Math.cos(a),y2=55+42*Math.sin(a); return <path key={i} d={`M60,55 L${x1},${y1} A42,42,0,${ang>Math.PI?1:0},1,${x2},${y2} Z`} fill={s.c} opacity="0.88" />;});})()}
             <circle cx="60" cy="55" r="21" fill={bg} />
             <text x="60" y="52" textAnchor="middle" fill={fg} style={{ fontFamily:'Playfair Display,serif', fontSize:12, fontWeight:700 }}>247</text>
             <text x="60" y="61" textAnchor="middle" fill={fgm} style={{ fontFamily:'Chakra Petch,monospace', fontSize:5 }}>TOTAL</text>
