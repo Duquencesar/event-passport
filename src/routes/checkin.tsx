@@ -921,12 +921,16 @@ function CheckinPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               ref={searchInputRef}
-              placeholder="Buscar por nome... (Ctrl+K)"
+              placeholder="Buscar por nome..."
               value={query}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-12 h-12 rounded-xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
+              className="pl-12 pr-20 h-12 rounded-xl border-border/40 bg-background/60 focus:bg-background/80 transition-colors"
               autoFocus
             />
+            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1">
+              <kbd className="kbd">⌘</kbd>
+              <kbd className="kbd">K</kbd>
+            </div>
           </div>
 
           {/* Search results */}
