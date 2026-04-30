@@ -368,7 +368,7 @@ function EventosPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <SectionBadge label="EVENTOS LUMA" pulse={false} className="mb-3" />
-            <h1 className="mb-2" style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', lineHeight: '1.1' }}>
+            <h1 className="display-h1 mb-2">
               <span className="gradient-text">Eventos</span>
             </h1>
             <p className="text-muted-foreground text-sm">Calendário Ipê Village {new Date().getFullYear()}</p>
@@ -381,8 +381,8 @@ function EventosPage() {
                 <span className="text-xs text-muted-foreground">eventos</span>
               </div>
               <div className="rounded-xl border border-border bg-card px-4 py-2.5 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-[#84E400]" />
-                <span className="text-lg font-bold text-[#84E400]">{totalCheckins}</span>
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <span className="text-lg font-bold text-primary tabular-nums">{totalCheckins}</span>
                 <span className="text-xs text-muted-foreground">check-ins</span>
               </div>
             </div>
@@ -410,20 +410,20 @@ function EventosPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
             <TabsList className="glass rounded-xl p-1 h-auto gap-1 flex-wrap">
               {todayEvents.length > 0 && (
-                <TabsTrigger value="hoje" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10 gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#84E400] inline-block" />
+                <TabsTrigger value="hoje" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-primary data-[state=active]:bg-primary/10 gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary inline-block animate-pulse" />
                   Hoje ({todayEvents.length})
                 </TabsTrigger>
               )}
-              <TabsTrigger value="proximos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10 gap-2">
+              <TabsTrigger value="proximos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-primary data-[state=active]:bg-primary/10 gap-2">
                 <CalendarClock className="w-3.5 h-3.5" />
                 Próximos ({upcomingEvents.length})
               </TabsTrigger>
-              <TabsTrigger value="passados" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10 gap-2">
+              <TabsTrigger value="passados" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-primary data-[state=active]:bg-primary/10 gap-2">
                 <History className="w-3.5 h-3.5" />
                 Passados ({pastEvents.length})
               </TabsTrigger>
-              <TabsTrigger value="todos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-[#84E400] data-[state=active]:bg-[#84E400]/10">
+              <TabsTrigger value="todos" className="rounded-lg px-4 py-2 text-sm data-[state=active]:text-primary data-[state=active]:bg-primary/10">
                 Todos ({allEvents.length})
               </TabsTrigger>
             </TabsList>
@@ -435,7 +435,7 @@ function EventosPage() {
               <span
                 className={`h-2 w-2 rounded-full shrink-0 ${
                   syncing
-                    ? "bg-[#84E400] animate-pulse"
+                    ? "bg-primary animate-pulse"
                     : syncStale
                       ? "bg-amber-400 animate-pulse"
                       : "bg-emerald-400"
