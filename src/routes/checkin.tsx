@@ -366,6 +366,33 @@ function CheckinPage() {
     }
   };
 
+  // Sync unificado: invalidate router + puxa Luma do dia + recarrega tela.
+  // Substitui os dois botões anteriores (Atualizar tela + Sincronizar agora).
+  const handleSyncAndRefresh = async () => {
+    setSyncing(true);
+    try {
+      const today = getCurrentBrasiliaDateKeySync();
+      const [result] = await Promise.all([
+        triggerLumaSync({ data: { since_date: today, until_date: today } }),
+        router.invalidate(),
+      ]);
+      const tasks: Promise<unknown>[] = [loadToday(), refreshLastSync()];
+      const ev = selectedEventRef.current;
+      if (ev && ev.id) tasks.push(refreshSelectedEventData(ev));
+      await Promise.all(tasks);
+      const t = result.totals;
+      toast.success("Sincronizado", {
+        description: `${result.events_processed} eventos · ${t.registrations} inscritos · ${t.checkins} check-ins`,
+      });
+    } catch (err) {
+      console.error(err);
+      const msg = err instanceof Error ? err.message : "Falha ao sincronizar";
+      toast.error("Erro na sincronização", { description: msg });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const refreshSelectedEventData = useCallback(async (event: EventBase) => {
     const [checkins, checkinCount, regCount, firstPage] = await Promise.all([
       getEventCheckins({ data: { event_id: event.id } }),
