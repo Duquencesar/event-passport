@@ -540,7 +540,7 @@ function ConfiguracoesPage() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-border hover:bg-transparent" style={{ backgroundColor: "oklch(0.10 0.02 265)" }}>
+                <TableRow className="stat-card border-border hover:bg-transparent">
                   <TableHead className="text-xs font-mono uppercase tracking-[0.12em] text-muted-foreground">Tipo</TableHead>
                   <TableHead className="text-xs font-mono uppercase tracking-[0.12em] text-muted-foreground">Descrição</TableHead>
                   <TableHead className="text-xs font-mono uppercase tracking-[0.12em] text-muted-foreground">Acesso check-in</TableHead>
