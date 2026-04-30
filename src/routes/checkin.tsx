@@ -730,51 +730,41 @@ function CheckinPage() {
       <Layout>
         <div className="space-y-8 fade-up stagger">
           {/* Page header */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
               <SectionBadge label="EVENTOS ATIVOS" pulse={true} className="mb-3" />
-              <h1 className="mb-1" style={{ fontFamily: "var(--font-display)", fontSize: "2rem", lineHeight: "1.1" }}>
+              <h1 className="display-h1 mb-1">
                 Check-<span className="gradient-text">In</span>
               </h1>
-              <p className="text-muted-foreground text-sm mt-1">Selecione o evento para iniciar</p>
+              <p className="text-muted-foreground text-sm mt-1 flex items-center gap-2 flex-wrap">
+                <span>Selecione o evento para iniciar</span>
+                <span className="text-muted-foreground/50">·</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin text-primary" : "text-muted-foreground/60"}`} />
+                  <span className="text-muted-foreground/80">
+                    Sincronizado <span className="text-foreground/80 font-medium">{formatRelativeTime(lastSync)}</span>
+                  </span>
+                </span>
+              </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Button
                 size="sm"
                 variant="outline"
-                onClick={handleForceRefresh}
-                disabled={refreshing}
+                onClick={handleSyncAndRefresh}
+                disabled={syncing}
                 className="rounded-xl gap-2"
-                title="Invalidar cache do SSR e recarregar os cards"
+                title="Puxa novidades do Luma e recarrega a tela"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-                {refreshing ? "Atualizando..." : "Atualizar tela"}
+                <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+                <span>{syncing ? "Sincronizando..." : "Sincronizar"}</span>
               </Button>
-              <div className="glass-strong rounded-2xl px-5 py-3 flex items-center gap-3">
-                <UserCheck className="w-5 h-5 text-primary" />
-                <span className="text-2xl font-bold text-foreground">{todayCount}</span>
-                <span className="text-sm text-muted-foreground">hoje</span>
+              <div className="glass-strong rounded-2xl px-3.5 sm:px-5 py-2.5 sm:py-3 flex items-center gap-2 sm:gap-3">
+                <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                <span className="text-xl sm:text-2xl font-bold text-foreground tabular-nums">{todayCount}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">hoje</span>
               </div>
             </div>
-          </div>
-
-          {/* Luma sync banner */}
-          <div className="glass-subtle rounded-2xl px-5 py-3 flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2 text-sm">
-              <RefreshCw className={`w-4 h-4 text-primary ${syncing ? "animate-spin" : ""}`} />
-              <span className="text-muted-foreground">Última sincronização do Luma:</span>
-              <span className="font-medium text-foreground">{formatRelativeTime(lastSync)}</span>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleManualSync}
-              disabled={syncing}
-              className="rounded-xl gap-2"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Sincronizando..." : "Sincronizar agora"}
-            </Button>
           </div>
 
           {events.length > 0 ? (
