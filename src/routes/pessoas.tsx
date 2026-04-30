@@ -425,10 +425,10 @@ function PessoasPage() {
                   onClick={() => openProfile(p)}
                   className="rounded-xl border border-border bg-card p-4 cursor-pointer lift-glow relative overflow-hidden group flex flex-col gap-3 text-left w-full scale-in"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#84E400]/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
                   <div className="flex items-center gap-3 relative">
                     {/* Avatar with initials — gradient saas */}
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#0d2a54] to-[#29B6F6] flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-secondary/40 to-secondary flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
                       {initials}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -494,7 +494,7 @@ function PessoasPage() {
               <>
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#0d2a54] to-[#29B6F6] flex items-center justify-center text-white text-lg font-semibold flex-shrink-0 shadow-[0_4px_14px_rgba(41,182,246,0.3)]">
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-secondary/40 to-secondary flex items-center justify-center text-white text-lg font-semibold flex-shrink-0 shadow-[var(--shadow-accent)]">
                       {initials}
                     </div>
                     <div className="min-w-0">

@@ -28,7 +28,7 @@ export function StatCard({ icon: Icon, label, value, delta, deltaLabel, classNam
     >
       {/* Top row: icon + delta */}
       <div className="flex items-start justify-between mb-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#0884c7] to-[#29B6F6] shadow-[0_4px_14px_rgba(41,182,246,0.3)]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-secondary/40 to-secondary shadow-[var(--shadow-accent)]">
           <Icon className="h-5 w-5 text-white" />
         </div>
         {delta && (

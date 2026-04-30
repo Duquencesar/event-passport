@@ -53,7 +53,7 @@ function LoginPage() {
         <div className="hidden md:flex flex-col justify-center gap-8 relative">
           {/* Radial glow accent */}
           <div
-            className="absolute top-[-150px] left-[-150px] w-[400px] h-[400px] rounded-full bg-[#84E400]/[0.06] blur-[60px] pointer-events-none"
+            className="absolute top-[-150px] left-[-150px] w-[400px] h-[400px] rounded-full bg-primary/[0.06] blur-[60px] pointer-events-none"
             aria-hidden="true"
           />
 
@@ -86,7 +86,7 @@ function LoginPage() {
           >
             {/* Spinning dashed ring */}
             <div
-              className="absolute w-72 h-72 rounded-full border-2 border-dashed border-[#84E400]/25 slow-spin dashed-ring"
+              className="absolute w-72 h-72 rounded-full border-2 border-dashed border-primary/25 slow-spin dashed-ring"
               aria-hidden="true"
             />
 
@@ -96,7 +96,7 @@ function LoginPage() {
               aria-hidden="true"
             >
               {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#84E400]/20" />
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary/20" />
               ))}
             </div>
 
@@ -117,7 +117,7 @@ function LoginPage() {
               className="absolute bottom-4 right-4 glass-strong rounded-xl shadow-lg px-4 py-3 float-card-2 flex items-center gap-2"
               aria-hidden="true"
             >
-              <span className="h-2 w-2 rounded-full bg-[#84E400] flex-shrink-0" />
+              <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
               <div>
                 <p className="text-xs font-semibold text-foreground">47 presentes</p>
                 <p className="text-[10px] text-muted-foreground">Evento Ativo</p>
@@ -126,7 +126,7 @@ function LoginPage() {
 
             {/* Corner accent block */}
             <div
-              className="absolute bottom-0 left-4 w-14 h-14 rounded-xl bg-gradient-to-br from-[#84E400] to-[#29B6F6] shadow-[0_4px_14px_rgba(132,228,0,0.3)]"
+              className="absolute bottom-0 left-4 w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-[var(--shadow-accent)]"
               aria-hidden="true"
             />
 
@@ -194,7 +194,7 @@ function LoginPage() {
               <div className="flex justify-end mt-1">
                 <a
                   href="mailto:admin@ipe.city?subject=Reset de senha"
-                  className="text-xs text-[#84E400] hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   Esqueceu a senha?
                 </a>

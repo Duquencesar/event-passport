@@ -11,12 +11,12 @@ export function SectionBadge({ label, pulse = true, className, style }: SectionB
   return (
     <div
       style={style}
-      className={`inline-flex items-center gap-3 rounded-full border border-[#84E400]/30 bg-[#84E400]/5 px-5 py-2 ${className ?? ""}`}
+      className={`inline-flex items-center gap-3 rounded-full border border-primary/30 bg-primary/5 px-5 py-2 ${className ?? ""}`}
     >
       <span
-        className={`h-2 w-2 rounded-full bg-[#84E400]${pulse ? " pulse-dot" : ""}`}
+        className={`h-2 w-2 rounded-full bg-primary${pulse ? " pulse-dot" : ""}`}
       />
-      <span className="font-mono text-xs uppercase tracking-[0.15em] text-[#84E400]">
+      <span className="font-mono text-xs uppercase tracking-[0.15em] text-primary">
         {label}
       </span>
     </div>
