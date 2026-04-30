@@ -117,7 +117,7 @@ function LoginPage() {
               className="absolute bottom-4 right-4 glass-strong rounded-xl shadow-lg px-4 py-3 float-card-2 flex items-center gap-2"
               aria-hidden="true"
             >
-              <span className="h-2 w-2 rounded-full bg-[#84E400] flex-shrink-0" />
+              <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
               <div>
                 <p className="text-xs font-semibold text-foreground">47 presentes</p>
                 <p className="text-[10px] text-muted-foreground">Evento Ativo</p>
