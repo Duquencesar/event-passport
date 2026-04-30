@@ -126,7 +126,7 @@ function LoginPage() {
 
             {/* Corner accent block */}
             <div
-              className="absolute bottom-0 left-4 w-14 h-14 rounded-xl bg-gradient-to-br from-[#84E400] to-[#29B6F6] shadow-[0_4px_14px_rgba(132,228,0,0.3)]"
+              className="absolute bottom-0 left-4 w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-secondary shadow-[var(--shadow-accent)]"
               aria-hidden="true"
             />
 
