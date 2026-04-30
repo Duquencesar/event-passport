@@ -246,7 +246,7 @@ function DateGroup({
 function EmptyState({ label }: { label: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-[#0884c7] to-[#29B6F6] mx-auto mb-4 shadow-[0_4px_14px_rgba(41,182,246,0.3)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-secondary/40 to-secondary mx-auto mb-4 shadow-[var(--shadow-accent)]">
         <Calendar className="h-7 w-7 text-white" />
       </div>
       <p className="text-sm font-medium text-foreground">Nenhum evento encontrado</p>
